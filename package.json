@@ -1,0 +1,28 @@
+{
+  "name": "metafy",
+  "version": "1.0.0",
+  "description": "Dashboard moderno de metas com medidor semicircular animado",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx http-server -p 8000",
+    "serve": "python -m http.server 8000",
+    "dev": "npx http-server -p 8000 -o"
+  },
+  "keywords": [
+    "dashboard",
+    "metas",
+    "objetivos",
+    "glassmorphism",
+    "frontend"
+  ],
+  "author": "Matheus Crypto",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/matheus87131470-crypto/metafy.git"
+  },
+  "bugs": {
+    "url": "https://github.com/matheus87131470-crypto/metafy/issues"
+  },
+  "homepage": "https://metafy.vercel.app"
+}
