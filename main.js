@@ -1,9 +1,9 @@
 /**
- * Script Principal - Dashboard Dinâmico de Metas
+ * Script Principal - Plataforma de Análise de Futebol
  */
 
 let goalsManager;
-let bettingAnalyzer;
+let footballAnalyzer;
 let balanceManager;
 let gaugesMap = new Map();
 let currentEditingGoalId = null;
@@ -11,7 +11,7 @@ let currentEditingGoalId = null;
 document.addEventListener('DOMContentLoaded', () => {
     // Inicializar sistemas
     goalsManager = new GoalsManager();
-    bettingAnalyzer = new BettingAnalyzer();
+    footballAnalyzer = new FootballAnalyzer();
     balanceManager = new BalanceManager();
 
     // Inicializar data padrão para formulário
@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Setup eventos
     setupEventListeners();
     setupTabNavigation();
-    setupBettingForm();
+    setupFootballAnalysisForm();
     setupBalanceControls();
 
     // Renderizar metas
@@ -442,53 +442,43 @@ function setupTabNavigation() {
 }
 
 // ====================================
-// ANÁLISE DE APOSTAS (IA MOCK)
+// ANÁLISE DE FUTEBOL (IA MOCK)
 // ====================================
 
-function setupBettingForm() {
-    const betForm = document.getElementById('betForm');
-    const btnAnalyze = document.getElementById('btnAnalyze');
-    const betFormReset = document.getElementById('betFormReset');
+function setupFootballAnalysisForm() {
+    const gameForm = document.getElementById('gameForm');
+    const analyzeBtn = document.getElementById('analyzeBtn');
 
-    if (betForm && btnAnalyze) {
-        btnAnalyze.addEventListener('click', (e) => {
+    if (gameForm && analyzeBtn) {
+        gameForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            handleBettingAnalysis();
-        });
-    }
-
-    if (betFormReset) {
-        betFormReset.addEventListener('click', () => {
-            betForm.reset();
-            const resultDiv = document.getElementById('analysisResult');
-            if (resultDiv) {
-                resultDiv.innerHTML = '';
-            }
+            handleFootballAnalysis();
         });
     }
 }
 
-function handleBettingAnalysis() {
-    const betForm = document.getElementById('betForm');
-    if (!betForm) return;
+function handleFootballAnalysis() {
+    const gameForm = document.getElementById('gameForm');
+    if (!gameForm) return;
 
-    const betData = {
-        team: document.getElementById('betTeam')?.value || '',
-        type: document.getElementById('betType')?.value || '',
-        odd: document.getElementById('betOdd')?.value || '',
-        amount: document.getElementById('betAmount')?.value || '',
-        notes: document.getElementById('betNotes')?.value || ''
+    const gameData = {
+        home: document.getElementById('homeTeam')?.value || '',
+        away: document.getElementById('awayTeam')?.value || '',
+        competition: document.getElementById('competition')?.value || '',
+        market: document.getElementById('market')?.value || '',
+        odd: document.getElementById('gameOdd')?.value || '',
+        amount: document.getElementById('gameAmount')?.value || ''
     };
 
     // Validar
-    const errors = bettingAnalyzer.validateBetData(betData);
+    const errors = footballAnalyzer.validateGameData(gameData);
     if (errors.length > 0) {
         showNotification(errors[0], 'error');
         return;
     }
 
     // Analisar
-    const analysis = bettingAnalyzer.analyze(betData);
+    const analysis = footballAnalyzer.analyze(gameData);
 
     if (analysis.error) {
         showNotification(analysis.error, 'error');
@@ -496,59 +486,101 @@ function handleBettingAnalysis() {
     }
 
     // Renderizar resultado
-    renderAnalysisResult(analysis);
+    renderFootballAnalysis(analysis);
     showNotification('✓ Análise gerada com sucesso!', 'success');
 }
 
-function renderAnalysisResult(analysis) {
+function renderFootballAnalysis(analysis) {
     const resultDiv = document.getElementById('analysisResult');
     if (!resultDiv) return;
 
     const riskColor = analysis.riskLevel.value;
+    const formAnalysis = analysis.formAnalysis;
 
     resultDiv.innerHTML = `
         <div class="analysis-card" style="animation: slideUp 0.3s ease;">
             <div class="analysis-header">
-                <h3>📊 Análise da Aposta</h3>
+                <h3>⚽ ${analysis.homeTeam} vs ${analysis.awayTeam}</h3>
                 <span class="risk-badge ${riskColor}">
-                    ⚠️ Risco ${analysis.riskLevel.label}
+                    ${analysis.riskLevel.emoji} ${analysis.riskLevel.label}
                 </span>
             </div>
             
             <div class="analysis-body">
-                <!-- Aposta -->
-                <div class="analysis-section">
-                    <h4>🎯 Aposta</h4>
-                    <p class="analysis-text">${analysis.team} - ${analysis.type}</p>
+                <!-- Informações do Jogo -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
+                    <div class="analysis-section">
+                        <h4>🏆 Competição</h4>
+                        <p class="analysis-text">${analysis.competition}</p>
+                    </div>
+                    <div class="analysis-section">
+                        <h4>📊 Mercado</h4>
+                        <p class="analysis-text">${analysis.market}</p>
+                    </div>
                 </div>
 
-                <!-- Matemática -->
-                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
+                <!-- Forma dos Times -->
+                <div class="analysis-section">
+                    <h4>📈 Forma Recente dos Times</h4>
+                    <div style="background: rgba(99, 102, 241, 0.05); border-radius: 10px; padding: 12px; margin-top: 8px;">
+                        <p style="margin: 6px 0; color: var(--text-secondary);">
+                            <strong>${formAnalysis.home.team}:</strong> ${formAnalysis.home.description}
+                        </p>
+                        <p style="margin: 6px 0; color: var(--text-secondary);">
+                            <strong>${formAnalysis.away.team}:</strong> ${formAnalysis.away.description}
+                        </p>
+                        <p style="margin: 6px 0; color: var(--accent-color); font-weight: 500;">
+                            → ${formAnalysis.comparison}
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Financeiro -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin: 20px 0;">
                     <div class="analysis-section">
                         <h4>Odd</h4>
                         <p class="analysis-value">${analysis.odd.toFixed(2)}</p>
                     </div>
                     <div class="analysis-section">
-                        <h4>Valor Apostado</h4>
+                        <h4>Valor</h4>
                         <p class="analysis-value">R$ ${parseFloat(analysis.amount).toFixed(2)}</p>
                     </div>
                     <div class="analysis-section">
-                        <h4>Retorno Esperado</h4>
-                        <p class="analysis-value">R$ ${parseFloat(analysis.potentialGain).toFixed(2)}</p>
+                        <h4>Lucro Potencial</h4>
+                        <p class="analysis-value" style="color: var(--accent-color);">
+                            R$ ${parseFloat(analysis.netProfit).toFixed(2)}
+                        </p>
                     </div>
                 </div>
 
-                <!-- Lucro Potencial -->
+                <!-- ROI -->
                 <div class="analysis-section">
-                    <h4>💰 Lucro Potencial</h4>
-                    <p class="analysis-value">R$ ${parseFloat(analysis.netProfit).toFixed(2)} (${analysis.roi}% ROI)</p>
-                    <p class="analysis-text">${analysis.returnAnalysis}</p>
+                    <h4>💰 Retorno Esperado</h4>
+                    <p class="analysis-value">${analysis.roi}% ROI</p>
+                </div>
+
+                <!-- Contexto do Jogo -->
+                <div class="analysis-section">
+                    <h4>🎯 Contexto da Partida</h4>
+                    <p class="analysis-text" style="margin-top: 8px;">
+                        <strong>Importância:</strong> ${analysis.gameContext.importance}<br>
+                        <strong>Nível:</strong> ${analysis.gameContext.level}<br>
+                        <strong>Detalhes:</strong> ${analysis.gameContext.details}
+                    </p>
                 </div>
 
                 <!-- Estratégia -->
                 <div class="analysis-section">
                     <h4>💡 Estratégia Recomendada</h4>
                     <p class="analysis-text">${analysis.strategy}</p>
+                </div>
+
+                <!-- Recomendação Final -->
+                <div class="analysis-section" style="background: rgba(99, 102, 241, 0.1); border-radius: 10px; padding: 14px; border-left: 4px solid var(--primary-color);">
+                    <h4>✅ Recomendação Final</h4>
+                    <p class="analysis-text" style="margin-top: 6px; font-weight: 500; color: var(--primary-color);">
+                        ${analysis.recommendation}
+                    </p>
                 </div>
 
                 <!-- Observações -->
@@ -561,13 +593,15 @@ function renderAnalysisResult(analysis) {
 
                 <!-- Disclaimer -->
                 <div class="warning-box">
-                    <strong>⚖️ Aviso Legal:</strong> Esta análise é simulada e fornecida apenas para fins educacionais. 
-                    Não constitui recomendação financeira. Você é totalmente responsável por suas decisões de aposta. 
-                    Aposte com responsabilidade.
+                    <strong>⚖️ Aviso Legal:</strong> Esta análise é simulada com base em algoritmos. 
+                    Futebol é imprevisível - mesmo análises excelentes têm taxa de acerto de 55-60%.
+                    Nunca aposte dinheiro que não pode perder. Jogue com responsabilidade.
                 </div>
             </div>
         </div>
     `;
+    
+    resultDiv.style.display = 'block';
 }
 
 // ====================================
