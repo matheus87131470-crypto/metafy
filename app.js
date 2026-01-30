@@ -1,22 +1,20 @@
 /**
  * app.js - Script Principal da Plataforma Football AI
- * Orquestra toda a lógica do aplicativo
+ * Integração com APIs reais de jogos e IA
  */
 
-let gamesManager;
-let footballAnalyzer;
 let balanceManager;
 let currentSelectedGame = null;
+let gamesCache = null;
+let isLoadingAnalysis = false;
 
 document.addEventListener('DOMContentLoaded', () => {
     // Inicializar
-    gamesManager = new GamesManager();
-    footballAnalyzer = new FootballAnalyzer();
     balanceManager = new BalanceManager();
 
     // Setup
     setupTabNavigation();
-    setupGamesList();
+    loadGamesList();
     setupBalanceControls();
     setupGameModal();
     updateTimestamp();
@@ -54,14 +52,63 @@ function setupTabNavigation() {
 }
 
 // ====================================
-// GAMES LIST
+// GAMES LIST - CARREGAMENTO VIA API
 // ====================================
 
-function setupGamesList() {
+async function loadGamesList() {
     const gamesList = document.getElementById('gamesList');
-    const games = gamesManager.getAllGames();
+    
+    // Mostrar loading
+    gamesList.innerHTML = `
+        <div style="grid-column: 1/-1; text-align: center; padding: 40px;">
+            <div style="font-size: 2rem; margin-bottom: 10px;">⏳</div>
+            <p style="color: var(--text-secondary);">Carregando jogos reais...</p>
+        </div>
+    `;
 
+    try {
+        // Buscar jogos da API
+        const response = await fetch('/api/games');
+        const data = await response.json();
+        
+        if (!data.success || !data.games) {
+            throw new Error('Erro ao buscar jogos');
+        }
+        
+        gamesCache = data.games;
+        renderGamesList(data.games);
+    } catch (error) {
+        console.error('Erro ao carregar jogos:', error);
+        gamesList.innerHTML = `
+            <div style="grid-column: 1/-1; text-align: center; padding: 40px;">
+                <div style="font-size: 2rem; margin-bottom: 10px;">⚠️</div>
+                <p style="color: var(--text-secondary);">Erro ao carregar jogos. Usando dados locais.</p>
+            </div>
+        `;
+        
+        // Fallback para dados locais
+        setTimeout(() => {
+            if (typeof GamesManager !== 'undefined') {
+                const gamesManager = new GamesManager();
+                gamesCache = gamesManager.getAllGames();
+                renderGamesList(gamesCache);
+            }
+        }, 1000);
+    }
+}
+
+function renderGamesList(games) {
+    const gamesList = document.getElementById('gamesList');
     gamesList.innerHTML = '';
+
+    if (!games || games.length === 0) {
+        gamesList.innerHTML = `
+            <div style="grid-column: 1/-1; text-align: center; padding: 40px;">
+                <p style="color: var(--text-secondary);">Nenhum jogo disponível</p>
+            </div>
+        `;
+        return;
+    }
 
     games.forEach(game => {
         const card = document.createElement('div');
@@ -69,6 +116,7 @@ function setupGamesList() {
         card.innerHTML = `
             <div class="game-card-header">
                 <div class="game-time">${game.time}</div>
+                <span style="font-size: 0.75rem; color: var(--text-muted);">${game.country || ''}</span>
             </div>
             <div class="game-card-content">
                 <div class="game-card-teams">
@@ -82,7 +130,7 @@ function setupGamesList() {
                         <span class="team-name">${game.awayTeam}</span>
                     </div>
                 </div>
-                <div class="game-competition">${gamesManager.formatCompetition(game.competition)}</div>
+                <div class="game-competition">⚽ ${game.competition}</div>
             </div>
             <button class="btn-analyze" data-game-id="${game.id}">
                 🤖 Analisar
@@ -123,7 +171,12 @@ function setupGameModal() {
 
 function openGameModal(gameId) {
     const modal = document.getElementById('gameModal');
-    const game = gamesManager.getGameById(gameId);
+    
+    // Procurar jogo no cache
+    let game = null;
+    if (gamesCache) {
+        game = gamesCache.find(g => g.id === parseInt(gameId));
+    }
     
     if (!game) return;
 
@@ -133,7 +186,7 @@ function openGameModal(gameId) {
     document.getElementById('modalTitle').textContent = `${game.homeTeam} x ${game.awayTeam}`;
     document.getElementById('homeTeamName').textContent = game.homeTeam;
     document.getElementById('awayTeamName').textContent = game.awayTeam;
-    document.getElementById('gameCompetition').textContent = gamesManager.formatCompetition(game.competition);
+    document.getElementById('gameCompetition').textContent = `⚽ ${game.competition}`;
 
     // Limpar form
     document.getElementById('analysisForm').reset();
@@ -149,111 +202,146 @@ function closeGameModal() {
     currentSelectedGame = null;
 }
 
-function handleAnalysisSubmit(e) {
+async function handleAnalysisSubmit(e) {
     e.preventDefault();
 
-    if (!currentSelectedGame) return;
+    if (!currentSelectedGame || isLoadingAnalysis) return;
 
-    const gameData = {
-        homeTeam: currentSelectedGame.homeTeam,
-        awayTeam: currentSelectedGame.awayTeam,
-        competition: currentSelectedGame.competition,
-        market: document.getElementById('marketSelect').value,
-        odd: parseFloat(document.getElementById('oddInput').value),
-        amount: parseFloat(document.getElementById('amountInput').value)
-    };
+    const market = document.getElementById('marketSelect').value;
+    const odd = parseFloat(document.getElementById('oddInput').value);
+    const amount = parseFloat(document.getElementById('amountInput').value);
 
     // Validar
-    if (!gameData.market || gameData.odd < 1.01 || gameData.amount < 0.01) {
+    if (!market || odd < 1.01 || amount < 0.01) {
         alert('⚠️ Preencha todos os campos corretamente');
         return;
     }
 
-    // Analisar
-    const analysis = footballAnalyzer.analyze(gameData);
+    isLoadingAnalysis = true;
+    const analyzeBtn = document.querySelector('#analysisForm button');
+    const originalText = analyzeBtn.innerHTML;
+    analyzeBtn.innerHTML = '⏳ Analisando com IA...';
+    analyzeBtn.disabled = true;
 
-    if (analysis.error) {
-        alert('❌ Erro na análise: ' + analysis.error);
-        return;
+    try {
+        const gameData = {
+            homeTeam: currentSelectedGame.homeTeam,
+            awayTeam: currentSelectedGame.awayTeam,
+            competition: currentSelectedGame.competition,
+            market,
+            odd,
+            amount
+        };
+
+        // Chamar API de análise
+        const response = await fetch('/api/analyze', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(gameData)
+        });
+
+        if (!response.ok) {
+            throw new Error('Erro ao gerar análise');
+        }
+
+        const result = await response.json();
+
+        if (result.success && result.analysis) {
+            displayAnalysisResult(result.analysis, gameData);
+        } else {
+            alert('❌ Erro ao gerar análise: ' + (result.error || 'Desconhecido'));
+        }
+    } catch (error) {
+        console.error('Erro:', error);
+        alert('❌ Erro ao conectar com IA: ' + error.message);
+    } finally {
+        isLoadingAnalysis = false;
+        analyzeBtn.innerHTML = originalText;
+        analyzeBtn.disabled = false;
     }
-
-    // Exibir resultado
-    displayAnalysisResult(analysis);
 }
 
-function displayAnalysisResult(analysis) {
+function displayAnalysisResult(analysis, gameData) {
     const resultDiv = document.getElementById('analysisResult');
 
     const html = `
         <div class="analysis-container">
             <div class="analysis-header">
-                <h3>📊 Resultado da Análise</h3>
+                <h3>📊 Análise com IA Real</h3>
+                <p style="font-size: 0.8rem; color: var(--text-muted);">Gerada por Inteligência Artificial</p>
             </div>
 
             <div class="analysis-section">
                 <h4>⚽ Contexto do Jogo</h4>
-                <p>${analysis.context}</p>
+                <p>${analysis.contexto || 'Análise de contexto'}</p>
             </div>
 
+            ${analysis.forma ? `
             <div class="analysis-section">
                 <h4>📈 Forma das Equipes</h4>
                 <div class="form-comparison">
                     <div class="team-form">
-                        <span class="form-label">${analysis.homeTeam}:</span>
-                        <span class="form-value">${analysis.form.homeForm}</span>
+                        <span class="form-label">${gameData.homeTeam}:</span>
+                        <span class="form-value">${analysis.forma.homeTeam}</span>
                     </div>
                     <div class="team-form">
-                        <span class="form-label">${analysis.awayTeam}:</span>
-                        <span class="form-value">${analysis.form.awayForm}</span>
+                        <span class="form-label">${gameData.awayTeam}:</span>
+                        <span class="form-value">${analysis.forma.awayTeam}</span>
                     </div>
                 </div>
-                <p class="form-comparison-text">${analysis.form.comparison}</p>
+                <p class="form-comparison-text">${analysis.forma.comparacao}</p>
             </div>
+            ` : ''}
 
             <div class="analysis-section">
                 <h4>💎 Análise da Aposta</h4>
                 <div class="betting-info">
                     <div class="info-item">
                         <span class="label">Mercado:</span>
-                        <span class="value">${analysis.market}</span>
+                        <span class="value">${gameData.market}</span>
                     </div>
                     <div class="info-item">
                         <span class="label">Odd:</span>
-                        <span class="value">${analysis.odd}</span>
+                        <span class="value">${gameData.odd}</span>
                     </div>
                     <div class="info-item">
                         <span class="label">Aposta:</span>
-                        <span class="value">${balanceManager.formatCurrency(analysis.amount)}</span>
+                        <span class="value">${balanceManager.formatCurrency(gameData.amount)}</span>
                     </div>
                     <div class="info-item">
                         <span class="label">Ganho Potencial:</span>
-                        <span class="value gain">${balanceManager.formatCurrency(analysis.potentialGain)}</span>
+                        <span class="value gain">${balanceManager.formatCurrency(analysis.ganho_potencial || (gameData.amount * gameData.odd))}</span>
                     </div>
                     <div class="info-item">
                         <span class="label">ROI:</span>
-                        <span class="value">${analysis.roi}%</span>
+                        <span class="value">${analysis.roi || ((gameData.amount * gameData.odd - gameData.amount) / gameData.amount * 100).toFixed(1)}%</span>
                     </div>
                 </div>
             </div>
 
             <div class="analysis-section">
                 <h4>🎯 Grau de Risco</h4>
-                <div class="risk-badge ${analysis.riskLevel}">
-                    ${analysis.riskEmoji} ${analysis.riskLevel === 'LOW' ? 'BAIXO' : analysis.riskLevel === 'MEDIUM' ? 'MÉDIO' : 'ALTO'}
+                <div class="risk-badge ${analysis.risco}">
+                    ${analysis.risco === 'LOW' ? '🟢 BAIXO' : analysis.risco === 'MEDIUM' ? '🟡 MÉDIO' : '🔴 ALTO'}
                 </div>
+                <p style="margin-top: 10px; font-size: 0.9rem; color: var(--text-secondary);">${analysis.risco_descricao || ''}</p>
             </div>
 
+            ${analysis.observacoes && analysis.observacoes.length > 0 ? `
             <div class="analysis-section">
                 <h4>💡 Observações Técnicas</h4>
                 <ul class="observations-list">
-                    ${analysis.observations.map(obs => `<li>• ${obs}</li>`).join('')}
+                    ${analysis.observacoes.map(obs => `<li>• ${obs}</li>`).join('')}
                 </ul>
             </div>
+            ` : ''}
 
             <div class="analysis-section">
                 <h4>✅ Recomendação Final</h4>
-                <div class="recommendation-box ${analysis.riskLevel}">
-                    ${analysis.recommendation}
+                <div class="recommendation-box ${analysis.risco}">
+                    ${analysis.recomendacao || 'Análise concluída'}
                 </div>
             </div>
 
@@ -334,10 +422,57 @@ function updateBalanceDisplay() {
     const balance = balanceManager.getBalance();
     const percentages = balanceManager.getBalancePercentages();
 
-    // Atualizar valores
-    document.getElementById('totalGains').textContent = balanceManager.formatCurrency(gains);
-    document.getElementById('totalLosses').textContent = balanceManager.formatCurrency(losses);
-    document.getElementById('balanceValue').textContent = balanceManager.formatCurrency(balance);
+    // Atualizar valores com animação
+    animateValue('totalGains', gains);
+    animateValue('totalLosses', losses);
+    animateValue('balanceValue', balance);
+
+    // Atualizar barra com animação suave
+    const barGain = document.getElementById('barGain');
+    const barLoss = document.getElementById('barLoss');
+    
+    setTimeout(() => {
+        barGain.style.width = percentages.gains + '%';
+        barLoss.style.width = percentages.losses + '%';
+    }, 100);
+
+    // Atualizar histórico
+    updateHistoryDisplay();
+}
+
+/**
+ * Anima a mudança de valor do currency
+ */
+function animateValue(elementId, finalValue) {
+    const element = document.getElementById(elementId);
+    if (!element) return;
+    
+    const formatter = new Intl.NumberFormat('pt-BR', {
+        style: 'currency',
+        currency: 'BRL'
+    });
+
+    const currentText = element.textContent;
+    const currentValue = parseFloat(currentText.replace('R$', '').replace('.', '').replace(',', '.')) || 0;
+    
+    const duration = 400;
+    const startTime = Date.now();
+    const diff = finalValue - currentValue;
+
+    function update() {
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const value = currentValue + (diff * progress);
+        
+        element.textContent = formatter.format(value);
+        
+        if (progress < 1) {
+            requestAnimationFrame(update);
+        }
+    }
+
+    update();
+}
 
     // Atualizar barra
     document.getElementById('barGain').style.width = percentages.gains + '%';

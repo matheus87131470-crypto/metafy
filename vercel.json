@@ -1,5 +1,20 @@
 {
-  "buildCommand": "echo 'Static site - no build needed'",
+  "buildCommand": "echo 'Static site with serverless functions'",
   "outputDirectory": ".",
-  "public": true
+  "public": true,
+  "functions": {
+    "api/**/*.js": {
+      "runtime": "nodejs18.x"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/$1"
+    }
+  ],
+  "env": {
+    "RAPIDAPI_KEY": "@rapidapi_key",
+    "OPENAI_API_KEY": "@openai_api_key"
+  }
 }
