@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Metafy - Dashboard de metas com medidor semicircular animado. Crie, acompanhe e conquiste seus objetivos.">
+    <meta name="theme-color" content="#0a0e27">
+    <title>Metafy - Dashboard de Metas</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="background-gradient"></div>
+    
+    <div class="container">
+        <!-- Header com Botão de Ação -->
+        <header class="header">
+            <div class="header-top">
+                <div>
+                    <h1 class="title">Metafy</h1>
+                    <p class="subtitle">Acompanhe e conquiste seus objetivos</p>
+                </div>
+                <button class="btn-primary btn-create" id="btnCreateGoal">
+                    <span class="btn-icon">+</span>
+                    <span class="btn-text">Criar Meta</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content" id="mainContent">
+            <!-- Será preenchido dinamicamente -->
+            <div class="empty-state" id="emptyState">
+                <div class="empty-state-content">
+                    <div class="empty-state-icon">🎯</div>
+                    <h2>Nenhuma meta ainda</h2>
+                    <p>Clique em "+ Criar Meta" para começar a acompanhar seus objetivos</p>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p class="footer-text">Última atualização: <span id="updateTime">--:--</span></p>
+        </footer>
+    </div>
+
+    <!-- Modal de Criar/Editar Meta -->
+    <div class="modal" id="goalModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalTitle">Criar Nova Meta</h2>
+                <button class="modal-close" id="modalClose">&times;</button>
+            </div>
+
+            <form class="modal-form" id="goalForm">
+                <!-- Título -->
+                <div class="form-group">
+                    <label for="goalTitle" class="form-label">Título da Meta</label>
+                    <input 
+                        type="text" 
+                        id="goalTitle" 
+                        class="form-input" 
+                        placeholder="Ex: Investimentos, Exercício, Leitura..."
+                        required
+                    >
+                </div>
+
+                <!-- Tipo -->
+                <div class="form-group">
+                    <label for="goalType" class="form-label">Tipo de Meta</label>
+                    <select id="goalType" class="form-input" required>
+                        <option value="">Selecione um tipo...</option>
+                        <option value="money">💰 Dinheiro</option>
+                        <option value="percentage">📊 Percentual</option>
+                        <option value="tasks">✅ Tarefas</option>
+                        <option value="custom">📈 Personalizado</option>
+                    </select>
+                </div>
+
+                <!-- Valor Alvo -->
+                <div class="form-group">
+                    <label for="goalTarget" class="form-label">Valor Alvo</label>
+                    <input 
+                        type="number" 
+                        id="goalTarget" 
+                        class="form-input" 
+                        placeholder="100"
+                        step="0.01"
+                        required
+                    >
+                </div>
+
+                <!-- Valor Atual -->
+                <div class="form-group">
+                    <label for="goalCurrent" class="form-label">Valor Atual</label>
+                    <input 
+                        type="number" 
+                        id="goalCurrent" 
+                        class="form-input" 
+                        placeholder="0"
+                        step="0.01"
+                        value="0"
+                        required
+                    >
+                </div>
+
+                <!-- Data Inicial -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="goalStartDate" class="form-label">Data Inicial</label>
+                        <input 
+                            type="date" 
+                            id="goalStartDate" 
+                            class="form-input"
+                            required
+                        >
+                    </div>
+
+                    <!-- Data Final -->
+                    <div class="form-group">
+                        <label for="goalEndDate" class="form-label">Data Final</label>
+                        <input 
+                            type="date" 
+                            id="goalEndDate" 
+                            class="form-input"
+                            required
+                        >
+                    </div>
+                </div>
+
+                <!-- Unidade Custom -->
+                <div class="form-group" id="customUnitGroup" style="display: none;">
+                    <label for="goalUnit" class="form-label">Unidade (ex: km, páginas)</label>
+                    <input 
+                        type="text" 
+                        id="goalUnit" 
+                        class="form-input" 
+                        placeholder="km"
+                    >
+                </div>
+
+                <!-- Botões -->
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" id="btnCancel">Cancelar</button>
+                    <button type="submit" class="btn-primary">Salvar Meta</button>
+                </div>
+
+                <!-- Botão Deletar (apenas em edição) -->
+                <button type="button" class="btn-danger" id="btnDelete" style="display: none; width: 100%;">
+                    Deletar Meta
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script src="gauge.js"></script>
+    <!-- Scripts -->
+    <script src="gauge.js"></script>
+    <script src="notifications.js"></script>
+    <script src="goals.js"></script>
+    <script src="main.js"></script>
+    <script src="demo-data.js"></script>
+</body>
+</html>
