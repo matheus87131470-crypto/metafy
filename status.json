@@ -1,0 +1,9 @@
+{
+  "status": "production",
+  "version": "2.0.0",
+  "apis": {
+    "games": "/api/games",
+    "analyze": "/api/analyze"
+  },
+  "timestamp": "2026-01-30T00:00:00Z"
+}
