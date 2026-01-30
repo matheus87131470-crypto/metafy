@@ -1,0 +1,16 @@
+.git
+.gitignore
+README.md
+EVOLUTION_COMPLETE.txt
+SETUP_GUIDE.md
+.env.example
+.env.local
+node_modules
+npm-debug.log
+yarn-error.log
+.DS_Store
+*.swp
+*.swo
+*~
+.vscode
+.idea

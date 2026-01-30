@@ -1,6 +1,7 @@
 /**
  * app.js - Script Principal da Plataforma Football AI
  * Integração com APIs reais de jogos e IA
+ * Versão: 2.0.0 (Com APIs Reais)
  */
 
 let balanceManager;
