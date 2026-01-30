@@ -3,330 +3,194 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Plataforma de Análise de Futebol com IA - Analise partidas, monte bilhetes de apostas e controle ganhos/perdas com nossa inteligência artificial.">
+    <meta name="description" content="Football AI - Análise Inteligente de Futebol. Analise jogos, monte estratégias e controle ganhos/perdas.">
     <meta name="theme-color" content="#0a0e27">
-    <title>Football AI - Análise de Futebol com Inteligência Artificial</title>
+    <title>Football AI - Análise Inteligente de Futebol</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="background-gradient"></div>
     
     <div class="container">
-        <!-- Header com Botão de Ação -->
+        <!-- Header -->
         <header class="header">
-            <div class="header-top">
-                <div>
-                    <h1 class="title">⚽ Football AI</h1>
-                    <p class="subtitle">Análise inteligente de partidas de futebol</p>
-                </div>
-                <button class="btn-primary btn-create" id="btnCreateGoal">
-                    <span class="btn-icon">+</span>
-                    <span class="btn-text">Nova Meta</span>
-                </button>
+            <div class="header-content">
+                <h1 class="title">⚽ Football AI</h1>
+                <p class="subtitle">Análise inteligente de partidas de futebol</p>
             </div>
 
-            <!-- Sistema de Abas -->
+            <!-- Abas Principais -->
             <nav class="tabs-nav">
-                <button class="tab-button active" data-tab="metas">
-                    <span class="tab-icon">🎯</span>
-                    <span class="tab-label">Metas</span>
-                </button>
-                <button class="tab-button" data-tab="analise">
+                <button class="tab-button active" data-tab="games">
                     <span class="tab-icon">⚽</span>
-                    <span class="tab-label">Análise</span>
+                    <span class="tab-label">Jogos</span>
                 </button>
-                <button class="tab-button" data-tab="ganhos">
+                <button class="tab-button" data-tab="balance">
                     <span class="tab-icon">📊</span>
-                    <span class="tab-label">Resultado</span>
+                    <span class="tab-label">Ganhos/Perdas</span>
                 </button>
             </nav>
         </header>
 
-        <!-- Main Content - Abas -->
-        <main class="main-content" id="mainContent">
-            <!-- Aba: Metas -->
-            <div class="tab-content active" id="tab-metas">
-                <div class="empty-state" id="emptyState">
-                    <div class="empty-state-content">
-                        <div class="empty-state-icon">🎯</div>
-                        <h2>Nenhuma meta ainda</h2>
-                        <p>Clique em "+ Nova Meta" para começar a acompanhar seus objetivos</p>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            
+            <!-- TAB 1: JOGOS DE FUTEBOL -->
+            <div class="tab-content active" id="tab-games">
+                <div class="games-section">
+                    <div class="section-header">
+                        <h2 class="section-title">⚽ Jogos de Hoje</h2>
+                        <p class="section-subtitle">Selecione um jogo para analisar com IA</p>
+                    </div>
+
+                    <!-- Lista de Jogos -->
+                    <div class="games-list" id="gamesList">
+                        <!-- Preenchida dinamicamente -->
                     </div>
                 </div>
             </div>
 
-            <!-- Aba: IA Análise -->
-            <div class="tab-content" id="tab-analise">
-                <div class="ia-section">
-                    <div class="ia-header">
-                        <h2 class="section-title">⚽ Análise IA de Partidas</h2>
-                        <p class="section-subtitle">Análise estratégica de jogos de futebol com IA</p>
-                    </div>
-
-                    <!-- Formulário de Análise de Futebol -->
-                    <div class="bet-form-container">
-                        <form class="bet-form" id="gameForm">
-                            <!-- Times -->
-                            <div class="form-row-2col">
-                                <div class="form-group">
-                                    <label class="form-label">⚪ Time da Casa</label>
-                                    <input type="text" class="form-input" id="homeTeam" placeholder="Ex: Flamengo" required>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">⚫ Time Visitante</label>
-                                    <input type="text" class="form-input" id="awayTeam" placeholder="Ex: Palmeiras" required>
-                                </div>
-                            </div>
-
-                            <!-- Competição -->
-                            <div class="form-group">
-                                <label class="form-label">🏆 Competição</label>
-                                <select class="form-input" id="competition" required>
-                                    <option value="">Selecione a competição...</option>
-                                    <option value="brasileirao">Campeonato Brasileiro</option>
-                                    <option value="copa-do-brasil">Copa do Brasil</option>
-                                    <option value="libertadores">Copa Libertadores</option>
-                                    <option value="sulamericana">Copa Sul-Americana</option>
-                                    <option value="champions">Champions League</option>
-                                    <option value="europa-league">Europa League</option>
-                                    <option value="serie-b">Série B</option>
-                                    <option value="estadual">Campeonato Estadual</option>
-                                    <option value="amistoso">Amistoso</option>
-                                </select>
-                            </div>
-
-                            <!-- Mercado de Aposta -->
-                            <div class="form-group">
-                                <label class="form-label">📊 Mercado de Aposta</label>
-                                <select class="form-input" id="market" required>
-                                    <option value="">Selecione o mercado...</option>
-                                    <option value="vencedor">Vencedor (1x2)</option>
-                                    <option value="ambas">Ambas Marcam (Sim/Não)</option>
-                                    <option value="over25">Over 2.5 Gols</option>
-                                    <option value="under25">Under 2.5 Gols</option>
-                                    <option value="resultado">Resultado Exato</option>
-                                    <option value="handicap">Handicap</option>
-                                    <option value="primeiro-gol">Primeiro Gol</option>
-                                    <option value="cartoes">Total de Cartões</option>
-                                    <option value="escanteios">Total de Escanteios</option>
-                                </select>
-                            </div>
-
-                            <!-- Odd e Valor -->
-                            <div class="form-row-2col">
-                                <div class="form-group">
-                                    <label class="form-label">💎 Odd</label>
-                                    <input type="number" class="form-input" id="gameOdd" placeholder="Ex: 2.50" step="0.01" min="1.01" required>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">💵 Valor Apostado (R$)</label>
-                                    <input type="number" class="form-input" id="gameAmount" placeholder="100" step="0.01" min="0.01" required>
-                                </div>
-                            </div>
-
-                            <!-- Botão de Análise -->
-                            <button type="submit" class="btn-primary btn-full" id="analyzeBtn">
-                                <span class="btn-icon">🤖</span>
-                                Analisar com IA
-                            </button>
-                        </form>
-                    </div>
-
-                    <!-- Resultado da Análise -->
-                    <div class="analysis-result" id="analysisResult" style="display: none;">
-                        <!-- Será preenchido dinamicamente -->
-                    </div>
-
-                </div>
-            </div>
-
-            <!-- Aba: Ganhos/Perdas -->
-            <div class="tab-content" id="tab-ganhos">
+            <!-- TAB 2: GANHOS/PERDAS -->
+            <div class="tab-content" id="tab-balance">
                 <div class="balance-section">
-                    <div class="balance-header">
+                    <div class="section-header">
                         <h2 class="section-title">📊 Resultado de Apostas</h2>
                         <p class="section-subtitle">Controle seus ganhos e perdas de forma visual</p>
                     </div>
 
-                    <!-- Controles -->
+                    <!-- Controles de Entrada -->
                     <div class="balance-controls">
                         <div class="control-group">
-                            <input type="number" class="form-input" id="gainAmount" placeholder="Valor ganho" step="0.01" min="0">
-                            <button class="btn-success" id="addGainBtn">
-                                <span>+</span> Ganho
-                            </button>
+                            <label>💰 Ganho (R$)</label>
+                            <input type="number" id="gainInput" placeholder="0.00" step="0.01" min="0">
+                            <button class="btn-success" id="addGainBtn">➕ Registrar Ganho</button>
                         </div>
                         <div class="control-group">
-                            <input type="number" class="form-input" id="lossAmount" placeholder="Valor perdido" step="0.01" min="0">
-                            <button class="btn-danger" id="addLossBtn">
-                                <span>-</span> Perda
-                            </button>
+                            <label>📉 Perda (R$)</label>
+                            <input type="number" id="lossInput" placeholder="0.00" step="0.01" min="0">
+                            <button class="btn-danger" id="addLossBtn">➖ Registrar Perda</button>
                         </div>
                     </div>
 
                     <!-- Estatísticas -->
                     <div class="balance-stats">
-                        <div class="stat-card">
+                        <div class="stat-card gain">
                             <div class="stat-label">✓ Ganhos</div>
-                            <div class="stat-value gain" id="totalGain">R$ 0,00</div>
+                            <div class="stat-value" id="totalGains">R$ 0,00</div>
                         </div>
-                        <div class="stat-card">
+                        <div class="stat-card loss">
                             <div class="stat-label">✗ Perdas</div>
-                            <div class="stat-value loss" id="totalLoss">R$ 0,00</div>
+                            <div class="stat-value" id="totalLosses">R$ 0,00</div>
                         </div>
-                        <div class="stat-card">
+                        <div class="stat-card balance">
                             <div class="stat-label">💰 Saldo</div>
-                            <div class="stat-value balance" id="balance">R$ 0,00</div>
+                            <div class="stat-value" id="balanceValue">R$ 0,00</div>
                         </div>
                     </div>
 
-                    <!-- Barra Visual de Ganhos/Perdas -->
-                    <div class="balance-bar-container">
+                    <!-- Barra Visual -->
+                    <div class="balance-bar-section">
                         <h3>📈 Visualização de Resultados</h3>
-                        <div class="balance-bar-wrapper">
+                        <div class="balance-bar-container">
                             <div class="balance-bar">
-                                <!-- Preenchido dinamicamente -->
+                                <div class="bar-gain" id="barGain" style="width: 0%"></div>
+                                <div class="bar-loss" id="barLoss" style="width: 0%"></div>
                             </div>
-                            <div class="balance-bar-labels">
-                                <span class="label-gain">Ganhos</span>
-                                <span class="label-loss">Perdas</span>
+                            <div class="bar-labels">
+                                <span class="label-left">Ganhos</span>
+                                <span class="label-right">Perdas</span>
                             </div>
                         </div>
                     </div>
 
                     <!-- Histórico -->
                     <div class="balance-history">
-                        <h3>📋 Últimas Transações</h3>
+                        <h3>📋 Transações</h3>
                         <div class="history-list" id="historyList">
-                            <div class="empty-history">Nenhuma transação registrada ainda</div>
+                            <div class="empty-message">Nenhuma transação registrada</div>
                         </div>
                     </div>
                 </div>
             </div>
         </main>
 
+
         <!-- Footer -->
         <footer class="footer">
-            <p class="footer-text">Última atualização: <span id="updateTime">--:--</span></p>
+            <p>Football AI © 2025 | Última atualização: <span id="timestamp">--:--</span></p>
         </footer>
     </div>
 
-    <!-- Modal de Criar/Editar Meta -->
-    <div class="modal" id="goalModal">
+    <!-- MODAL: Análise do Jogo -->
+    <div class="modal" id="gameModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2 class="modal-title" id="modalTitle">Criar Nova Meta</h2>
+                <h2 class="modal-title" id="modalTitle">--</h2>
                 <button class="modal-close" id="modalClose">&times;</button>
             </div>
 
-            <form class="modal-form" id="goalForm">
-                <!-- Título -->
-                <div class="form-group">
-                    <label for="goalTitle" class="form-label">Título da Meta</label>
-                    <input 
-                        type="text" 
-                        id="goalTitle" 
-                        class="form-input" 
-                        placeholder="Ex: Investimentos, Exercício, Leitura..."
-                        required
-                    >
-                </div>
-
-                <!-- Tipo -->
-                <div class="form-group">
-                    <label for="goalType" class="form-label">Tipo de Meta</label>
-                    <select id="goalType" class="form-input" required>
-                        <option value="">Selecione um tipo...</option>
-                        <option value="money">💰 Dinheiro</option>
-                        <option value="percentage">📊 Percentual</option>
-                        <option value="tasks">✅ Tarefas</option>
-                        <option value="custom">📈 Personalizado</option>
-                    </select>
-                </div>
-
-                <!-- Valor Alvo -->
-                <div class="form-group">
-                    <label for="goalTarget" class="form-label">Valor Alvo</label>
-                    <input 
-                        type="number" 
-                        id="goalTarget" 
-                        class="form-input" 
-                        placeholder="100"
-                        step="0.01"
-                        required
-                    >
-                </div>
-
-                <!-- Valor Atual -->
-                <div class="form-group">
-                    <label for="goalCurrent" class="form-label">Valor Atual</label>
-                    <input 
-                        type="number" 
-                        id="goalCurrent" 
-                        class="form-input" 
-                        placeholder="0"
-                        step="0.01"
-                        value="0"
-                        required
-                    >
-                </div>
-
-                <!-- Data Inicial -->
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="goalStartDate" class="form-label">Data Inicial</label>
-                        <input 
-                            type="date" 
-                            id="goalStartDate" 
-                            class="form-input"
-                            required
-                        >
+            <div class="modal-body">
+                <!-- Game Info -->
+                <div class="game-info">
+                    <div class="team-info">
+                        <span class="team-name" id="homeTeamName">--</span>
+                        <span class="team-emoji">⚪</span>
                     </div>
-
-                    <!-- Data Final -->
-                    <div class="form-group">
-                        <label for="goalEndDate" class="form-label">Data Final</label>
-                        <input 
-                            type="date" 
-                            id="goalEndDate" 
-                            class="form-input"
-                            required
-                        >
+                    <span class="vs">VS</span>
+                    <div class="team-info">
+                        <span class="team-emoji">⚫</span>
+                        <span class="team-name" id="awayTeamName">--</span>
                     </div>
                 </div>
+                <p class="game-competition" id="gameCompetition">--</p>
 
-                <!-- Unidade Custom -->
-                <div class="form-group" id="customUnitGroup" style="display: none;">
-                    <label for="goalUnit" class="form-label">Unidade (ex: km, páginas)</label>
-                    <input 
-                        type="text" 
-                        id="goalUnit" 
-                        class="form-input" 
-                        placeholder="km"
-                    >
+                <!-- Form para Análise -->
+                <form id="analysisForm" class="analysis-form">
+                    <div class="form-group">
+                        <label>📊 Mercado de Aposta</label>
+                        <select id="marketSelect" required>
+                            <option value="">Selecione o mercado...</option>
+                            <option value="vencedor">Vencedor (1x2)</option>
+                            <option value="ambas">Ambas Marcam</option>
+                            <option value="over25">Over 2.5 Gols</option>
+                            <option value="under25">Under 2.5 Gols</option>
+                            <option value="resultado">Resultado Exato</option>
+                            <option value="handicap">Handicap</option>
+                            <option value="primeiro-gol">Primeiro Gol</option>
+                            <option value="cartoes">Cartões</option>
+                            <option value="escanteios">Escanteios</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>💎 Odd da Aposta</label>
+                        <input type="number" id="oddInput" placeholder="2.50" step="0.01" min="1.01" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>💵 Valor da Aposta (R$)</label>
+                        <input type="number" id="amountInput" placeholder="100" step="0.01" min="0.01" required>
+                    </div>
+
+                    <button type="submit" class="btn-primary btn-full" id="analyzeBtn">
+                        🤖 Analisar Jogo
+                    </button>
+                </form>
+
+                <!-- Análise Resultado -->
+                <div class="analysis-result" id="analysisResult" style="display: none;">
+                    <!-- Preenchida dinamicamente -->
                 </div>
-
-                <!-- Botões -->
-                <div class="form-actions">
-                    <button type="button" class="btn-secondary" id="btnCancel">Cancelar</button>
-                    <button type="submit" class="btn-primary">Salvar Meta</button>
-                </div>
-
-                <!-- Botão Deletar (apenas em edição) -->
-                <button type="button" class="btn-danger" id="btnDelete" style="display: none; width: 100%;">
-                    Deletar Meta
-                </button>
-            </form>
+            </div>
         </div>
     </div>
 
     <!-- Scripts -->
-    <script src="gauge.js"></script>
-    <script src="notifications.js"></script>
-    <script src="goals.js"></script>
-    <script src="betting-analysis.js"></script>
-    <script src="balance-manager.js"></script>
-    <script src="main.js"></script>
-    <script src="demo-data.js"></script>
+    <script src="games.js"></script>
+    <script src="football-analyzer.js"></script>
+    <script src="balance.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>
+
