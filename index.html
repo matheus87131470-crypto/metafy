@@ -21,19 +21,201 @@
                 </div>
                 <button class="btn-primary btn-create" id="btnCreateGoal">
                     <span class="btn-icon">+</span>
-                    <span class="btn-text">Criar Meta</span>
+                    <span class="btn-text">Nova Meta</span>
                 </button>
             </div>
+
+            <!-- Sistema de Abas -->
+            <nav class="tabs-nav">
+                <button class="tab-button active" data-tab="metas">
+                    <span class="tab-icon">🎯</span>
+                    <span class="tab-label">Metas</span>
+                </button>
+                <button class="tab-button" data-tab="analise">
+                    <span class="tab-icon">🤖</span>
+                    <span class="tab-label">IA Análise</span>
+                </button>
+                <button class="tab-button" data-tab="ganhos">
+                    <span class="tab-icon">📊</span>
+                    <span class="tab-label">Ganhos/Perdas</span>
+                </button>
+            </nav>
         </header>
 
-        <!-- Main Content -->
+        <!-- Main Content - Abas -->
         <main class="main-content" id="mainContent">
-            <!-- Será preenchido dinamicamente -->
-            <div class="empty-state" id="emptyState">
-                <div class="empty-state-content">
-                    <div class="empty-state-icon">🎯</div>
-                    <h2>Nenhuma meta ainda</h2>
-                    <p>Clique em "+ Criar Meta" para começar a acompanhar seus objetivos</p>
+            <!-- Aba: Metas -->
+            <div class="tab-content active" id="tab-metas">
+                <div class="empty-state" id="emptyState">
+                    <div class="empty-state-content">
+                        <div class="empty-state-icon">🎯</div>
+                        <h2>Nenhuma meta ainda</h2>
+                        <p>Clique em "+ Nova Meta" para começar a acompanhar seus objetivos</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Aba: IA Análise -->
+            <div class="tab-content" id="tab-analise">
+                <div class="ia-section">
+                    <div class="ia-header">
+                        <h2 class="section-title">🤖 Análise IA de Apostas</h2>
+                        <p class="section-subtitle">Receba análises estratégicas com IA para suas apostas</p>
+                    </div>
+
+                    <!-- Formulário de Aposta -->
+                    <div class="bet-form-container">
+                        <form class="bet-form" id="betForm">
+                            <div class="form-row-2col">
+                                <div class="form-group">
+                                    <label class="form-label">Time/Evento</label>
+                                    <input type="text" class="form-input" id="betTeam" placeholder="Ex: Flamengo" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Tipo de Aposta</label>
+                                    <select class="form-input" id="betType" required>
+                                        <option value="">Selecione...</option>
+                                        <option value="vitoria">Vitória</option>
+                                        <option value="empate">Empate</option>
+                                        <option value="derrota">Derrota</option>
+                                        <option value="gols">Gols (Over/Under)</option>
+                                        <option value="handicap">Handicap</option>
+                                        <option value="combo">Combo/Parlay</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-row-2col">
+                                <div class="form-group">
+                                    <label class="form-label">Odd</label>
+                                    <input type="number" class="form-input" id="betOdd" placeholder="Ex: 2.50" step="0.01" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Valor Apostado (R$)</label>
+                                    <input type="number" class="form-input" id="betAmount" placeholder="100" step="0.01" required>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Observações (opcional)</label>
+                                <textarea class="form-input form-textarea" id="betNotes" placeholder="Adicione contexto da aposta..."></textarea>
+                            </div>
+
+                            <button type="submit" class="btn-primary btn-full">
+                                <span class="btn-icon">✨</span>
+                                Analisar com IA
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Resultado da Análise -->
+                    <div class="analysis-result" id="analysisResult" style="display: none;">
+                        <div class="analysis-card">
+                            <div class="analysis-header">
+                                <h3 id="analysisTitle">Análise Concluída</h3>
+                                <span class="risk-badge" id="riskBadge">Médio</span>
+                            </div>
+
+                            <div class="analysis-body">
+                                <div class="analysis-section">
+                                    <h4>📈 Potencial de Ganho</h4>
+                                    <p id="potentialGain" class="analysis-value"></p>
+                                </div>
+
+                                <div class="analysis-section">
+                                    <h4>⚠️ Nível de Risco</h4>
+                                    <p id="riskLevel" class="analysis-value"></p>
+                                </div>
+
+                                <div class="analysis-section">
+                                    <h4>💡 Estratégia Recomendada</h4>
+                                    <p id="strategy" class="analysis-text"></p>
+                                </div>
+
+                                <div class="analysis-section">
+                                    <h4>🎯 Observações</h4>
+                                    <ul id="observations" class="analysis-list"></ul>
+                                </div>
+
+                                <div class="analysis-section warning-box">
+                                    <h4>⚡ Aviso Importante</h4>
+                                    <p id="disclaimer" class="analysis-text"></p>
+                                </div>
+                            </div>
+
+                            <button type="button" class="btn-secondary btn-full" onclick="closeAnalysis()">
+                                Fechar Análise
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Aba: Ganhos/Perdas -->
+            <div class="tab-content" id="tab-ganhos">
+                <div class="balance-section">
+                    <div class="balance-header">
+                        <h2 class="section-title">📊 Controle de Ganhos e Perdas</h2>
+                        <p class="section-subtitle">Acompanhe seus resultados em tempo real</p>
+                    </div>
+
+                    <!-- Controles -->
+                    <div class="balance-controls">
+                        <div class="control-group">
+                            <input type="number" class="form-input" id="gainInput" placeholder="Valor ganho" step="0.01">
+                            <button class="btn-success" id="addGainBtn">
+                                <span>+</span> Ganho
+                            </button>
+                        </div>
+                        <div class="control-group">
+                            <input type="number" class="form-input" id="lossInput" placeholder="Valor perdido" step="0.01">
+                            <button class="btn-danger" id="addLossBtn">
+                                <span>-</span> Perda
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Estatísticas -->
+                    <div class="balance-stats">
+                        <div class="stat-card">
+                            <div class="stat-label">Total Ganho</div>
+                            <div class="stat-value gain" id="totalGain">R$ 0,00</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Total Perdido</div>
+                            <div class="stat-value loss" id="totalLoss">R$ 0,00</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Saldo</div>
+                            <div class="stat-value balance" id="balance">R$ 0,00</div>
+                        </div>
+                    </div>
+
+                    <!-- Barra Visual de Ganhos/Perdas -->
+                    <div class="balance-bar-container">
+                        <h3>Visualização de Saldo</h3>
+                        <div class="balance-bar-wrapper">
+                            <div class="balance-bar">
+                                <div class="balance-bar-fill gain-fill" id="barGains"></div>
+                                <div class="balance-bar-fill loss-fill" id="barLosses"></div>
+                            </div>
+                            <div class="balance-bar-labels">
+                                <span class="label-gain">Ganhos</span>
+                                <span class="label-loss">Perdas</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Histórico -->
+                    <div class="balance-history">
+                        <h3>Histórico de Movimentações</h3>
+                        <div class="history-list" id="historyList">
+                            <p class="empty-history">Nenhuma movimentação ainda</p>
+                        </div>
+                        <button class="btn-secondary" id="clearHistoryBtn" style="margin-top: 20px;">
+                            Limpar Histórico
+                        </button>
+                    </div>
                 </div>
             </div>
         </main>
@@ -153,11 +335,12 @@
         </div>
     </div>
 
-    <script src="gauge.js"></script>
     <!-- Scripts -->
     <script src="gauge.js"></script>
     <script src="notifications.js"></script>
     <script src="goals.js"></script>
+    <script src="betting-analysis.js"></script>
+    <script src="balance-manager.js"></script>
     <script src="main.js"></script>
     <script src="demo-data.js"></script>
 </body>

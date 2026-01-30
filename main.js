@@ -3,21 +3,29 @@
  */
 
 let goalsManager;
+let bettingAnalyzer;
+let balanceManager;
 let gaugesMap = new Map();
 let currentEditingGoalId = null;
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Inicializar sistema de metas
+    // Inicializar sistemas
     goalsManager = new GoalsManager();
+    bettingAnalyzer = new BettingAnalyzer();
+    balanceManager = new BalanceManager();
 
     // Inicializar data padrão para formulário
     setDefaultDates();
 
     // Setup eventos
     setupEventListeners();
+    setupTabNavigation();
+    setupBettingForm();
+    setupBalanceControls();
 
     // Renderizar metas
     renderGoals();
+    renderBalanceStats();
 
     // Atualizar timestamp
     updateTime();
@@ -400,3 +408,303 @@ window.importGoals = function (jsonData) {
     }
     return success;
 };
+// ====================================
+// SISTEMA DE ABAS (NAVEGAÇÃO)
+// ====================================
+
+function setupTabNavigation() {
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const tabName = button.getAttribute('data-tab');
+
+            // Remover classe active de todos os botões e conteúdos
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+            tabContents.forEach(content => content.classList.remove('active'));
+
+            // Adicionar classe active ao botão e conteúdo clicado
+            button.classList.add('active');
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+
+            // Trigger de eventos quando abrir tabs específicas
+            if (tabName === 'ganhos') {
+                renderBalanceStats();
+            }
+        });
+    });
+
+    // Ativar primeira aba por padrão
+    if (tabButtons.length > 0) {
+        tabButtons[0].classList.add('active');
+    }
+}
+
+// ====================================
+// ANÁLISE DE APOSTAS (IA MOCK)
+// ====================================
+
+function setupBettingForm() {
+    const betForm = document.getElementById('betForm');
+    const btnAnalyze = document.getElementById('btnAnalyze');
+    const betFormReset = document.getElementById('betFormReset');
+
+    if (betForm && btnAnalyze) {
+        btnAnalyze.addEventListener('click', (e) => {
+            e.preventDefault();
+            handleBettingAnalysis();
+        });
+    }
+
+    if (betFormReset) {
+        betFormReset.addEventListener('click', () => {
+            betForm.reset();
+            const resultDiv = document.getElementById('analysisResult');
+            if (resultDiv) {
+                resultDiv.innerHTML = '';
+            }
+        });
+    }
+}
+
+function handleBettingAnalysis() {
+    const betForm = document.getElementById('betForm');
+    if (!betForm) return;
+
+    const betData = {
+        team: document.getElementById('betTeam')?.value || '',
+        type: document.getElementById('betType')?.value || '',
+        odd: document.getElementById('betOdd')?.value || '',
+        amount: document.getElementById('betAmount')?.value || '',
+        notes: document.getElementById('betNotes')?.value || ''
+    };
+
+    // Validar
+    const errors = bettingAnalyzer.validateBetData(betData);
+    if (errors.length > 0) {
+        showNotification(errors[0], 'error');
+        return;
+    }
+
+    // Analisar
+    const analysis = bettingAnalyzer.analyze(betData);
+
+    if (analysis.error) {
+        showNotification(analysis.error, 'error');
+        return;
+    }
+
+    // Renderizar resultado
+    renderAnalysisResult(analysis);
+    showNotification('✓ Análise gerada com sucesso!', 'success');
+}
+
+function renderAnalysisResult(analysis) {
+    const resultDiv = document.getElementById('analysisResult');
+    if (!resultDiv) return;
+
+    const riskColor = analysis.riskLevel.value;
+
+    resultDiv.innerHTML = `
+        <div class="analysis-card" style="animation: slideUp 0.3s ease;">
+            <div class="analysis-header">
+                <h3>📊 Análise da Aposta</h3>
+                <span class="risk-badge ${riskColor}">
+                    ⚠️ Risco ${analysis.riskLevel.label}
+                </span>
+            </div>
+            
+            <div class="analysis-body">
+                <!-- Aposta -->
+                <div class="analysis-section">
+                    <h4>🎯 Aposta</h4>
+                    <p class="analysis-text">${analysis.team} - ${analysis.type}</p>
+                </div>
+
+                <!-- Matemática -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
+                    <div class="analysis-section">
+                        <h4>Odd</h4>
+                        <p class="analysis-value">${analysis.odd.toFixed(2)}</p>
+                    </div>
+                    <div class="analysis-section">
+                        <h4>Valor Apostado</h4>
+                        <p class="analysis-value">R$ ${parseFloat(analysis.amount).toFixed(2)}</p>
+                    </div>
+                    <div class="analysis-section">
+                        <h4>Retorno Esperado</h4>
+                        <p class="analysis-value">R$ ${parseFloat(analysis.potentialGain).toFixed(2)}</p>
+                    </div>
+                </div>
+
+                <!-- Lucro Potencial -->
+                <div class="analysis-section">
+                    <h4>💰 Lucro Potencial</h4>
+                    <p class="analysis-value">R$ ${parseFloat(analysis.netProfit).toFixed(2)} (${analysis.roi}% ROI)</p>
+                    <p class="analysis-text">${analysis.returnAnalysis}</p>
+                </div>
+
+                <!-- Estratégia -->
+                <div class="analysis-section">
+                    <h4>💡 Estratégia Recomendada</h4>
+                    <p class="analysis-text">${analysis.strategy}</p>
+                </div>
+
+                <!-- Observações -->
+                <div class="analysis-section">
+                    <h4>⚠️ Observações Importantes</h4>
+                    <ul class="analysis-list">
+                        ${analysis.observations.map(obs => `<li>${obs}</li>`).join('')}
+                    </ul>
+                </div>
+
+                <!-- Disclaimer -->
+                <div class="warning-box">
+                    <strong>⚖️ Aviso Legal:</strong> Esta análise é simulada e fornecida apenas para fins educacionais. 
+                    Não constitui recomendação financeira. Você é totalmente responsável por suas decisões de aposta. 
+                    Aposte com responsabilidade.
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// ====================================
+// CONTROLE DE GANHOS E PERDAS
+// ====================================
+
+function setupBalanceControls() {
+    const addGainBtn = document.getElementById('addGainBtn');
+    const addLossBtn = document.getElementById('addLossBtn');
+    const gainInput = document.getElementById('gainAmount');
+    const lossInput = document.getElementById('lossAmount');
+
+    if (addGainBtn) {
+        addGainBtn.addEventListener('click', () => {
+            const amount = gainInput?.value;
+            if (!amount || parseFloat(amount) <= 0) {
+                showNotification('Digite um valor válido', 'error');
+                return;
+            }
+
+            try {
+                balanceManager.addGain(parseFloat(amount), 'Ganho registrado');
+                renderBalanceStats();
+                gainInput.value = '';
+                showNotification(`✓ Ganho de R$ ${parseFloat(amount).toFixed(2)} registrado!`, 'success');
+            } catch (error) {
+                showNotification(error.message, 'error');
+            }
+        });
+    }
+
+    if (addLossBtn) {
+        addLossBtn.addEventListener('click', () => {
+            const amount = lossInput?.value;
+            if (!amount || parseFloat(amount) <= 0) {
+                showNotification('Digite um valor válido', 'error');
+                return;
+            }
+
+            try {
+                balanceManager.addLoss(parseFloat(amount), 'Perda registrada');
+                renderBalanceStats();
+                lossInput.value = '';
+                showNotification(`✗ Perda de R$ ${parseFloat(amount).toFixed(2)} registrada!`, 'error');
+            } catch (error) {
+                showNotification(error.message, 'error');
+            }
+        });
+    }
+
+    // Permitir Enter para enviar
+    gainInput?.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') addGainBtn?.click();
+    });
+
+    lossInput?.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') addLossBtn?.click();
+    });
+}
+
+function renderBalanceStats() {
+    const stats = balanceManager.getStatistics();
+    const proportions = balanceManager.getBarProportions();
+
+    // Atualizar cards de estatísticas
+    const gainCard = document.getElementById('totalGain');
+    if (gainCard) {
+        gainCard.textContent = `R$ ${parseFloat(stats.totalGains).toFixed(2).replace('.', ',')}`;
+    }
+
+    const lossCard = document.getElementById('totalLoss');
+    if (lossCard) {
+        lossCard.textContent = `-R$ ${parseFloat(stats.totalLoss).toFixed(2).replace('.', ',')}`;
+    }
+
+    const balanceCard = document.getElementById('balance');
+    if (balanceCard) {
+        const balanceValue = parseFloat(stats.balance);
+        const prefix = balanceValue >= 0 ? '+' : '';
+        balanceCard.textContent = `${prefix}R$ ${Math.abs(balanceValue).toFixed(2).replace('.', ',')}`;
+        balanceCard.className = balanceValue >= 0 ? 'stat-value balance' : 'stat-value balance loss';
+    }
+
+    // Atualizar barra visual
+    const balanceBar = document.querySelector('.balance-bar');
+    if (balanceBar) {
+        balanceBar.innerHTML = '';
+
+        if (proportions.gainPercent > 0) {
+            const gainFill = document.createElement('div');
+            gainFill.className = 'balance-bar-fill gain-fill';
+            gainFill.style.width = `${proportions.gainPercent}%`;
+            gainFill.textContent = `${proportions.gainPercent}%`;
+            balanceBar.appendChild(gainFill);
+        }
+
+        if (proportions.lossPercent > 0) {
+            const lossFill = document.createElement('div');
+            lossFill.className = 'balance-bar-fill loss-fill';
+            lossFill.style.width = `${proportions.lossPercent}%`;
+            lossFill.textContent = `${proportions.lossPercent}%`;
+            balanceBar.appendChild(lossFill);
+        }
+
+        if (proportions.gainPercent === 0 && proportions.lossPercent === 0) {
+            balanceBar.innerHTML = '<div style="width: 100%; color: var(--text-muted); text-align: center;">Sem dados</div>';
+        }
+    }
+
+    // Renderizar histórico
+    renderBalanceHistory();
+}
+
+function renderBalanceHistory() {
+    const historyList = document.querySelector('.history-list');
+    if (!historyList) return;
+
+    const transactions = balanceManager.getAllTransactions(20);
+
+    if (transactions.length === 0) {
+        historyList.innerHTML = '<div class="empty-history">Nenhuma transação registrada ainda</div>';
+        return;
+    }
+
+    historyList.innerHTML = transactions.map(trans => `
+        <div class="history-item">
+            <div class="history-item-type">
+                <div class="history-item-label">
+                    ${trans.type === 'gain' ? '✓ Ganho' : '✗ Perda'}
+                </div>
+                <div class="history-item-time">
+                    ${BalanceManager.formatDateTime(trans.timestamp)}
+                </div>
+            </div>
+            <div class="history-item-value ${trans.type}">
+                ${trans.type === 'gain' ? '+' : '-'}R$ ${trans.amount.toFixed(2)}
+            </div>
+        </div>
+    `).join('');
+}
