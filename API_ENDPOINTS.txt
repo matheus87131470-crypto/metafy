@@ -1,0 +1,327 @@
+╔════════════════════════════════════════════════════════════════════╗
+║                  Football AI Backend - API Documentation            ║
+║                          v1.0.0                                      ║
+╚════════════════════════════════════════════════════════════════════╝
+
+🔧 ARQUIVOS CRIADOS/MODIFICADOS
+═══════════════════════════════════════════════════════════════════
+
+✅ CRIADOS:
+  1. server.js (250+ linhas)
+     - Express server com 3 endpoints
+     - Análise heurística
+     - RapidAPI integration
+     - Fallback para mock games
+
+  2. BACKEND_README.md (200+ linhas)
+     - Guia completo de setup
+     - Instruções deploy Render
+     - Exemplos de API calls
+     - Troubleshooting
+
+✏️ MODIFICADOS:
+  1. package.json
+     - Adicionado "main": "server.js"
+     - scripts.start: "node server.js"
+     - scripts.dev: "nodemon server.js"
+     - Adicionadas dependências:
+       * express
+       * cors
+       * dotenv
+       * axios
+       * body-parser
+
+  2. .env.example
+     - Adicionados comentários
+     - PORT=3001
+     - RAPIDAPI_KEY
+     - RAPIDAPI_HOST
+
+  3. .gitignore
+     - Adicionado .env
+     - Adicionado .env.production
+
+═══════════════════════════════════════════════════════════════════
+
+🚀 ENDPOINTS DA API
+═══════════════════════════════════════════════════════════════════
+
+1️⃣ GET /health
+   ─────────────────────────────────────────────────────────
+   Teste de status da API
+   
+   Método:     GET
+   URL:        http://localhost:3001/health
+   Body:       (vazio)
+   
+   Response 200 OK:
+   {
+     "success": true,
+     "status": "OK",
+     "message": "Football AI Backend is running",
+     "timestamp": "2026-01-31T10:00:00Z",
+     "version": "1.0.0"
+   }
+
+2️⃣ GET /games/today
+   ─────────────────────────────────────────────────────────
+   Lista jogos do dia com odds
+   
+   Método:     GET
+   URL:        http://localhost:3001/games/today
+   Body:       (vazio)
+   
+   Query Params: (nenhum)
+   
+   Response 200 OK:
+   {
+     "success": true,
+     "count": 6,
+     "date": "2026-01-31",
+     "source": "rapidapi",
+     "games": [
+       {
+         "id": 1,
+         "date": "2026-01-31T20:00:00Z",
+         "status": "NS",
+         "homeTeam": "Flamengo",
+         "homeId": 1,
+         "awayTeam": "Palmeiras",
+         "awayId": 2,
+         "competition": "Campeonato Brasileiro",
+         "season": 2026,
+         "homeOdds": 2.40,
+         "drawOdds": 3.20,
+         "awayOdds": 2.85
+       },
+       ... (mais 5 jogos)
+     ]
+   }
+   
+   Fallback (se RapidAPI falhar):
+   {
+     "success": true,
+     "count": 6,
+     "source": "mock",
+     "message": "Usando jogos mockados (erro na API)",
+     "games": [... jogos hardcoded ...]
+   }
+
+3️⃣ POST /analyze-game
+   ─────────────────────────────────────────────────────────
+   Análise heurística de um jogo específico
+   
+   Método:     POST
+   URL:        http://localhost:3001/analyze-game
+   Content-Type: application/json
+   
+   Request Body (obrigatório):
+   {
+     "homeTeam": "Flamengo",
+     "awayTeam": "Palmeiras",
+     "competition": "Campeonato Brasileiro",
+     "homeOdds": 2.40,
+     "drawOdds": 3.20,
+     "awayOdds": 2.85
+   }
+   
+   Response 200 OK:
+   {
+     "success": true,
+     "analysis": {
+       "homeTeam": "Flamengo",
+       "awayTeam": "Palmeiras",
+       "competition": "Campeonato Brasileiro",
+       "timestamp": "2026-01-31T10:00:00Z",
+       
+       "probabilities": {
+         "home": 52,    // probabilidade calculada
+         "draw": 30,
+         "away": 18
+       },
+       
+       "implied_probabilities": {
+         "home": 42,    // probabilidade implícita na odd
+         "draw": 31,
+         "away": 27
+       },
+       
+       "recommendation": "Vitória Flamengo",
+       "recommendedOdd": "2.40",
+       "riskLevel": "MÉDIO",
+       "confidence": 68,
+       "overUnder": "Over 2.5",
+       
+       "explanation": "Flamengo está em boa forma (52%)...",
+       
+       "forms": {
+         "home": "Flamengo: 52%",
+         "away": "Palmeiras: 35%"
+       },
+       
+       "value_bets": [
+         {
+           "market": "1 (Vitória do Mandante)",
+           "probability": 52,
+           "odd": "2.40",
+           "value_score": "21.7"  // EV em %
+         },
+         {
+           "market": "X (Empate)",
+           "probability": 30,
+           "odd": "3.20",
+           "value_score": "9.4"
+         },
+         {
+           "market": "2 (Vitória do Visitante)",
+           "probability": 18,
+           "odd": "2.85",
+           "value_score": "6.3"
+         }
+       ]
+     }
+   }
+   
+   Response 400 Bad Request:
+   {
+     "success": false,
+     "error": "Campos obrigatórios: homeTeam, awayTeam, competition"
+   }
+
+═══════════════════════════════════════════════════════════════════
+
+📊 ALGORITMO DE ANÁLISE
+═══════════════════════════════════════════════════════════════════
+
+1. Calcular Score de cada time:
+   score = hash(teamName) % 100 / 100
+   (normalizado entre 0.2 e 1.0)
+
+2. Calcular Probabilidades:
+   P(Home) = homeScore / (homeScore + awayScore + 0.5)
+   P(Draw) = 0.3 (fixo)
+   P(Away) = awayScore / (homeScore + awayScore + 0.5)
+
+3. Normalizar (soma = 100%):
+   P_norm = P / (P_home + P_draw + P_away)
+
+4. Calcular Implied Probabilities das odds:
+   implied = 1 / odd
+
+5. Calcular Value Bets (Expected Value):
+   EV = (Probability / Odd) * 100
+   Exemplo: (0.52 / 2.40) * 100 = 21.7%
+
+6. Recomendação:
+   • Melhor EV recebe recomendação
+   • Odd > 3.0 = ALTO risco
+   • Odd 2.0-3.0 = MÉDIO risco
+   • Odd < 2.0 = BAIXO risco
+
+7. Confiança:
+   confidence = |homeScore - awayScore| * 50
+   (0-100)
+
+═══════════════════════════════════════════════════════════════════
+
+🔒 VARIÁVEIS DE AMBIENTE
+═══════════════════════════════════════════════════════════════════
+
+Necessárias para produção:
+├── PORT (padrão: 3001)
+├── NODE_ENV (development / production)
+├── RAPIDAPI_KEY ⭐ (OBRIGATÓRIA)
+└── RAPIDAPI_HOST (padrão: api-football-v3.p.rapidapi.com)
+
+Arquivo .env local (NÃO commitar):
+PORT=3001
+NODE_ENV=development
+RAPIDAPI_KEY=sk_live_abc123def456...
+RAPIDAPI_HOST=api-football-v3.p.rapidapi.com
+
+Arquivo .env.example (VERSIONADO):
+PORT=3001
+NODE_ENV=production
+RAPIDAPI_KEY=your_rapidapi_key_here
+RAPIDAPI_HOST=api-football-v3.p.rapidapi.com
+
+═══════════════════════════════════════════════════════════════════
+
+🌐 DEPLOYMENT NO RENDER
+═══════════════════════════════════════════════════════════════════
+
+Build Command:   npm install
+Start Command:   npm start
+Environment:     Node 18.x
+
+Environment Variables (adicionar no dashboard):
+  PORT=3001
+  NODE_ENV=production
+  RAPIDAPI_KEY=seu_valor_real
+  RAPIDAPI_HOST=api-football-v3.p.rapidapi.com
+
+URL de Produção:
+  https://football-ai-backend.onrender.com
+
+═══════════════════════════════════════════════════════════════════
+
+📱 CONSUMIR DO FRONTEND (app.js)
+═══════════════════════════════════════════════════════════════════
+
+1. Definir URL da API:
+   
+   const API_URL = 'https://football-ai-backend.onrender.com';
+
+2. Buscar jogos:
+   
+   async function loadGamesList() {
+       try {
+           const response = await fetch(`${API_URL}/games/today`);
+           const data = await response.json();
+           if (data.success) {
+               gamesCache = data.games;
+               renderGamesList(data.games);
+           }
+       } catch (error) {
+           console.error('Erro:', error);
+           // Usar fallback local
+       }
+   }
+
+3. Analisar jogo:
+   
+   async function handleAnalysisSubmit(e) {
+       e.preventDefault();
+       
+       const response = await fetch(`${API_URL}/analyze-game`, {
+           method: 'POST',
+           headers: { 'Content-Type': 'application/json' },
+           body: JSON.stringify({
+               homeTeam: game.homeTeam,
+               awayTeam: game.awayTeam,
+               competition: game.competition,
+               homeOdds: odd_home,
+               drawOdds: odd_draw,
+               awayOdds: odd_away
+           })
+       });
+       
+       const result = await response.json();
+       if (result.success) {
+           displayAnalysisResult(result.analysis);
+       }
+   }
+
+═══════════════════════════════════════════════════════════════════
+
+✅ STATUS
+═══════════════════════════════════════════════════════════════════
+
+Backend API:         ✅ PRONTO
+Endpoints:           ✅ 3 implementados
+Análise Heurística:  ✅ Funcionando
+RapidAPI Integration:✅ Com fallback
+Environment Vars:    ✅ Configuradas
+Deploy Render:       ✅ Pronto
+
+Próximo passo: Fazer commit e push!
