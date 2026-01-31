@@ -1,11 +1,12 @@
 /**
  * app.js - Script Principal da Plataforma Football AI
  * Integração com APIs reais de jogos e IA
- * Versão: 2.0.1 (Deploy Fix)
- * Build: 2026-01-30T14:50:00Z
+ * Versão: 2.1.0 (MVP com IA de Análise)
+ * Build: 2026-01-31T00:00:00Z
  */
 
 let balanceManager;
+let aiAnalyzer;
 let currentSelectedGame = null;
 let gamesCache = null;
 let isLoadingAnalysis = false;
@@ -13,6 +14,7 @@ let isLoadingAnalysis = false;
 document.addEventListener('DOMContentLoaded', () => {
     // Inicializar
     balanceManager = new BalanceManager();
+    aiAnalyzer = new AIAnalyzer();
 
     // Setup
     setupTabNavigation();
@@ -226,6 +228,8 @@ async function handleAnalysisSubmit(e) {
     analyzeBtn.disabled = true;
 
     try {
+        // Tentar API real primeiro
+        let analysis = null;
         const gameData = {
             homeTeam: currentSelectedGame.homeTeam,
             awayTeam: currentSelectedGame.awayTeam,
@@ -235,29 +239,38 @@ async function handleAnalysisSubmit(e) {
             amount
         };
 
-        // Chamar API de análise
-        const response = await fetch('/api/analyze', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(gameData)
-        });
+        try {
+            const response = await fetch('/api/analyze', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(gameData),
+                timeout: 5000
+            });
 
-        if (!response.ok) {
-            throw new Error('Erro ao gerar análise');
+            if (response.ok) {
+                const result = await response.json();
+                if (result.success && result.analysis) {
+                    analysis = result.analysis;
+                }
+            }
+        } catch (apiError) {
+            console.log('API não disponível, usando análise local...');
         }
 
-        const result = await response.json();
-
-        if (result.success && result.analysis) {
-            displayAnalysisResult(result.analysis, gameData);
+        // Se API falhar, usar AIAnalyzer local
+        if (!analysis) {
+            analysis = await aiAnalyzer.analyzeGame(currentSelectedGame, market, odd);
+            analysis.source = 'local';
         } else {
-            alert('❌ Erro ao gerar análise: ' + (result.error || 'Desconhecido'));
+            analysis.source = 'api';
         }
+
+        displayAnalysisResult(analysis, gameData);
     } catch (error) {
         console.error('Erro:', error);
-        alert('❌ Erro ao conectar com IA: ' + error.message);
+        alert('❌ Erro ao gerar análise: ' + error.message);
     } finally {
         isLoadingAnalysis = false;
         analyzeBtn.innerHTML = originalText;
@@ -267,15 +280,11 @@ async function handleAnalysisSubmit(e) {
 
 function displayAnalysisResult(analysis, gameData) {
     const resultDiv = document.getElementById('analysisResult');
+    
+    // Se for análise local, formatar diferente
+    const isLocal = analysis.source === 'local' || analysis.riskLevel;
 
-    const html = `
-        <div class="analysis-container">
-            <div class="analysis-header">
-                <h3>📊 Análise com IA Real</h3>
-                <p style="font-size: 0.8rem; color: var(--text-muted);">Gerada por Inteligência Artificial</p>
-            </div>
-
-            <div class="analysis-section">
+    const html = isLocal ? formatLocalAnalysis(analysis) : formatAPIAnalysis(analysis);
                 <h4>⚽ Contexto do Jogo</h4>
                 <p>${analysis.contexto || 'Análise de contexto'}</p>
             </div>
@@ -506,9 +515,85 @@ function updateHistoryDisplay() {
 // UTILITIES
 // ====================================
 
-function updateTimestamp() {
-    const now = new Date();
-    const timeString = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+function formatLocalAnalysis(analysis) {
+    const riskColor = {
+        'BAIXO': '#14b8a6',
+        'MÉDIO': '#f59e0b',
+        'ALTO': '#ef4444'
+    }[analysis.riskLevel] || '#14b8a6';
+
+    return `
+        <div class="analysis-container">
+            <div class="analysis-header">
+                <h3>🤖 Análise com IA</h3>
+                <p style="font-size: 0.8rem; color: var(--text-muted);">Análise Inteligente em Tempo Real</p>
+            </div>
+
+            <div class="analysis-section">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+                    <div style="background: rgba(20, 184, 166, 0.1); padding: 12px; border-radius: 8px; border-left: 3px solid #14b8a6;">
+                        <div style="font-size: 0.75rem; color: var(--text-muted);">Probabilidade</div>
+                        <div style="font-size: 1.5rem; font-weight: bold; color: #14b8a6;">${Math.round(analysis.probability * 100)}%</div>
+                    </div>
+                    <div style="background: rgba(${analysis.riskLevel === 'BAIXO' ? '20, 184, 166' : analysis.riskLevel === 'MÉDIO' ? '245, 158, 11' : '239, 68, 68'}, 0.1); padding: 12px; border-radius: 8px; border-left: 3px solid ${riskColor};">
+                        <div style="font-size: 0.75rem; color: var(--text-muted);">Risco</div>
+                        <div style="font-size: 1.5rem; font-weight: bold; color: ${riskColor};">${analysis.riskLevel}</div>
+                    </div>
+                </div>
+
+                <div style="background: rgba(99, 102, 241, 0.1); padding: 12px; border-radius: 8px; margin-bottom: 16px; border: 1px solid rgba(99, 102, 241, 0.2);">
+                    <div style="font-weight: bold; color: #6366f1; margin-bottom: 8px;">💡 Sugestão</div>
+                    <div style="color: var(--text-primary); font-size: 0.95rem;">${analysis.suggestion}</div>
+                </div>
+
+                <div style="background: rgba(236, 72, 153, 0.05); padding: 12px; border-radius: 8px; margin-bottom: 16px;">
+                    <div style="font-weight: bold; color: var(--text-primary); margin-bottom: 8px;">📋 Análise</div>
+                    <div style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.5; white-space: pre-wrap;">${analysis.explanation.trim()}</div>
+                </div>
+
+                <div style="background: rgba(34, 197, 94, 0.05); padding: 12px; border-radius: 8px;">
+                    <div style="font-weight: bold; color: var(--text-primary); margin-bottom: 8px;">✅ Recomendações</div>
+                    <ul style="list-style: none; padding: 0; margin: 0;">
+                        ${analysis.recommendations.map(rec => `<li style="color: var(--text-secondary); font-size: 0.9rem; padding: 4px 0;">${rec}</li>`).join('')}
+                    </ul>
+                </div>
+            </div>
+
+            <button class="btn-register-bet" onclick="registerBetFromAnalysis(${analysis.confidence}, ${analysis.potentialGain})">
+                ✅ Registrar Aposta
+            </button>
+        </div>
+    `;
+}
+
+function formatAPIAnalysis(analysis) {
+    // Para respostas da API (formato anterior)
+    return `
+        <div class="analysis-container">
+            <div class="analysis-header">
+                <h3>📊 Análise com IA Real</h3>
+                <p style="font-size: 0.8rem; color: var(--text-muted);">Gerada por Inteligência Artificial</p>
+            </div>
+
+            <div class="analysis-section">
+                <div style="background: rgba(99, 102, 241, 0.1); padding: 16px; border-radius: 8px; border-left: 4px solid #6366f1; margin-bottom: 12px;">
+                    <h4 style="margin: 0 0 8px 0; color: var(--text-primary);">🔍 Contexto</h4>
+                    <p style="margin: 0; color: var(--text-secondary); font-size: 0.9rem;">${analysis.contexto || 'Análise detalhada do confronto'}</p>
+                </div>
+
+                <div style="background: rgba(236, 72, 153, 0.1); padding: 16px; border-radius: 8px; border-left: 4px solid #ec4899; margin-bottom: 12px;">
+                    <h4 style="margin: 0 0 8px 0; color: var(--text-primary);">📊 Forma dos Times</h4>
+                    <p style="margin: 0; color: var(--text-secondary); font-size: 0.9rem;">${analysis.forma || 'Análise de performance recente'}</p>
+                </div>
+
+                <button class="btn-register-bet" onclick="registerBetFromAnalysis()">
+                    ✅ Registrar Aposta
+                </button>
+            </div>
+        </div>
+    `;
+}
+
     const timestampEl = document.getElementById('timestamp');
     if (timestampEl) {
         timestampEl.textContent = timeString;
