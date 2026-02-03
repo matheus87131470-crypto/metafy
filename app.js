@@ -5,6 +5,14 @@
  * Build: 2026-02-03T00:00:00Z
  */
 
+// ✅ Verificar se JS carregou
+console.log("✅ Metafy JS carregado com sucesso");
+
+// 🖱️ Listener de cliques para debug
+document.addEventListener("click", (e) => {
+    console.log("🖱️ Clique detectado:", e.target);
+});
+
 let balanceManager;
 let aiAnalyzer;
 let currentSelectedGame = null;
