@@ -601,14 +601,6 @@ function animateValue(elementId, finalValue) {
     update();
 }
 
-    // Atualizar barra
-    document.getElementById('barGain').style.width = percentages.gains + '%';
-    document.getElementById('barLoss').style.width = percentages.losses + '%';
-
-    // Atualizar histórico
-    updateHistoryDisplay();
-}
-
 function updateHistoryDisplay() {
     const historyList = document.getElementById('historyList');
     const transactions = balanceManager.getRecentTransactions(20);
@@ -708,10 +700,4 @@ function formatAPIAnalysis(analysis) {
             </div>
         </div>
     `;
-}
-
-    const timestampEl = document.getElementById('timestamp');
-    if (timestampEl) {
-        timestampEl.textContent = timeString;
-    }
 }

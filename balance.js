@@ -91,7 +91,3 @@ class BalanceManager {
         }).format(value);
     }
 }
-
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = BalanceManager;
-}

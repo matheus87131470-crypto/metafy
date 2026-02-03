@@ -151,8 +151,3 @@ class AIAnalyzer {
         };
     }
 }
-
-// Exportar para uso em scripts
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = AIAnalyzer;
-}

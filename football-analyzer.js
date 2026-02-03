@@ -183,7 +183,3 @@ class FootballAnalyzer {
         }).format(value);
     }
 }
-
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = FootballAnalyzer;
-}

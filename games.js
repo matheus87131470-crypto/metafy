@@ -89,8 +89,3 @@ class GamesManager {
         return `${icons[competition] || '⚽'} ${competition}`;
     }
 }
-
-// Exportar ou deixar global
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = GamesManager;
-}
