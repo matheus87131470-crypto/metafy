@@ -8,8 +8,22 @@ dotenv.config();
 
 const app = express();
 
-app.use(cors());
+// CORS configurado para aceitar requisições do frontend
+const corsOptions = {
+  origin: '*', // Permite de qualquer origem (Vercel, localhost, etc)
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: false,
+  maxAge: 86400
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
+
+// Health check
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
 
 app.use("/api/analyze", analyzeRoute);
 app.use("/api/games", gamesRoute);

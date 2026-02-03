@@ -10,8 +10,12 @@ let aiAnalyzer;
 let currentSelectedGame = null;
 let gamesCache = null;
 let isLoadingAnalysis = false;
+const BACKEND_URL = 'https://metafy-backend.onrender.com';
 
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('🚀 App iniciando...');
+    console.log('📡 Backend URL:', BACKEND_URL);
+    
     // Inicializar
     balanceManager = new BalanceManager();
     aiAnalyzer = new AIAnalyzer();
@@ -25,6 +29,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Atualizar timestamp a cada segundo
     setInterval(updateTimestamp, 1000);
+    
+    console.log('✅ App inicializado com sucesso');
 });
 
 // ====================================
@@ -66,38 +72,52 @@ async function loadGamesList() {
     gamesList.innerHTML = `
         <div style="grid-column: 1/-1; text-align: center; padding: 40px;">
             <div style="font-size: 2rem; margin-bottom: 10px;">⏳</div>
-            <p style="color: var(--text-secondary);">Carregando jogos reais...</p>
+            <p style="color: var(--text-secondary);">Carregando jogos da API...</p>
         </div>
     `;
 
     try {
-        // Buscar jogos reais do backend
-        const response = await fetch('https://metafy-backend.onrender.com/api/games');
+        console.log('🔄 Buscando jogos de:', BACKEND_URL + '/api/games');
+        
+        // Buscar jogos REAIS da API do backend (Render)
+        const response = await fetch(BACKEND_URL + '/api/games', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            mode: 'cors'
+        });
+
+        console.log('📡 Resposta status:', response.status);
+        
+        if (!response.ok) {
+            throw new Error(`Erro HTTP ${response.status}: ${response.statusText}`);
+        }
+
         const data = await response.json();
+        console.log('✅ Dados recebidos:', data);
         
         if (!data.success || !data.games || data.games.length === 0) {
-            throw new Error('Nenhum jogo disponível');
+            throw new Error('API retornou dados vazios');
         }
         
         gamesCache = data.games;
+        console.log(`✅ ${data.games.length} jogos carregados com sucesso`);
         renderGamesList(data.games);
     } catch (error) {
-        console.error('Erro ao carregar jogos reais:', error);
+        console.error('❌ Erro ao buscar jogos:', error);
         gamesList.innerHTML = `
             <div style="grid-column: 1/-1; text-align: center; padding: 40px;">
-                <div style="font-size: 2rem; margin-bottom: 10px;">⚠️</div>
-                <p style="color: var(--text-secondary);">Erro ao carregar jogos reais. Usando dados locais.</p>
+                <div style="font-size: 2rem; margin-bottom: 10px;">❌</div>
+                <p style="color: var(--text-secondary);">Erro ao carregar jogos</p>
+                <p style="color: var(--text-tertiary); font-size: 0.85rem; margin-top: 10px;">
+                    ${error.message}
+                </p>
+                <button onclick="location.reload()" style="margin-top: 15px; padding: 8px 16px; background: #6366f1; color: white; border: none; border-radius: 6px; cursor: pointer;">
+                    🔄 Tentar Novamente
+                </button>
             </div>
         `;
-        
-        // Fallback para dados locais
-        setTimeout(() => {
-            if (typeof GamesManager !== 'undefined') {
-                const gamesManager = new GamesManager();
-                gamesCache = gamesManager.getAllGames();
-                renderGamesList(gamesCache);
-            }
-        }, 1000);
     }
 }
 
