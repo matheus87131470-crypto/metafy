@@ -1,8 +1,8 @@
 /**
- * app.js - Script Principal da Plataforma Football AI
+ * app.js - Script Principal da Plataforma Metafy
  * Integração com APIs reais de jogos e IA
  * Versão: 2.1.0 (MVP com IA de Análise)
- * Build: 2026-01-31T00:00:00Z
+ * Build: 2026-02-03T00:00:00Z
  */
 
 let balanceManager;

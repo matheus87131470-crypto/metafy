@@ -1,7 +1,7 @@
 {
   "name": "metafy-football-ai",
   "version": "2.1.0",
-  "description": "Football AI Platform - Análise Inteligente de Jogos com Backend API",
+  "description": "Metafy - Plataforma de Análise Inteligente de Futebol com IA Real",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
