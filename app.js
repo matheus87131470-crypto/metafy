@@ -65,28 +65,39 @@ async function loadGamesList() {
     // Mostrar loading
     gamesList.innerHTML = `
         <div style="grid-column: 1/-1; text-align: center; padding: 40px;">
-            <div style="font-size: 2rem; margin-bottom: 10px;">⚽</div>
-            <p style="color: var(--text-secondary);">Carregando jogos...</p>
+            <div style="font-size: 2rem; margin-bottom: 10px;">⏳</div>
+            <p style="color: var(--text-secondary);">Carregando jogos reais...</p>
         </div>
     `;
 
     try {
-        // Usar dados locais do GamesManager
-        if (typeof GamesManager !== 'undefined') {
-            const gamesManager = new GamesManager();
-            gamesCache = gamesManager.getAllGames();
-            renderGamesList(gamesCache);
-        } else {
-            throw new Error('GamesManager não disponível');
+        // Buscar jogos reais do backend
+        const response = await fetch('https://metafy-backend.onrender.com/api/games');
+        const data = await response.json();
+        
+        if (!data.success || !data.games || data.games.length === 0) {
+            throw new Error('Nenhum jogo disponível');
         }
+        
+        gamesCache = data.games;
+        renderGamesList(data.games);
     } catch (error) {
-        console.error('Erro ao carregar jogos:', error);
+        console.error('Erro ao carregar jogos reais:', error);
         gamesList.innerHTML = `
             <div style="grid-column: 1/-1; text-align: center; padding: 40px;">
-                <div style="font-size: 2rem; margin-bottom: 10px;">❌</div>
-                <p style="color: var(--text-secondary);">Erro ao carregar jogos: ${error.message}</p>
+                <div style="font-size: 2rem; margin-bottom: 10px;">⚠️</div>
+                <p style="color: var(--text-secondary);">Erro ao carregar jogos reais. Usando dados locais.</p>
             </div>
         `;
+        
+        // Fallback para dados locais
+        setTimeout(() => {
+            if (typeof GamesManager !== 'undefined') {
+                const gamesManager = new GamesManager();
+                gamesCache = gamesManager.getAllGames();
+                renderGamesList(gamesCache);
+            }
+        }, 1000);
     }
 }
 
