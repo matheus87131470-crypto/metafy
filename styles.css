@@ -2350,6 +2350,245 @@ body {
     box-shadow: 0 0 10px rgba(34, 197, 94, 0.3);
 }
 
+/* ====================================
+   SEÇÃO PREMIUM / ASSINATURA NUBANK
+   ==================================== */
+
+.premium-section {
+    animation: fadeIn 0.6s ease-out;
+}
+
+.subscription-box {
+    background: rgba(99, 102, 241, 0.08);
+    backdrop-filter: blur(20px);
+    border: 2px solid rgba(99, 102, 241, 0.2);
+    border-radius: 24px;
+    padding: 40px 32px;
+    max-width: 480px;
+    margin: 40px auto;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(99, 102, 241, 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.subscription-box:hover {
+    border-color: rgba(99, 102, 241, 0.4);
+    box-shadow: 0 24px 72px rgba(99, 102, 241, 0.25),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    transform: translateY(-4px);
+}
+
+.premium-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #6366f1, #ec4899);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 16px;
+    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+}
+
+.subscription-box h3 {
+    font-size: 1.8rem;
+    color: var(--text-primary);
+    margin: 16px 0 8px 0;
+    font-weight: 600;
+    background: var(--gradient-main);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.price-tag {
+    font-size: 1.1rem;
+    color: var(--text-secondary);
+    margin: 12px 0 20px 0;
+}
+
+.price-tag strong {
+    font-size: 2rem;
+    color: #14b8a6;
+    font-weight: 700;
+}
+
+.features {
+    background: rgba(20, 184, 166, 0.08);
+    border-radius: 16px;
+    padding: 20px;
+    margin: 24px 0;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.feature-item {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.feature-item::before {
+    content: '✓';
+    color: #14b8a6;
+    font-weight: bold;
+    font-size: 1.2rem;
+}
+
+.subscribe-btn {
+    display: block;
+    background: linear-gradient(135deg, #6366f1, #ec4899);
+    color: white;
+    padding: 16px 32px;
+    border-radius: 14px;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 1.05rem;
+    margin: 20px 0;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 8px 24px rgba(99, 102, 241, 0.3);
+    border: none;
+    cursor: pointer;
+    display: inline-block;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.subscribe-btn:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 36px rgba(99, 102, 241, 0.4);
+}
+
+.subscribe-btn:active {
+    transform: translateY(-1px);
+}
+
+.copy-btn {
+    background: transparent;
+    border: 2px solid #6366f1;
+    color: #6366f1;
+    padding: 12px 24px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+    width: 100%;
+    display: block;
+    margin: 12px 0;
+}
+
+.copy-btn:hover {
+    background: rgba(99, 102, 241, 0.1);
+    border-color: #6366f1;
+    transform: translateY(-2px);
+}
+
+.copy-btn:active {
+    transform: translateY(0);
+}
+
+.divider {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin: 20px 0;
+    opacity: 0.6;
+}
+
+.qr-area {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px dashed rgba(99, 102, 241, 0.2);
+    border-radius: 16px;
+    padding: 24px;
+    margin: 24px 0;
+}
+
+.qr-area p {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    margin-bottom: 16px;
+    font-weight: 500;
+}
+
+#qrcode {
+    display: block;
+    margin: 0 auto;
+    width: 180px;
+    height: 180px;
+    border-radius: 12px;
+    background: white;
+    padding: 8px;
+    box-sizing: border-box;
+}
+
+.payment-info {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    margin-top: 16px;
+    opacity: 0.8;
+}
+
+/* Responsividade Premium */
+@media (max-width: 768px) {
+    .subscription-box {
+        max-width: 100%;
+        padding: 32px 24px;
+    }
+
+    .subscription-box h3 {
+        font-size: 1.5rem;
+    }
+
+    .price-tag strong {
+        font-size: 1.7rem;
+    }
+
+    #qrcode {
+        width: 150px;
+        height: 150px;
+    }
+}
+
+@media (max-width: 480px) {
+    .subscription-box {
+        padding: 24px 16px;
+        border-radius: 16px;
+    }
+
+    .subscription-box h3 {
+        font-size: 1.3rem;
+    }
+
+    .price-tag strong {
+        font-size: 1.5rem;
+    }
+
+    .subscribe-btn {
+        padding: 14px 24px;
+        font-size: 0.95rem;
+    }
+
+    #qrcode {
+        width: 140px;
+        height: 140px;
+    }
+
+    .features {
+        padding: 16px;
+    }
+
+    .feature-item {
+        font-size: 0.85rem;
+    }
+}
+
 .bar-loss {
     background: linear-gradient(90deg, #ef4444 0%, #dc2626 100%);
     box-shadow: 0 0 10px rgba(239, 68, 68, 0.3);

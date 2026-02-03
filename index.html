@@ -9,6 +9,7 @@
     <link rel="icon" href="/public/favicon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/public/favicon.svg">
     <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
 </head>
 <body>
     <div class="background-gradient"></div>
@@ -30,6 +31,10 @@
                 <button class="tab-button" data-tab="balance">
                     <span class="tab-icon">📊</span>
                     <span class="tab-label">Ganhos/Perdas</span>
+                </button>
+                <button class="tab-button" data-tab="premium">
+                    <span class="tab-icon">💎</span>
+                    <span class="tab-label">Premium</span>
                 </button>
             </nav>
         </header>
@@ -112,6 +117,51 @@
                         <div class="history-list" id="historyList">
                             <div class="empty-message">Nenhuma transação registrada</div>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 3: PREMIUM / ASSINATURA -->
+            <div class="tab-content" id="tab-premium">
+                <div class="premium-section">
+                    <div class="section-header">
+                        <h2 class="section-title">💎 Metafy Premium</h2>
+                        <p class="section-subtitle">Análises com IA real e acesso ilimitado</p>
+                    </div>
+
+                    <!-- Subscription Box -->
+                    <div class="subscription-box">
+                        <div class="premium-badge">✨ PREMIUM</div>
+                        <h3>Análise Profissional com IA Real</h3>
+                        <p class="price-tag">Por apenas <strong>R$ 3,50</strong></p>
+                        
+                        <div class="features">
+                            <div class="feature-item">✅ Análises com GPT-4o-mini</div>
+                            <div class="feature-item">✅ Jogos reais de ligas mundiais</div>
+                            <div class="feature-item">✅ Histórico completo de apostas</div>
+                            <div class="feature-item">✅ Estatísticas avançadas</div>
+                        </div>
+
+                        <a 
+                            href="https://nubank.com.br/cobrar/ell2f/69826c94-7bdd-49bf-b020-4a92c9458ef3" 
+                            target="_blank" 
+                            class="subscribe-btn"
+                        >
+                            💳 Assinar com Nubank
+                        </a>
+
+                        <button class="copy-btn" onclick="copyPaymentLink()">
+                            📋 Copiar Link de Pagamento
+                        </button>
+
+                        <div class="divider">ou</div>
+
+                        <div class="qr-area">
+                            <p>Pague com QR Code:</p>
+                            <canvas id="qrcode"></canvas>
+                        </div>
+
+                        <p class="payment-info">🔒 Pagamento seguro via Nubank • Acesso imediato após confirmação</p>
                     </div>
                 </div>
             </div>

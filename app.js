@@ -25,6 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadGamesList();
     setupBalanceControls();
     setupGameModal();
+    setupPremiumSection();
     updateTimestamp();
 
     // Atualizar timestamp a cada segundo
@@ -735,4 +736,89 @@ function formatAPIAnalysis(analysis) {
             </div>
         </div>
     `;
+}
+
+// ====================================
+// PREMIUM SECTION
+// ====================================
+
+function setupPremiumSection() {
+    // Gerar QR Code quando Premium tab for ativado
+    const tabButtons = document.querySelectorAll('.tab-button');
+    
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            if (button.dataset.tab === 'premium') {
+                // Delay para garantir que DOM foi atualizado
+                setTimeout(() => {
+                    generateQRCode();
+                }, 100);
+            }
+        });
+    });
+}
+
+function copyPaymentLink() {
+    const paymentLink = 'https://nubank.com.br/cobrar/ell2f/69826c94-7bdd-49bf-b020-4a92c9458ef3';
+    
+    navigator.clipboard.writeText(paymentLink).then(() => {
+        // Feedback visual
+        const copyBtn = document.querySelector('.copy-btn');
+        const originalText = copyBtn.innerHTML;
+        
+        copyBtn.innerHTML = '✅ Copiado!';
+        copyBtn.style.background = 'rgba(34, 197, 94, 0.1)';
+        copyBtn.style.borderColor = '#22c55e';
+        copyBtn.style.color = '#22c55e';
+        
+        setTimeout(() => {
+            copyBtn.innerHTML = originalText;
+            copyBtn.style.background = '';
+            copyBtn.style.borderColor = '';
+            copyBtn.style.color = '';
+        }, 2000);
+    }).catch(err => {
+        console.error('Erro ao copiar:', err);
+        alert('❌ Não foi possível copiar o link');
+    });
+}
+
+function generateQRCode() {
+    try {
+        const paymentLink = 'https://nubank.com.br/cobrar/ell2f/69826c94-7bdd-49bf-b020-4a92c9458ef3';
+        const canvas = document.getElementById('qrcode');
+        
+        if (!canvas || !window.QRCode) {
+            console.warn('⚠️ QRCode library ou canvas não encontrado');
+            return;
+        }
+        
+        // Limpar canvas anterior
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Gerar QR Code com cores customizadas
+        QRCode.toCanvas(
+            canvas,
+            paymentLink,
+            {
+                width: 180,
+                margin: 2,
+                color: {
+                    dark: '#6366f1',    // Indigo (cor principal)
+                    light: '#ffffff'    // Fundo branco
+                },
+                errorCorrectionLevel: 'H'
+            },
+            (error) => {
+                if (error) {
+                    console.error('Erro ao gerar QR Code:', error);
+                } else {
+                    console.log('✅ QR Code gerado com sucesso');
+                }
+            }
+        );
+    } catch (error) {
+        console.error('❌ Erro ao gerar QR Code:', error);
+    }
 }
