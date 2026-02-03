@@ -32,7 +32,6 @@
     }
   ],
   "env": {
-    "RAPIDAPI_KEY": "@rapidapi_key",
-    "OPENAI_API_KEY": "@openai_api_key"
+    "BACKEND_URL": "https://metafy-backend.onrender.com"
   }
 }
