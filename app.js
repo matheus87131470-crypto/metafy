@@ -119,25 +119,40 @@ function renderGamesList(games) {
         card.className = 'game-card';
         card.innerHTML = `
             <div class="game-card-header">
-                <div class="game-time">${game.time}</div>
-                <span style="font-size: 0.75rem; color: var(--text-muted);">${game.country || ''}</span>
+                <div class="game-time">⏰ ${game.time}</div>
+                <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: bold;">${game.country || ''}</span>
             </div>
             <div class="game-card-content">
                 <div class="game-card-teams">
                     <div class="team">
-                        <span class="team-emoji">⚪</span>
+                        <span class="team-emoji">${game.homeFlag || '⚽'}</span>
                         <span class="team-name">${game.homeTeam}</span>
                     </div>
                     <div class="vs-badge">VS</div>
                     <div class="team">
-                        <span class="team-emoji">⚫</span>
+                        <span class="team-emoji">${game.awayFlag || '⚽'}</span>
                         <span class="team-name">${game.awayTeam}</span>
                     </div>
                 </div>
-                <div class="game-competition">⚽ ${game.competition}</div>
+                <div class="game-competition" style="font-size: 0.85rem; font-weight: 600;">🏆 ${game.competition}</div>
+                <div style="margin-top: 10px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; font-size: 0.8rem;">
+                    <div style="text-align: center; padding: 6px; background: rgba(99, 102, 241, 0.1); border-radius: 4px;">
+                        <div style="color: var(--text-muted);">Casa</div>
+                        <div style="color: #6366f1; font-weight: bold;">${game.homeOdds.toFixed(2)}</div>
+                    </div>
+                    <div style="text-align: center; padding: 6px; background: rgba(236, 72, 153, 0.1); border-radius: 4px;">
+                        <div style="color: var(--text-muted);">Empate</div>
+                        <div style="color: #ec4899; font-weight: bold;">${game.drawOdds.toFixed(2)}</div>
+                    </div>
+                    <div style="text-align: center; padding: 6px; background: rgba(20, 184, 166, 0.1); border-radius: 4px;">
+                        <div style="color: var(--text-muted);">Fora</div>
+                        <div style="color: #14b8a6; font-weight: bold;">${game.awayOdds.toFixed(2)}</div>
+                    </div>
+                </div>
+                ${game.stadium ? `<div style="margin-top: 8px; font-size: 0.75rem; color: var(--text-tertiary);">📍 ${game.stadium}</div>` : ''}
             </div>
             <button class="btn-analyze" data-game-id="${game.id}">
-                🤖 Analisar
+                🤖 Analisar com IA
             </button>
         `;
 
