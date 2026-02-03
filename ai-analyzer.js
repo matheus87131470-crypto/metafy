@@ -1,198 +1,154 @@
 /**
- * ai-analyzer.js - Sistema de Análise IA para Jogos de Futebol
- * Análise mockada inicialmente, pronto para integração com OpenAI
+ * ai-analyzer.js - Sistema de Análise IA com Backend Real
+ * Integrado com Backend Node.js em Produção (Render.com)
+ * Versão: 3.0.0 - IA Real OpenAI GPT-4o-mini
  */
 
 class AIAnalyzer {
     constructor() {
         this.analysisCache = new Map();
-        this.riskLevels = ['BAIXO', 'MÉDIO', 'ALTO'];
-        this.suggestions = [
-            'Vitória do mandante',
-            'Vitória do visitante',
-            'Empate',
-            'Over 2.5',
-            'Under 2.5',
-            'Ambos marcam'
-        ];
+        this.apiEndpoint = "https://metafy-backend.onrender.com/api/analyze";
+        this.timeoutDuration = 30000; // 30 segundos
     }
 
     /**
-     * Analisar um jogo
+     * Analisar um jogo com IA Real
      * @param {Object} game - Dados do jogo
-     * @param {String} market - Mercado selecionado (ex: "1X2", "over_under")
+     * @param {String} market - Mercado selecionado
      * @param {Number} odd - Odd selecionada
-     * @returns {Promise<Object>} Análise completa
+     * @param {Number} amount - Valor da aposta
+     * @param {String} notes - Notas adicionais
+     * @returns {Promise<Object>} Análise da IA Real
      */
-    async analyzeGame(game, market, odd) {
-        const cacheKey = `${game.id}-${market}-${odd}`;
+    async analyzeGame(game, market, odd, amount = 100, notes = '') {
+        const cacheKey = `${game.id || game.homeTeam}-${market}-${odd}`;
         
+        // Retornar do cache se existir
         if (this.analysisCache.has(cacheKey)) {
             return this.analysisCache.get(cacheKey);
         }
 
-        // Simular delay de processamento IA
-        await new Promise(resolve => setTimeout(resolve, 800));
+        try {
+            // Montar payload para IA
+            const payload = {
+                home: game.homeTeam || game.home,
+                away: game.awayTeam || game.away,
+                competition: game.competition || 'Futebol',
+                market: market,
+                odd: parseFloat(odd),
+                stake: parseFloat(amount),
+                notes: notes
+            };
 
-        const analysis = this._generateAnalysis(game, market, odd);
-        this.analysisCache.set(cacheKey, analysis);
-        
-        return analysis;
+            // Chamar IA Real
+            const analysis = await this._analyzeWithRealAI(payload);
+            
+            // Cachear resultado
+            this.analysisCache.set(cacheKey, analysis);
+            
+            return analysis;
+        } catch (error) {
+            console.error('Erro ao analisar com IA Real:', error);
+            
+            // Fallback: retornar análise simples
+            return this._generateFallbackAnalysis(game, market, odd, amount);
+        }
     }
 
     /**
-     * Gerar análise mockada
+     * Chamar a IA Real do Backend
      * @private
      */
-    _generateAnalysis(game, market, odd) {
-        const homeTeamScore = this._calculateTeamScore(game.homeTeam);
-        const awayTeamScore = this._calculateTeamScore(game.awayTeam);
-        const totalScore = homeTeamScore + awayTeamScore;
-        
-        // Determinar risco baseado na odd e scores
-        const riskLevel = this._calculateRisk(odd, homeTeamScore, awayTeamScore);
-        
-        // Gerar sugestão
-        const suggestion = this._generateSuggestion(game, market, homeTeamScore, awayTeamScore);
-        
-        // Calcular probabilidade
-        const probability = this._calculateProbability(homeTeamScore, awayTeamScore, market);
-        
-        // Gerar explicação
-        const explanation = this._generateExplanation(game, market, homeTeamScore, awayTeamScore);
+    async _analyzeWithRealAI(payload) {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), this.timeoutDuration);
 
+        try {
+            const response = await fetch(this.apiEndpoint, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(payload),
+                signal: controller.signal
+            });
+
+            clearTimeout(timeoutId);
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const data = await response.json();
+
+            if (!data.analysis) {
+                throw new Error('Resposta inválida da IA');
+            }
+
+            // Parsear resposta da IA
+            return this._parseAIResponse(data.analysis, payload);
+        } catch (error) {
+            clearTimeout(timeoutId);
+            throw error;
+        }
+    }
+
+    /**
+     * Parsear resposta da IA em estrutura compatível
+     * @private
+     */
+    _parseAIResponse(aiText, payload) {
         return {
-            gameId: game.id,
-            market: market,
-            odd: odd,
-            riskLevel: riskLevel,
-            probability: probability,
-            suggestion: suggestion,
-            explanation: explanation,
-            scores: {
-                home: homeTeamScore,
-                away: awayTeamScore,
-                total: totalScore
+            source: 'api',
+            rawAnalysis: aiText,
+            gameInfo: {
+                home: payload.home,
+                away: payload.away,
+                competition: payload.competition,
+                market: payload.market,
+                odd: payload.odd,
+                stake: payload.stake
             },
-            confidence: Math.round((probability) * 100),
-            potentialGain: this._calculatePotentialGain(odd),
-            recommendations: this._generateRecommendations(game, riskLevel, probability),
+            potentialGain: (payload.stake * payload.odd) - payload.stake,
+            roi: ((payload.stake * payload.odd - payload.stake) / payload.stake * 100).toFixed(1),
             timestamp: new Date().toISOString()
         };
     }
 
     /**
-     * Calcular score de forma de um time
+     * Análise Fallback (sem acesso à IA Real)
      * @private
      */
-    _calculateTeamScore(teamName) {
-        // Algoritmo simples: baseado no nome do time e hora
-        const nameHash = teamName.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-        const timeInfluence = new Date().getHours() % 24;
-        const randomInfluence = Math.floor(Math.random() * 30);
-        
-        const score = ((nameHash + timeInfluence + randomInfluence) % 100) / 100;
-        return Math.round(score * 100) / 100;
-    }
-
-    /**
-     * Calcular nível de risco
-     * @private
-     */
-    _calculateRisk(odd, homeScore, awayScore) {
-        const scoreDiff = Math.abs(homeScore - awayScore);
-        
-        // Lógica: odds maiores = maior risco
-        if (odd > 3.5) return 'ALTO';
-        if (odd > 2.0) return 'MÉDIO';
-        return 'BAIXO';
-    }
-
-    /**
-     * Gerar sugestão de aposta
-     * @private
-     */
-    _generateSuggestion(game, market, homeScore, awayScore) {
-        if (market === '1X2') {
-            if (homeScore > awayScore + 0.15) return '1 (Vitória do mandante)';
-            if (awayScore > homeScore + 0.15) return '2 (Vitória do visitante)';
-            return 'X (Empate)';
-        }
-        
-        if (market === 'over_under') {
-            const combinedScore = homeScore + awayScore;
-            return combinedScore > 0.5 ? 'Over 2.5' : 'Under 2.5';
-        }
-        
-        return 'Ambos marcam (Sim)';
-    }
-
-    /**
-     * Calcular probabilidade
-     * @private
-     */
-    _calculateProbability(homeScore, awayScore, market) {
-        if (market === '1X2') {
-            const total = homeScore + awayScore + 0.5; // evitar divisão por zero
-            return Math.round((homeScore / total) * 100) / 100;
-        }
-        return (homeScore + awayScore) / 2;
-    }
-
-    /**
-     * Gerar explicação textual
-     * @private
-     */
-    _generateExplanation(game, market, homeScore, awayScore) {
-        const scoreDiff = (homeScore - awayScore).toFixed(2);
-        const formHome = homeScore > 0.5 ? 'boa forma' : 'forma instável';
-        const formAway = awayScore > 0.5 ? 'boa forma' : 'forma inconsistente';
-
-        return `
-            ${game.homeTeam} está em ${formHome} (índice: ${(homeScore * 100).toFixed(0)}%).
-            ${game.awayTeam} apresenta ${formAway} (índice: ${(awayScore * 100).toFixed(0)}%).
-            
-            Diferença de forma: ${Math.abs(scoreDiff) > 0 ? 'Mandante favorecido' : 'Equilibrado'}.
-            
-            Baseado em: Forma recente, histórico de confrontos e contexto da competição.
-            Confiança da análise: ${Math.round((homeScore + awayScore) / 2 * 100)}%.
-        `;
-    }
-
-    /**
-     * Calcular ganho potencial
-     * @private
-     */
-    _calculatePotentialGain(odd) {
-        const baseAmount = 100; // assumir aposta de 100
-        return Math.round((baseAmount * odd - baseAmount) * 100) / 100;
-    }
-
-    /**
-     * Gerar recomendações
-     * @private
-     */
-    _generateRecommendations(game, riskLevel, probability) {
-        const recommendations = [];
-        
-        if (riskLevel === 'BAIXO') {
-            recommendations.push('✅ Aposta com risco controlado');
-            recommendations.push('✅ Ideal para iniciantes');
-        } else if (riskLevel === 'MÉDIO') {
-            recommendations.push('⚠️ Risco moderado - considere seu bankroll');
-            recommendations.push('💡 Combine com outras apostas');
-        } else {
-            recommendations.push('🔴 Alto risco - apenas aposte o que pode perder');
-            recommendations.push('💡 Considere reduzir o valor da aposta');
-        }
-        
-        if (probability > 0.65) {
-            recommendations.push('📈 Alta probabilidade de acerto');
-        } else if (probability < 0.35) {
-            recommendations.push('📉 Baixa probabilidade - revisar análise');
-        }
-        
-        return recommendations;
+    _generateFallbackAnalysis(game, market, odd, amount) {
+        return {
+            source: 'fallback',
+            gameInfo: {
+                home: game.homeTeam || game.home,
+                away: game.awayTeam || game.away,
+                competition: game.competition || 'Futebol',
+                market: market,
+                odd: odd,
+                stake: amount
+            },
+            rawAnalysis: `
+                ⚠️ ANÁLISE LOCAL (IA Real indisponível)
+                
+                ${game.homeTeam || game.home} vs ${game.awayTeam || game.away}
+                
+                Esta análise é gerada localmente e pode não refletir dados atualizados.
+                
+                📊 Informações da Aposta:
+                • Mercado: ${market}
+                • Odd: ${odd}
+                • Valor: R$ ${parseFloat(amount).toFixed(2)}
+                • Ganho Potencial: R$ ${((amount * odd) - amount).toFixed(2)}
+                
+                ⚠️ Para análise completa com IA Real, verifique a conexão com o backend.
+            `,
+            potentialGain: (amount * odd) - amount,
+            roi: ((amount * odd - amount) / amount * 100).toFixed(1),
+            timestamp: new Date().toISOString()
+        };
     }
 }
 

@@ -214,6 +214,7 @@ async function handleAnalysisSubmit(e) {
     const market = document.getElementById('marketSelect').value;
     const odd = parseFloat(document.getElementById('oddInput').value);
     const amount = parseFloat(document.getElementById('amountInput').value);
+    const notes = document.getElementById('notesInput')?.value || '';
 
     // Validar
     if (!market || odd < 1.01 || amount < 0.01) {
@@ -224,53 +225,51 @@ async function handleAnalysisSubmit(e) {
     isLoadingAnalysis = true;
     const analyzeBtn = document.querySelector('#analysisForm button');
     const originalText = analyzeBtn.innerHTML;
-    analyzeBtn.innerHTML = '⏳ Analisando com IA...';
+    analyzeBtn.innerHTML = '⏳ Analisando com IA Real...';
     analyzeBtn.disabled = true;
 
+    const resultDiv = document.getElementById('analysisResult');
+    resultDiv.innerHTML = `
+        <div style="text-align: center; padding: 40px;">
+            <div style="font-size: 2.5rem; margin-bottom: 15px; animation: pulse 1.5s infinite;">🤖</div>
+            <p style="color: var(--text-secondary); font-size: 1.1rem;">Conectando com IA Real...</p>
+            <p style="color: var(--text-tertiary); font-size: 0.9rem; margin-top: 10px;">Isso pode levar alguns segundos</p>
+        </div>
+    `;
+    resultDiv.style.display = 'block';
+
     try {
-        // Tentar API real primeiro
-        let analysis = null;
-        const gameData = {
+        // Chamar IA Real com os dados
+        const analysis = await aiAnalyzer.analyzeGame(
+            currentSelectedGame,
+            market,
+            odd,
+            amount,
+            notes
+        );
+
+        // Renderizar resultado
+        displayAnalysisResult(analysis, {
             homeTeam: currentSelectedGame.homeTeam,
             awayTeam: currentSelectedGame.awayTeam,
             competition: currentSelectedGame.competition,
             market,
             odd,
             amount
-        };
+        });
 
-        try {
-            const response = await fetch('/api/analyze', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(gameData),
-                timeout: 5000
-            });
-
-            if (response.ok) {
-                const result = await response.json();
-                if (result.success && result.analysis) {
-                    analysis = result.analysis;
-                }
-            }
-        } catch (apiError) {
-            console.log('API não disponível, usando análise local...');
-        }
-
-        // Se API falhar, usar AIAnalyzer local
-        if (!analysis) {
-            analysis = await aiAnalyzer.analyzeGame(currentSelectedGame, market, odd);
-            analysis.source = 'local';
-        } else {
-            analysis.source = 'api';
-        }
-
-        displayAnalysisResult(analysis, gameData);
     } catch (error) {
-        console.error('Erro:', error);
-        alert('❌ Erro ao gerar análise: ' + error.message);
+        console.error('Erro na análise:', error);
+        resultDiv.innerHTML = `
+            <div style="text-align: center; padding: 40px;">
+                <div style="font-size: 2.5rem; margin-bottom: 15px;">⚠️</div>
+                <p style="color: var(--text-secondary); font-size: 1.1rem;">Erro ao conectar com IA</p>
+                <p style="color: var(--text-tertiary); font-size: 0.9rem; margin-top: 10px;">${error.message}</p>
+                <button class="btn-primary" style="margin-top: 20px;" onclick="document.getElementById('analysisResult').style.display = 'none';">
+                    Fechar
+                </button>
+            </div>
+        `;
     } finally {
         isLoadingAnalysis = false;
         analyzeBtn.innerHTML = originalText;
@@ -281,33 +280,50 @@ async function handleAnalysisSubmit(e) {
 function displayAnalysisResult(analysis, gameData) {
     const resultDiv = document.getElementById('analysisResult');
     
-    // Se for análise local, formatar diferente
-    const isLocal = analysis.source === 'local' || analysis.riskLevel;
+    // Renderizar baseado no tipo de análise (IA Real ou Fallback)
+    const isRealAI = analysis.source === 'api';
+    const html = isRealAI ? formatRealAIAnalysis(analysis, gameData) : formatFallbackAnalysis(analysis, gameData);
 
-    const html = isLocal ? formatLocalAnalysis(analysis) : formatAPIAnalysis(analysis);
-                <h4>⚽ Contexto do Jogo</h4>
-                <p>${analysis.contexto || 'Análise de contexto'}</p>
+    resultDiv.innerHTML = html;
+    resultDiv.style.display = 'block';
+    
+    // Scroll para o resultado
+    setTimeout(() => {
+        resultDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+}
+
+function formatRealAIAnalysis(analysis, gameData) {
+    return `
+        <div class="analysis-container">
+            <div class="analysis-header">
+                <h3>🤖 Análise com IA Real OpenAI</h3>
+                <p style="font-size: 0.8rem; color: var(--text-muted);">GPT-4o-mini • Análise Profissional</p>
             </div>
 
-            ${analysis.forma ? `
             <div class="analysis-section">
-                <h4>📈 Forma das Equipes</h4>
-                <div class="form-comparison">
-                    <div class="team-form">
-                        <span class="form-label">${gameData.homeTeam}:</span>
-                        <span class="form-value">${analysis.forma.homeTeam}</span>
-                    </div>
-                    <div class="team-form">
-                        <span class="form-label">${gameData.awayTeam}:</span>
-                        <span class="form-value">${analysis.forma.awayTeam}</span>
+                <h4>⚽ Jogo</h4>
+                <div style="background: rgba(99, 102, 241, 0.08); padding: 16px; border-radius: 8px; border-left: 4px solid #6366f1;">
+                    <p style="font-weight: bold; font-size: 1.1rem; margin: 0;">
+                        ${analysis.gameInfo.home} <span style="color: var(--text-muted);">vs</span> ${analysis.gameInfo.away}
+                    </p>
+                    <p style="margin: 8px 0 0 0; font-size: 0.9rem; color: var(--text-secondary);">
+                        ${analysis.gameInfo.competition} • ${analysis.gameInfo.market}
+                    </p>
+                </div>
+            </div>
+
+            <div class="analysis-section">
+                <h4>🧠 Análise da IA</h4>
+                <div style="background: rgba(236, 72, 153, 0.05); padding: 16px; border-radius: 8px; border-left: 4px solid #ec4899; max-height: 400px; overflow-y: auto;">
+                    <div style="color: var(--text-primary); font-size: 0.95rem; line-height: 1.6; white-space: pre-wrap; word-break: break-word;">
+                        ${escapeHtml(analysis.rawAnalysis)}
                     </div>
                 </div>
-                <p class="form-comparison-text">${analysis.forma.comparacao}</p>
             </div>
-            ` : ''}
 
             <div class="analysis-section">
-                <h4>💎 Análise da Aposta</h4>
+                <h4>💰 Informações da Aposta</h4>
                 <div class="betting-info">
                     <div class="info-item">
                         <span class="label">Mercado:</span>
@@ -315,7 +331,7 @@ function displayAnalysisResult(analysis, gameData) {
                     </div>
                     <div class="info-item">
                         <span class="label">Odd:</span>
-                        <span class="value">${gameData.odd}</span>
+                        <span class="value" style="font-weight: bold; color: #6366f1;">${gameData.odd.toFixed(2)}</span>
                     </div>
                     <div class="info-item">
                         <span class="label">Aposta:</span>
@@ -323,47 +339,147 @@ function displayAnalysisResult(analysis, gameData) {
                     </div>
                     <div class="info-item">
                         <span class="label">Ganho Potencial:</span>
-                        <span class="value gain">${balanceManager.formatCurrency(analysis.ganho_potencial || (gameData.amount * gameData.odd))}</span>
+                        <span class="value gain" style="font-weight: bold;">${balanceManager.formatCurrency(analysis.potentialGain)}</span>
                     </div>
                     <div class="info-item">
                         <span class="label">ROI:</span>
-                        <span class="value">${analysis.roi || ((gameData.amount * gameData.odd - gameData.amount) / gameData.amount * 100).toFixed(1)}%</span>
+                        <span class="value">${analysis.roi}%</span>
                     </div>
                 </div>
             </div>
 
             <div class="analysis-section">
-                <h4>🎯 Grau de Risco</h4>
-                <div class="risk-badge ${analysis.risco}">
-                    ${analysis.risco === 'LOW' ? '🟢 BAIXO' : analysis.risco === 'MEDIUM' ? '🟡 MÉDIO' : '🔴 ALTO'}
-                </div>
-                <p style="margin-top: 10px; font-size: 0.9rem; color: var(--text-secondary);">${analysis.risco_descricao || ''}</p>
-            </div>
-
-            ${analysis.observacoes && analysis.observacoes.length > 0 ? `
-            <div class="analysis-section">
-                <h4>💡 Observações Técnicas</h4>
-                <ul class="observations-list">
-                    ${analysis.observacoes.map(obs => `<li>• ${obs}</li>`).join('')}
-                </ul>
-            </div>
-            ` : ''}
-
-            <div class="analysis-section">
-                <h4>✅ Recomendação Final</h4>
-                <div class="recommendation-box ${analysis.risco}">
-                    ${analysis.recomendacao || 'Análise concluída'}
+                <h4>⚖️ Aviso Legal</h4>
+                <div style="background: rgba(245, 158, 11, 0.08); padding: 12px; border-radius: 8px; border-left: 4px solid #f59e0b; font-size: 0.85rem; color: var(--text-secondary);">
+                    <p style="margin: 0;">
+                        ⚠️ Esta análise é fornecida para fins informativos. Apostas envolvem riscos.
+                        Nunca aposte mais do que pode perder. Consulte um especialista se necessário.
+                    </p>
                 </div>
             </div>
 
-            <button class="btn-primary btn-full" onclick="registerBetFromAnalysis()">
-                📊 Registrar Aposta
-            </button>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px;">
+                <button class="btn-primary" onclick="registerBetFromAnalysis()" style="background: linear-gradient(135deg, #6366f1, #8b5cf6);">
+                    ✅ Registrar Aposta
+                </button>
+                <button class="btn-secondary" onclick="closeGameModal()" style="border: 1px solid rgba(99, 102, 241, 0.3); background: transparent; color: #6366f1;">
+                    ❌ Fechar
+                </button>
+            </div>
+
+            <div style="margin-top: 16px; padding: 12px; background: rgba(20, 184, 166, 0.05); border-radius: 8px; text-align: center; font-size: 0.8rem; color: var(--text-tertiary);">
+                Análise gerada em ${new Date(analysis.timestamp).toLocaleTimeString('pt-BR')}
+            </div>
         </div>
     `;
+}
 
-    resultDiv.innerHTML = html;
-    resultDiv.style.display = 'block';
+function formatFallbackAnalysis(analysis, gameData) {
+    return `
+        <div class="analysis-container">
+            <div class="analysis-header">
+                <h3>⚠️ Análise Local (Fallback)</h3>
+                <p style="font-size: 0.8rem; color: var(--text-muted);">IA Real indisponível • Usando dados locais</p>
+            </div>
+
+            <div class="analysis-section">
+                <h4>ℹ️ Informações</h4>
+                <div style="background: rgba(245, 158, 11, 0.08); padding: 16px; border-radius: 8px; border-left: 4px solid #f59e0b;">
+                    <p style="margin: 0; color: var(--text-secondary); font-size: 0.9rem;">
+                        A IA em produção não está disponível no momento. 
+                        <br/><br/>
+                        <strong>Para usar a IA real:</strong>
+                        <br/>
+                        1. Certifique-se que o backend está rodando
+                        <br/>
+                        2. Configure a chave OpenAI no arquivo .env
+                        <br/>
+                        3. Recarregue a página
+                    </p>
+                </div>
+            </div>
+
+            <div class="analysis-section">
+                <h4>⚽ Jogo</h4>
+                <div style="background: rgba(99, 102, 241, 0.08); padding: 16px; border-radius: 8px; border-left: 4px solid #6366f1;">
+                    <p style="font-weight: bold; font-size: 1.1rem; margin: 0;">
+                        ${analysis.gameInfo.home} <span style="color: var(--text-muted);">vs</span> ${analysis.gameInfo.away}
+                    </p>
+                    <p style="margin: 8px 0 0 0; font-size: 0.9rem; color: var(--text-secondary);">
+                        ${analysis.gameInfo.competition} • ${analysis.gameInfo.market}
+                    </p>
+                </div>
+            </div>
+
+            <div class="analysis-section">
+                <h4>📊 Análise Local</h4>
+                <div style="background: rgba(236, 72, 153, 0.05); padding: 16px; border-radius: 8px; border-left: 4px solid #ec4899;">
+                    <div style="color: var(--text-primary); font-size: 0.95rem; line-height: 1.6; white-space: pre-wrap; word-break: break-word;">
+                        ${escapeHtml(analysis.rawAnalysis)}
+                    </div>
+                </div>
+            </div>
+
+            <div class="analysis-section">
+                <h4>💰 Informações da Aposta</h4>
+                <div class="betting-info">
+                    <div class="info-item">
+                        <span class="label">Mercado:</span>
+                        <span class="value">${gameData.market}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">Odd:</span>
+                        <span class="value" style="font-weight: bold; color: #6366f1;">${gameData.odd.toFixed(2)}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">Aposta:</span>
+                        <span class="value">${balanceManager.formatCurrency(gameData.amount)}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">Ganho Potencial:</span>
+                        <span class="value gain" style="font-weight: bold;">${balanceManager.formatCurrency(analysis.potentialGain)}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">ROI:</span>
+                        <span class="value">${analysis.roi}%</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="analysis-section">
+                <h4>⚖️ Aviso Legal</h4>
+                <div style="background: rgba(245, 158, 11, 0.08); padding: 12px; border-radius: 8px; border-left: 4px solid #f59e0b; font-size: 0.85rem; color: var(--text-secondary);">
+                    <p style="margin: 0;">
+                        ⚠️ Esta é uma análise local de demonstração. Apostas envolvem riscos.
+                        Nunca aposte mais do que pode perder. Consulte um especialista se necessário.
+                    </p>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px;">
+                <button class="btn-primary" onclick="registerBetFromAnalysis()" style="background: linear-gradient(135deg, #6366f1, #8b5cf6);">
+                    ✅ Registrar Aposta
+                </button>
+                <button class="btn-secondary" onclick="closeGameModal()" style="border: 1px solid rgba(99, 102, 241, 0.3); background: transparent; color: #6366f1;">
+                    ❌ Fechar
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * Escape HTML para evitar XSS
+ */
+function escapeHtml(text) {
+    const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    };
+    return text.replace(/[&<>"']/g, m => map[m]);
 }
 
 function registerBetFromAnalysis() {
@@ -374,7 +490,7 @@ function registerBetFromAnalysis() {
     const amount = parseFloat(amountInput.value);
     
     if (odd && amount) {
-        const potentialGain = amount * odd;
+        const potentialGain = (amount * odd) - amount;
         balanceManager.addGain(potentialGain);
         updateBalanceDisplay();
         alert(`✅ Aposta registrada! Ganho potencial: ${balanceManager.formatCurrency(potentialGain)}`);
