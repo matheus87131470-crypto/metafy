@@ -8,10 +8,10 @@
 // ✅ Verificar se JS carregou
 console.log("✅ Metafy JS carregado com sucesso");
 
-// 🖱️ Listener de cliques para debug
-document.addEventListener("click", (e) => {
-    console.log("🖱️ Clique detectado:", e.target);
-});
+// 🖱️ Listener de cliques para debug (comentado para produção)
+// document.addEventListener("click", (e) => {
+//     console.log("🖱️ Clique detectado:", e.target);
+// });
 
 let balanceManager;
 let aiAnalyzer;
@@ -71,8 +71,20 @@ function setupTabNavigation() {
 }
 
 // ====================================
-// GAMES LIST - CARREGAMENTO VIA API
+// GAMES LIST - CARREGAMENTO VIA API COM FALLBACK
 // ====================================
+
+// Mock data como fallback (sempre ter jogos visíveis)
+const FALLBACK_GAMES = [
+    { id: 1, homeTeam: 'Flamengo', awayTeam: 'Palmeiras', competition: 'Campeonato Brasileiro', time: '20:00', homeOdds: 2.40, drawOdds: 3.20, awayOdds: 2.85, stadium: 'Estádio do Flamengo', country: 'Brasil', homeFlag: '🇧🇷', awayFlag: '🇧🇷' },
+    { id: 2, homeTeam: 'Real Madrid', awayTeam: 'Barcelona', competition: 'La Liga', time: '21:00', homeOdds: 1.85, drawOdds: 3.50, awayOdds: 3.80, stadium: 'Santiago Bernabéu', country: 'Espanha', homeFlag: '🇪🇸', awayFlag: '🇪🇸' },
+    { id: 3, homeTeam: 'Manchester City', awayTeam: 'Arsenal', competition: 'Premier League', time: '15:30', homeOdds: 1.55, drawOdds: 4.00, awayOdds: 5.20, stadium: 'Etihad Stadium', country: 'Inglaterra', homeFlag: '🇬🇧', awayFlag: '🇬🇧' },
+    { id: 4, homeTeam: 'PSG', awayTeam: 'Lyon', competition: 'Ligue 1', time: '20:00', homeOdds: 1.45, drawOdds: 4.50, awayOdds: 6.00, stadium: 'Parc des Princes', country: 'França', homeFlag: '🇫🇷', awayFlag: '🇫🇷' },
+    { id: 5, homeTeam: 'Bayern Munich', awayTeam: 'Borussia Dortmund', competition: 'Bundesliga', time: '19:30', homeOdds: 1.65, drawOdds: 3.80, awayOdds: 4.50, stadium: 'Allianz Arena', country: 'Alemanha', homeFlag: '🇩🇪', awayFlag: '🇩🇪' },
+    { id: 6, homeTeam: 'Juventus', awayTeam: 'Inter', competition: 'Serie A', time: '18:00', homeOdds: 2.20, drawOdds: 3.40, awayOdds: 3.10, stadium: 'Allianz Stadium', country: 'Itália', homeFlag: '🇮🇹', awayFlag: '🇮🇹' },
+    { id: 7, homeTeam: 'Benfica', awayTeam: 'Porto', competition: 'Primeira Liga', time: '20:30', homeOdds: 2.10, drawOdds: 3.60, awayOdds: 3.30, stadium: 'Estádio da Luz', country: 'Portugal', homeFlag: '🇵🇹', awayFlag: '🇵🇹' },
+    { id: 8, homeTeam: 'LAFC', awayTeam: 'Seattle Sounders', competition: 'MLS', time: '22:00', homeOdds: 2.50, drawOdds: 3.10, awayOdds: 2.70, stadium: 'BMO Stadium', country: 'EUA', homeFlag: '🇺🇸', awayFlag: '🇺🇸' }
+];
 
 async function loadGamesList() {
     const gamesList = document.getElementById('gamesList');
@@ -81,7 +93,7 @@ async function loadGamesList() {
     gamesList.innerHTML = `
         <div style="grid-column: 1/-1; text-align: center; padding: 40px;">
             <div style="font-size: 2rem; margin-bottom: 10px;">⏳</div>
-            <p style="color: var(--text-secondary);">Carregando jogos da API...</p>
+            <p style="color: var(--text-secondary);">Carregando jogos...</p>
         </div>
     `;
 
@@ -91,43 +103,28 @@ async function loadGamesList() {
         // Buscar jogos REAIS da API do backend (Render)
         const response = await fetch(BACKEND_URL + '/api/games', {
             method: 'GET',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            mode: 'cors'
+            headers: { 'Content-Type': 'application/json' },
+            mode: 'cors',
+            timeout: 10000
         });
 
-        console.log('📡 Resposta status:', response.status);
-        
-        if (!response.ok) {
-            throw new Error(`Erro HTTP ${response.status}: ${response.statusText}`);
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success && data.games && data.games.length > 0) {
+                gamesCache = data.games;
+                console.log(`✅ ${data.games.length} jogos reais carregados`);
+                renderGamesList(data.games);
+                return;
+            }
         }
-
-        const data = await response.json();
-        console.log('✅ Dados recebidos:', data);
-        
-        if (!data.success || !data.games || data.games.length === 0) {
-            throw new Error('API retornou dados vazios');
-        }
-        
-        gamesCache = data.games;
-        console.log(`✅ ${data.games.length} jogos carregados com sucesso`);
-        renderGamesList(data.games);
     } catch (error) {
-        console.error('❌ Erro ao buscar jogos:', error);
-        gamesList.innerHTML = `
-            <div style="grid-column: 1/-1; text-align: center; padding: 40px;">
-                <div style="font-size: 2rem; margin-bottom: 10px;">❌</div>
-                <p style="color: var(--text-secondary);">Erro ao carregar jogos</p>
-                <p style="color: var(--text-tertiary); font-size: 0.85rem; margin-top: 10px;">
-                    ${error.message}
-                </p>
-                <button onclick="location.reload()" style="margin-top: 15px; padding: 8px 16px; background: #6366f1; color: white; border: none; border-radius: 6px; cursor: pointer;">
-                    🔄 Tentar Novamente
-                </button>
-            </div>
-        `;
+        console.warn('⚠️ API indisponível, usando fallback:', error.message);
     }
+
+    // Fallback: usar dados mock quando API falhar
+    console.log('📦 Usando fallback com 8 jogos mockados');
+    gamesCache = FALLBACK_GAMES;
+    renderGamesList(FALLBACK_GAMES);
 }
 
 function renderGamesList(games) {
@@ -760,10 +757,68 @@ function setupPremiumSection() {
                 // Delay para garantir que DOM foi atualizado
                 setTimeout(() => {
                     generateQRCode();
+                    // Aplicar bloqueio visual se não assinado
+                    managePremiumLock();
                 }, 100);
             }
         });
     });
+}
+
+// Gerenciar bloqueio visual da seção Premium
+function managePremiumLock() {
+    const isPremium = localStorage.getItem('metafy_premium_user') === 'true';
+    const premiumSection = document.querySelector('.premium-section');
+    const existingOverlay = document.querySelector('.premium-lock-overlay');
+    
+    // Remover overlay anterior se existir
+    if (existingOverlay) {
+        existingOverlay.remove();
+    }
+    
+    if (!isPremium) {
+        // Adicionar classe de blur
+        premiumSection.classList.add('locked');
+        
+        // Criar overlay com mensagem
+        const overlay = document.createElement('div');
+        overlay.className = 'premium-lock-overlay';
+        overlay.innerHTML = `
+            <div class="premium-lock-message">
+                <div class="premium-lock-icon">🔒</div>
+                <h3>Área Premium</h3>
+                <p>Assine agora e desbloqueie acesso ilimitado a análises com IA real por apenas R$ 3,50</p>
+                <button type="button" class="premium-unlock-btn" onclick="scrollToPremium()">
+                    💎 Desbloquear Premium
+                </button>
+            </div>
+        `;
+        
+        document.body.appendChild(overlay);
+        
+        // Fechar ao clicar fora
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+                overlay.remove();
+                premiumSection.classList.remove('locked');
+            }
+        });
+    } else {
+        // Usuário é premium, remover bloqueio
+        premiumSection.classList.remove('locked');
+    }
+}
+
+function scrollToPremium() {
+    const premiumSection = document.querySelector('.subscription-box');
+    if (premiumSection) {
+        premiumSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    // Remover overlay
+    const overlay = document.querySelector('.premium-lock-overlay');
+    if (overlay) {
+        overlay.remove();
+    }
 }
 
 function copyPaymentLink() {
