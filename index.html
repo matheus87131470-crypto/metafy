@@ -7,6 +7,7 @@
     <title>Metafy — Análise Inteligente de Futebol</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="balance-new.css">
+    <link rel="stylesheet" href="match-center.css">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%238b5cf6'/><text x='50' y='70' font-size='60' text-anchor='middle' fill='white' font-weight='bold'>M</text></svg>" type="image/svg+xml">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
@@ -252,7 +253,7 @@
                         🏆 ${game.competition} ${game.stadium ? '• 📍 ' + game.stadium : ''}
                     </div>
                     
-                    <button type="button" class="btn-analyze-compact" onclick="alert('🤖 Analisando ${game.homeTeam} vs ${game.awayTeam}\\n\\nCompetição: ${game.competition}\\nStatus: ${game.status}')">
+                    <button type="button" class="btn-analyze-compact" onclick="openMatchCenter(${game.id})">
                         🤖 Analisar com IA
                     </button>
                 `;
@@ -261,6 +262,118 @@
             });
 
             console.log('✅ Todos os', GAMES.length, 'jogos foram renderizados!');
+        }
+
+        // Abrir Match Center detalhado
+        function openMatchCenter(gameId) {
+            const game = GAMES.find(g => g.id === gameId);
+            if (!game) return;
+
+            const matchCenter = document.createElement('div');
+            matchCenter.className = 'match-center-overlay';
+            matchCenter.innerHTML = `
+                <div class="match-center-modal">
+                    <button type="button" class="close-modal" onclick="this.parentElement.parentElement.remove()">✕</button>
+                    
+                    <!-- Header do jogo -->
+                    <div class="match-header">
+                        <div class="match-date">08 Fev</div>
+                        <div class="match-main">
+                            <div class="team-logo">${game.homeFlag || '⚽'}</div>
+                            <div class="match-time">23:30</div>
+                            <div class="team-logo">${game.awayFlag || '⚽'}</div>
+                        </div>
+                        <div class="team-names">
+                            <span>${game.homeTeam}</span>
+                            <span>vs</span>
+                            <span>${game.awayTeam}</span>
+                        </div>
+                    </div>
+
+                    <!-- Tabs de estatísticas -->
+                    <div class="match-tabs">
+                        <button class="match-tab active" data-tab="overview">Overview</button>
+                        <button class="match-tab" data-tab="odds">Quot</button>
+                        <button class="match-tab" data-tab="corner">Corner</button>
+                        <button class="match-tab" data-tab="card">Card</button>
+                    </div>
+
+                    <!-- Conteúdo Overview -->
+                    <div class="match-content">
+                        <!-- Stats principais -->
+                        <div class="stats-row">
+                            <div class="stat-item">
+                                <div class="stat-icon green">✓</div>
+                                <div class="stat-info">
+                                    <div class="stat-label">% Odds</div>
+                                    <div class="stat-value">50%</div>
+                                </div>
+                                <div class="stat-badge green">Pont:5</div>
+                            </div>
+                            <div class="stat-divider">VS</div>
+                            <div class="stat-item">
+                                <div class="stat-icon blue">✓</div>
+                                <div class="stat-info">
+                                    <div class="stat-label">% Odds</div>
+                                    <div class="stat-value">85%</div>
+                                </div>
+                                <div class="stat-badge blue">Pont:5</div>
+                            </div>
+                        </div>
+
+                        <!-- Estatísticas secundárias -->
+                        <div class="secondary-stats">
+                            <div class="sec-stat">
+                                <div class="sec-label">% BTTS</div>
+                                <div class="sec-bar">
+                                    <div class="sec-bar-fill" style="width: 55%"></div>
+                                </div>
+                                <div class="sec-value">55%</div>
+                            </div>
+                            <div class="sec-stat">
+                                <div class="sec-label">Gols/média</div>
+                                <div class="sec-bar">
+                                    <div class="sec-bar-fill" style="width: 45%"></div>
+                                </div>
+                                <div class="sec-value">4.5</div>
+                            </div>
+                            <div class="sec-stat">
+                                <div class="sec-label">2.5 Gols</div>
+                                <div class="sec-bar">
+                                    <div class="sec-bar-fill orange" style="width: 25%"></div>
+                                </div>
+                                <div class="sec-value">2.5</div>
+                            </div>
+                            <div class="sec-stat">
+                                <div class="sec-label">13.7 Corners</div>
+                                <div class="sec-bar">
+                                    <div class="sec-bar-fill green" style="width: 65%"></div>
+                                </div>
+                                <div class="sec-value">13.7</div>
+                            </div>
+                        </div>
+
+                        <!-- Últimos jogos -->
+                        <div class="recent-matches">
+                            <div class="recent-match">
+                                <span class="team-logo-sm">${game.homeFlag || '⚽'}</span>
+                                <span class="recent-score">2:3 – 44%</span>
+                            </div>
+                            <div class="recent-match-note">
+                                Vitória em a última 2 a 3, a probabilidade de empate é grande, Maior a chance de over 4,5% do que under
+                            </div>
+                            <div class="recent-match">
+                                <span class="team-logo-sm">${game.awayFlag || '⚽'}</span>
+                                <span class="recent-score">3:25 – 36%</span>
+                            </div>
+                            <div class="recent-match-note">
+                                W: 99%
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(matchCenter);
         }
 
         // Mostrar mensagem "Sem jogos hoje"
