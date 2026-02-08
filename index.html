@@ -232,40 +232,54 @@
                     hasGames: !!data.games,
                     gamesLength: data.games?.length || 0,
                     message: data.message,
-                    error: data.error,
-                    debug: data.debug
+                    error: data.error
                 });
                 
-                if (data.success && data.games && data.games.length > 0) {
-                    console.log('✅ Jogos encontrados:', data.games.length);
-                    console.log('🎮 Primeiros 3 jogos:', data.games.slice(0, 3).map(g => ({
-                        id: g.id,
-                        jogo: `${g.homeTeam} vs ${g.awayTeam}`,
-                        liga: g.competition,
-                        horario: g.time
-                    })));
-                    
-                    GAMES = data.games;
-                    console.log('✅ Jogos reais carregados:', GAMES.length);
-                    renderGames();
-                } else if (data.count === 0) {
-                    console.warn('⚠️ API retornou 0 jogos');
-                    console.log('ℹ️ Informações de debug:', data.debug || 'Não disponível');
-                    showNoGames();
-                } else {
+                if (!data.success) {
                     console.error('❌ API retornou erro:', data.error);
-                    showError();
+                    containerJogos.innerHTML = `
+                        <div style="text-align: center; padding: 30px; color: #999;">
+                            <p>❌ ${data.error || 'Erro ao carregar jogos'}</p>
+                        </div>
+                    `;
+                    return;
                 }
+                
+                if (data.count === 0 || !data.games || data.games.length === 0) {
+                    console.warn('⚠️ Não há jogos hoje');
+                    containerJogos.innerHTML = `
+                        <div style="text-align: center; padding: 30px; color: #999;">
+                            <p>⚽ Não há jogos hoje</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                console.log('✅ Jogos encontrados:', data.games.length);
+                console.log('🎮 Primeiros 3 jogos:', data.games.slice(0, 3).map(g => ({
+                    id: g.id,
+                    jogo: `${g.homeTeam} vs ${g.awayTeam}`,
+                    liga: g.competition,
+                    horario: g.time
+                })));
+                
+                // Renderizar TODOS os jogos SEM filtros
+                renderGames(data.games);
             } catch (error) {
                 console.error('💥 ERRO CRÍTICO ao buscar jogos:', error);
                 console.error('📋 Stack trace:', error.stack);
-                showError();
+                containerJogos.innerHTML = `
+                    <div style="text-align: center; padding: 30px; color: #999;">
+                        <p>❌ Erro ao conectar com a API</p>
+                        <p style="font-size: 12px; margin-top: 10px;">${error.message}</p>
+                    </div>
+                `;
             }
         }
 
         // Renderizar jogos REAIS
-        function renderGames() {
-            console.log('📍 renderGames() iniciando com', GAMES.length, 'jogos...');
+        function renderGames(games) {
+            console.log('📍 renderGames() iniciando com', games.length, 'jogos...');
             const container = document.getElementById('gamesList');
             
             if (!container) {
@@ -275,14 +289,14 @@
 
             container.innerHTML = '';
 
-            GAMES.forEach((game, index) => {
+            games.forEach((game, index) => {
                 console.log(`🏟️ Renderizando jogo ${index + 1}:`, game.homeTeam, 'vs', game.awayTeam);
                 
                 const card = document.createElement('div');
                 card.className = 'game-card-compact';
                 card.innerHTML = `
-                    <div class="game-time-status ${game.status === 'LIVE' ? 'live' : game.status === 'FT' ? 'finished' : ''}">
-                        ${game.status === 'LIVE' ? '🔴 AO VIVO' : game.status === 'FT' ? 'FINALIZADO' : '⏰ ' + game.time}
+                    <div class="game-time-status ${game.status === 'LIVE' ? 'live' : game.status === 'FINALIZADO' ? 'finished' : ''}">
+                        ${game.status === 'LIVE' ? '🔴 AO VIVO' : game.status === 'FINALIZADO' ? 'FINALIZADO' : '⏰ ' + game.time}
                     </div>
                     
                     <div class="game-teams-row">
