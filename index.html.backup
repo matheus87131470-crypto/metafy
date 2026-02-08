@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Metafy — Análise Inteligente de Futebol com IA Real e Jogos Reais. Analise jogos, monte estratégias e controle ganhos/perdas.">
+    <meta name="theme-color" content="#0a0e27">
+    <title>Metafy — Análise Inteligente de Futebol</title>
+    <link rel="icon" href="/public/favicon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/public/favicon.svg">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+</head>
+<body>
+    <div class="background-gradient"></div>
+    
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1 class="title">🎯 Metafy</h1>
+                <p class="subtitle">Análise inteligente de partidas de futebol com IA</p>
+            </div>
+
+            <!-- Abas Principais -->
+            <nav class="tabs-nav">
+                <button type="button" class="tab-button active" data-tab="games">
+                    <span class="tab-icon">⚽</span>
+                    <span class="tab-label">Jogos</span>
+                </button>
+                <button type="button" class="tab-button" data-tab="balance">
+                    <span class="tab-icon">📊</span>
+                    <span class="tab-label">Ganhos/Perdas</span>
+                </button>
+                <button type="button" class="tab-button" data-tab="premium">
+                    <span class="tab-icon">💎</span>
+                    <span class="tab-label">Premium</span>
+                </button>
+            </nav>
+        </header>
+
+
+        <!-- Main Content -->
+        <main class="main-content">
+            
+            <!-- TAB 1: JOGOS DE FUTEBOL -->
+            <div class="tab-content active" id="tab-games">
+                <div class="games-section">
+                    <div class="section-header">
+                        <h2 class="section-title">⚽ Jogos de Hoje</h2>
+                        <p class="section-subtitle">Selecione um jogo para analisar com IA</p>
+                    </div>
+
+                    <!-- Lista de Jogos -->
+                    <div class="games-list" id="gamesList">
+                        <!-- Preenchida dinamicamente -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: GANHOS/PERDAS -->
+            <div class="tab-content" id="tab-balance">
+                <div class="balance-section">
+                    <div class="section-header">
+                        <h2 class="section-title">📊 Resultado de Apostas</h2>
+                        <p class="section-subtitle">Controle seus ganhos e perdas de forma visual</p>
+                    </div>
+
+                    <!-- Controles de Entrada -->
+                    <div class="balance-controls">
+                        <div class="control-group">
+                            <label>💰 Ganho (R$)</label>
+                            <input type="number" id="gainInput" placeholder="0.00" step="0.01" min="0">
+                            <button type="button" class="btn-success" id="addGainBtn">➕ Registrar Ganho</button>
+                        </div>
+                        <div class="control-group">
+                            <label>📉 Perda (R$)</label>
+                            <input type="number" id="lossInput" placeholder="0.00" step="0.01" min="0">
+                            <button type="button" class="btn-danger" id="addLossBtn">➖ Registrar Perda</button>
+                        </div>
+                    </div>
+
+                    <!-- Estatísticas -->
+                    <div class="balance-stats">
+                        <div class="stat-card gain">
+                            <div class="stat-label">✓ Ganhos</div>
+                            <div class="stat-value" id="totalGains">R$ 0,00</div>
+                        </div>
+                        <div class="stat-card loss">
+                            <div class="stat-label">✗ Perdas</div>
+                            <div class="stat-value" id="totalLosses">R$ 0,00</div>
+                        </div>
+                        <div class="stat-card balance">
+                            <div class="stat-label">💰 Saldo</div>
+                            <div class="stat-value" id="balanceValue">R$ 0,00</div>
+                        </div>
+                    </div>
+
+                    <!-- Barra Visual -->
+                    <div class="balance-bar-section">
+                        <h3>📈 Visualização de Resultados</h3>
+                        <div class="balance-bar-container">
+                            <div class="balance-bar">
+                                <div class="bar-gain" id="barGain" style="width: 0%"></div>
+                                <div class="bar-loss" id="barLoss" style="width: 0%"></div>
+                            </div>
+                            <div class="bar-labels">
+                                <span class="label-left">Ganhos</span>
+                                <span class="label-right">Perdas</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Histórico -->
+                    <div class="balance-history">
+                        <h3>📋 Transações</h3>
+                        <div class="history-list" id="historyList">
+                            <div class="empty-message">Nenhuma transação registrada</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 3: PREMIUM / ASSINATURA -->
+            <div class="tab-content" id="tab-premium">
+                <div class="premium-section">
+                    <div class="section-header">
+                        <h2 class="section-title">💎 Metafy Premium</h2>
+                        <p class="section-subtitle">Análises com IA real e acesso ilimitado</p>
+                    </div>
+
+                    <!-- Subscription Box -->
+                    <div class="subscription-box">
+                        <div class="premium-badge">✨ PREMIUM</div>
+                        <h3>Análise Profissional com IA Real</h3>
+                        <p class="price-tag">Por apenas <strong>R$ 3,50</strong></p>
+                        
+                        <div class="features">
+                            <div class="feature-item">✅ Análises com GPT-4o-mini</div>
+                            <div class="feature-item">✅ Jogos reais de ligas mundiais</div>
+                            <div class="feature-item">✅ Histórico completo de apostas</div>
+                            <div class="feature-item">✅ Estatísticas avançadas</div>
+                        </div>
+
+                        <a 
+                            href="https://nubank.com.br/cobrar/ell2f/69826c94-7bdd-49bf-b020-4a92c9458ef3" 
+                            target="_blank" 
+                            rel="noopener"
+                            class="subscribe-btn"
+                        >
+                            💳 Assinar com Nubank
+                        </a>
+
+                        <button type="button" class="copy-btn" onclick="copyPaymentLink()">
+                            📋 Copiar Link de Pagamento
+                        </button>
+
+                        <div class="divider">ou</div>
+
+                        <div class="qr-area">
+                            <p>Pague com QR Code:</p>
+                            <canvas id="qrcode"></canvas>
+                        </div>
+
+                        <p class="payment-info">🔒 Pagamento seguro via Nubank • Acesso imediato após confirmação</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>Metafy © 2025 | Última atualização: <span id="timestamp">--:--</span></p>
+        </footer>
+    </div>
+
+    <!-- MODAL: Análise do Jogo -->
+    <div class="modal" id="gameModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalTitle">--</h2>
+                <button type="button" class="modal-close" id="modalClose">&times;</button>
+            </div>
+
+            <div class="modal-body">
+                <!-- Game Info -->
+                <div class="game-info">
+                    <div class="team-info">
+                        <span class="team-name" id="homeTeamName">--</span>
+                        <span class="team-emoji">⚪</span>
+                    </div>
+                    <span class="vs">VS</span>
+                    <div class="team-info">
+                        <span class="team-emoji">⚫</span>
+                        <span class="team-name" id="awayTeamName">--</span>
+                    </div>
+                </div>
+                <p class="game-competition" id="gameCompetition">--</p>
+
+                <!-- Form para Análise -->
+                <form id="analysisForm" class="analysis-form">
+                    <div class="form-group">
+                        <label>📊 Mercado de Aposta</label>
+                        <select id="marketSelect" required>
+                            <option value="">Selecione o mercado...</option>
+                            <option value="vencedor">Vencedor (1x2)</option>
+                            <option value="ambas">Ambas Marcam</option>
+                            <option value="over25">Over 2.5 Gols</option>
+                            <option value="under25">Under 2.5 Gols</option>
+                            <option value="resultado">Resultado Exato</option>
+                            <option value="handicap">Handicap</option>
+                            <option value="primeiro-gol">Primeiro Gol</option>
+                            <option value="cartoes">Cartões</option>
+                            <option value="escanteios">Escanteios</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>💎 Odd da Aposta</label>
+                        <input type="number" id="oddInput" placeholder="2.50" step="0.01" min="1.01" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>💵 Valor da Aposta (R$)</label>
+                        <input type="number" id="amountInput" placeholder="100" step="0.01" min="0.01" required>
+                    </div>
+
+                    <button type="submit" class="btn-primary btn-full" id="analyzeBtn">
+                        🤖 Analisar Jogo
+                    </button>
+                </form>
+
+                <!-- Análise Resultado -->
+                <div class="analysis-result" id="analysisResult" style="display: none;">
+                    <!-- Preenchida dinamicamente -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="games.js"></script>
+    <script src="football-analyzer.js"></script>
+    <script src="ai-analyzer.js"></script>
+    <script src="balance.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
+

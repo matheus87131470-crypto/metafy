@@ -25,21 +25,22 @@ module.exports = async (req, res) => {
   try {
     const games = await gamesService.getTodayGames();
     
+    // Retornar jogos reais ou vazio (SEM FALLBACK)
     return res.status(200).json({
       success: true,
       count: games.length,
-      games: games
+      games: games,
+      message: games.length === 0 ? 'Nenhum jogo encontrado para hoje' : null
     });
   } catch (error) {
     console.error('Erro ao buscar jogos:', error);
     
-    // Retornar fallback mesmo com erro
-    const fallbackGames = gamesService.getFallbackGames();
+    // Retornar vazio em caso de erro (SEM MOCK DATA)
     return res.status(200).json({
-      success: true,
-      count: fallbackGames.length,
-      games: fallbackGames,
-      note: 'Usando dados de fallback'
+      success: false,
+      count: 0,
+      games: [],
+      error: 'Erro ao buscar jogos da API'
     });
   }
 };

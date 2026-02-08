@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Metafy — Análise inteligente de partidas de futebol">
+    <title>Metafy — Análise Inteligente de Futebol</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%238b5cf6'/><text x='50' y='70' font-size='60' text-anchor='middle' fill='white' font-weight='bold'>M</text></svg>" type="image/svg+xml">
+</head>
+<body>
+    <div class="background-gradient"></div>
+    
+    <div class="container">
+        <header class="header">
+            <div class="header-content">
+                <h1 class="title">🎯 Metafy</h1>
+                <p class="subtitle">Análise inteligente de partidas de futebol com IA</p>
+            </div>
+
+            <nav class="tabs-nav">
+                <button type="button" class="tab-button active" data-tab="games">
+                    <span class="tab-icon">⚽</span>
+                    <span class="tab-label">Jogos</span>
+                </button>
+                <button type="button" class="tab-button" data-tab="balance">
+                    <span class="tab-icon">📊</span>
+                    <span class="tab-label">Ganhos/Perdas</span>
+                </button>
+                <button type="button" class="tab-button" data-tab="premium">
+                    <span class="tab-icon">💎</span>
+                    <span class="tab-label">Premium</span>
+                </button>
+            </nav>
+        </header>
+
+        <main class="main-content">
+            <div class="tab-content active" id="tab-games">
+                <div class="games-section">
+                    <div class="section-header">
+                        <h2 class="section-title">⚽ Jogos de Hoje</h2>
+                        <p class="section-subtitle">Selecione um jogo para analisar com IA</p>
+                    </div>
+                    <div class="games-list" id="gamesList"></div>
+                </div>
+            </div>
+
+            <div class="tab-content" id="tab-balance">
+                <p style="text-align: center; padding: 40px; color: #888;">Em desenvolvimento</p>
+            </div>
+
+            <div class="tab-content" id="tab-premium">
+                <p style="text-align: center; padding: 40px; color: #888;">Em desenvolvimento</p>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <p>Metafy © 2026 | Análise Inteligente de Futebol</p>
+        </footer>
+    </div>
+
+    <script>
+        console.log('✅ Metafy carregando...');
+
+        // Dados dos jogos
+        const GAMES = [
+            { id: 1, home: 'Flamengo', away: 'Palmeiras', comp: 'Brasileirão', homeScore: 2, awayScore: 1, status: 'LIVE', homeFlag: '🇧🇷', awayFlag: '🇧🇷', odds: [2.40, 3.20, 2.85] },
+            { id: 2, home: 'Real Madrid', away: 'Barcelona', comp: 'La Liga', homeScore: 2, awayScore: 3, status: 'FT', homeFlag: '🇪🇸', awayFlag: '🇪🇸', odds: [1.85, 3.50, 3.80] },
+            { id: 3, home: 'Man City', away: 'Arsenal', comp: 'Premier League', homeScore: null, awayScore: null, status: '15:30', homeFlag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', awayFlag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', odds: [1.55, 4.00, 5.20] },
+            { id: 4, home: 'PSG', away: 'Lyon', comp: 'Ligue 1', homeScore: 0, awayScore: 0, status: 'FT', homeFlag: '🇫🇷', awayFlag: '🇫🇷', odds: [1.45, 4.50, 6.00] },
+            { id: 5, home: 'Bayern', away: 'Dortmund', comp: 'Bundesliga', homeScore: 1, awayScore: 1, status: 'LIVE', homeFlag: '🇩🇪', awayFlag: '🇩🇪', odds: [1.65, 3.80, 4.50] },
+            { id: 6, home: 'Juventus', away: 'Inter', comp: 'Serie A', homeScore: null, awayScore: null, status: '18:00', homeFlag: '🇮🇹', awayFlag: '🇮🇹', odds: [2.20, 3.40, 3.10] }
+        ];
+
+        // Renderizar jogos
+        function renderGames() {
+            const container = document.getElementById('gamesList');
+            if (!container) return;
+
+            container.innerHTML = '';
+
+            GAMES.forEach(game => {
+                const card = document.createElement('div');
+                card.className = 'game-card-compact';
+                card.innerHTML = `
+                    <div class="game-time-status ${game.status === 'LIVE' ? 'live' : game.status === 'FT' ? 'finished' : ''}">
+                        ${game.status === 'LIVE' ? '🔴 AO VIVO' : game.status === 'FT' ? 'FINALIZADO' : '⏰ ' + game.status}
+                    </div>
+                    
+                    <div class="game-teams-row">
+                        <div class="team-compact">
+                            <span class="team-flag">${game.homeFlag}</span>
+                            <span class="team-name-compact">${game.home}</span>
+                        </div>
+                        <div class="score-display">
+                            <span class="score-number">${game.homeScore !== null ? game.homeScore : '-'}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="game-teams-row">
+                        <div class="team-compact">
+                            <span class="team-flag">${game.awayFlag}</span>
+                            <span class="team-name-compact">${game.away}</span>
+                        </div>
+                        <div class="score-display">
+                            <span class="score-number">${game.awayScore !== null ? game.awayScore : '-'}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="game-odds-compact">
+                        <span class="odd-item">1: ${game.odds[0].toFixed(2)}</span>
+                        <span class="odd-item">X: ${game.odds[1].toFixed(2)}</span>
+                        <span class="odd-item">2: ${game.odds[2].toFixed(2)}</span>
+                    </div>
+                    
+                    <button type="button" class="btn-analyze-compact" onclick="alert('🤖 Analisando ${game.home} vs ${game.away}\\n\\nFavorito: ${game.home}\\nProbabilidade: ${Math.random() > 0.5 ? '65%' : '58%'}\\nSugestão: ${game.odds[0] < 2 ? \\'Casa vence\\' : \\'Aposta arriscada\\'}')">
+                        🤖 Analisar com IA
+                    </button>
+                `;
+                
+                container.appendChild(card);
+            });
+
+            console.log('✅ Jogos renderizados!', GAMES.length);
+        }
+
+        // Navegação de tabs
+        document.querySelectorAll('.tab-button').forEach(btn => {
+            btn.addEventListener('click', () => {
+                // Remover active
+                document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                
+                // Adicionar active
+                btn.classList.add('active');
+                document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+            });
+        });
+
+        // Carregar quando página estiver pronta
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', renderGames);
+        } else {
+            renderGames();
+        }
+    </script>
+</body>
+</html>

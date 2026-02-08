@@ -18,6 +18,9 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
+// Import games API route
+const gamesApiRoute = require('./api/games');
+
 // ====================================
 // HEALTH CHECK
 // ====================================
@@ -31,6 +34,12 @@ app.get('/health', (req, res) => {
         version: '1.0.0'
     });
 });
+
+// ====================================
+// API GAMES ROUTE
+// ====================================
+
+app.get('/api/games', gamesApiRoute);
 
 // ====================================
 // GET GAMES TODAY

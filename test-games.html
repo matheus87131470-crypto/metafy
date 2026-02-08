@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Jogos Metafy</title>
+    <style>
+        body {
+            background: #0a0e27;
+            color: white;
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        .game-card {
+            background: rgba(20, 24, 41, 0.7);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+        .team-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 8px 0;
+        }
+        .score {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #6366f1;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎯 Metafy - Teste de Jogos</h1>
+    <div id="gamesList"></div>
+
+    <script>
+        console.log('✅ Script de teste carregando...');
+
+        const FALLBACK_GAMES = [
+            { id: 1, homeTeam: 'Flamengo', awayTeam: 'Palmeiras', competition: 'Brasileirão', homeScore: 2, awayScore: 1, homeFlag: '🇧🇷', awayFlag: '🇧🇷', status: 'LIVE' },
+            { id: 2, homeTeam: 'Real Madrid', awayTeam: 'Barcelona', competition: 'La Liga', homeScore: 2, awayScore: 3, homeFlag: '🇪🇸', awayFlag: '🇪🇸', status: 'FT' },
+            { id: 3, homeTeam: 'Man City', awayTeam: 'Arsenal', competition: 'Premier League', homeScore: undefined, awayScore: undefined, homeFlag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', awayFlag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', status: 'HOJE', time: '15:30' }
+        ];
+
+        function renderGames() {
+            console.log('🎮 Renderizando jogos...');
+            const container = document.getElementById('gamesList');
+            
+            if (!container) {
+                console.error('❌ Container não encontrado!');
+                return;
+            }
+
+            FALLBACK_GAMES.forEach(game => {
+                const card = document.createElement('div');
+                card.className = 'game-card';
+                card.innerHTML = `
+                    <div style="font-size: 0.8rem; color: #888; margin-bottom: 8px;">
+                        🏆 ${game.competition} | ${game.status}
+                    </div>
+                    <div class="team-row">
+                        <span>${game.homeFlag} ${game.homeTeam}</span>
+                        <span class="score">${game.homeScore !== undefined ? game.homeScore : '-'}</span>
+                    </div>
+                    <div class="team-row">
+                        <span>${game.awayFlag} ${game.awayTeam}</span>
+                        <span class="score">${game.awayScore !== undefined ? game.awayScore : '-'}</span>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+
+            console.log('✅ Jogos renderizados!');
+        }
+
+        // Executar quando DOM carregar
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', renderGames);
+        } else {
+            renderGames();
+        }
+    </script>
+</body>
+</html>

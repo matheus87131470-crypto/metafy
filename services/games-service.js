@@ -1,32 +1,33 @@
 /**
- * games-service.js - Serviço de Jogos Reais com API-Football
+ * games-service.js - Serviço de Jogos Reais com API Gratuita
  * Busca jogos reais de futebol do dia
  */
 
 class GamesService {
   constructor() {
-    // Usar API-Football (api-football-v3.p.rapidapi.com)
-    this.apiKey = process.env.RAPIDAPI_KEY || 'YOUR_API_KEY_HERE';
-    this.apiHost = 'api-football-v3.p.rapidapi.com';
-    this.baseUrl = 'https://api-football-v3.p.rapidapi.com';
+    // Usar API-SPORTS.io (gratuita) - 100 requests/dia
+    this.apiKey = process.env.API_SPORTS_KEY || 'demo';
+    this.baseUrl = 'https://v3.football.api-sports.io';
     
-    // Cache de jogos (5 minutos)
+    // Cache de jogos (10 minutos)
     this.cacheGames = null;
     this.cacheTimestamp = null;
-    this.cacheExpiry = 5 * 60 * 1000; // 5 minutos
+    this.cacheExpiry = 10 * 60 * 1000; // 10 minutos
   }
 
   /**
-   * Busca jogos do dia usando API-Football
+   * Busca jogos do dia usando API-SPORTS
    */
   async getTodayGames() {
     // Verificar cache
     if (this.isCacheValid()) {
+      console.log('📦 Retornando jogos do cache');
       return this.cacheGames;
     }
 
     try {
       const today = this.getDateString(new Date());
+      console.log('🔄 Buscando jogos reais da API para:', today);
       
       const response = await fetch(
         `${this.baseUrl}/fixtures?date=${today}`,
@@ -34,26 +35,35 @@ class GamesService {
           method: 'GET',
           headers: {
             'x-rapidapi-key': this.apiKey,
-            'x-rapidapi-host': this.apiHost
+            'x-rapidapi-host': 'v3.football.api-sports.io'
           }
         }
       );
 
       if (!response.ok) {
+        console.error('❌ API retornou erro:', response.status);
         throw new Error(`API Error: ${response.status}`);
       }
 
       const data = await response.json();
+      console.log('📊 API response:', data.results, 'jogos encontrados');
+      
+      if (!data.response || data.response.length === 0) {
+        console.warn('⚠️ Nenhum jogo encontrado para hoje');
+        return [];
+      }
+
       const games = this.parseGames(data);
       
       // Atualizar cache
       this.cacheGames = games;
       this.cacheTimestamp = Date.now();
       
+      console.log('✅ Jogos processados:', games.length);
       return games;
     } catch (error) {
-      console.error('Erro ao buscar jogos reais:', error);
-      return this.getFallbackGames();
+      console.error('❌ Erro ao buscar jogos reais:', error);
+      return [];
     }
   }
 
@@ -61,43 +71,63 @@ class GamesService {
    * Parsa dados da API para formato esperado
    */
   parseGames(apiData) {
-    if (!apiData.response || apiData.response.length === 0) {
-      return this.getFallbackGames();
-    }
+    const games = apiData.response
+      .filter(f => {
+        // Filtrar apenas ligas importantes
+        const importantLeagues = [39, 140, 78, 61, 135, 2, 3, 88]; // Premier, La Liga, Bundesliga, Ligue 1, Serie A, Champions, etc
+        return importantLeagues.includes(f.league.id);
+      })
+      .slice(0, 10) // Máximo 10 jogos
+      .map(fixture => {
+        const statusMap = {
+          'NS': 'HOJE',
+          '1H': 'LIVE',
+          '2H': 'LIVE',
+          'HT': 'LIVE',
+          'FT': 'FT',
+          'PST': 'ADIADO'
+        };
 
-    return apiData.response.map(fixture => ({
-      id: fixture.fixture.id,
-      homeTeam: fixture.teams.home.name,
-      awayTeam: fixture.teams.away.name,
-      competition: fixture.league.name,
-      country: fixture.league.country,
-      date: fixture.fixture.date,
-      time: this.formatTime(fixture.fixture.date),
-      status: fixture.fixture.status.short,
-      homeOdds: fixture.odds?.h2h?.[0] || 2.40,
-      drawOdds: fixture.odds?.h2h?.[1] || 3.20,
-      awayOdds: fixture.odds?.h2h?.[2] || 2.85,
-      statistics: fixture.statistics || {}
-    }));
+        return {
+          id: fixture.fixture.id,
+          homeTeam: fixture.teams.home.name,
+          awayTeam: fixture.teams.away.name,
+          homeFlag: this.getCountryFlag(fixture.league.country),
+          awayFlag: this.getCountryFlag(fixture.league.country),
+          competition: fixture.league.name,
+          country: fixture.league.country,
+          date: fixture.fixture.date,
+          time: this.formatTime(fixture.fixture.date),
+          status: statusMap[fixture.fixture.status.short] || 'HOJE',
+          homeScore: fixture.goals.home,
+          awayScore: fixture.goals.away,
+          homeOdds: 2.40,
+          drawOdds: 3.20,
+          awayOdds: 2.85,
+          stadium: fixture.fixture.venue?.name || ''
+        };
+      });
+
+    return games;
   }
 
   /**
-   * Jogos de fallback se API falhar
+   * Retorna bandeira do país
    */
-  getFallbackGames() {
-    return [
-      {
-        id: 1,
-        homeTeam: 'Flamengo',
-        awayTeam: 'Palmeiras',
-        competition: 'Campeonato Brasileiro',
-        country: 'Brazil',
-        date: new Date().toISOString(),
-        time: '20:00',
-        status: 'NOT_STARTED',
-        homeOdds: 2.40,
-        drawOdds: 3.20,
-        awayOdds: 2.85
+  getCountryFlag(country) {
+    const flags = {
+      'Brazil': '🇧🇷',
+      'Spain': '🇪🇸',
+      'England': '🏴󠁧󠁢󠁥󠁮󠁧󠁿',
+      'Germany': '🇩🇪',
+      'France': '🇫🇷',
+      'Italy': '🇮🇹',
+      'Portugal': '🇵🇹',
+      'USA': '🇺🇸',
+      'World': '🌍'
+    };
+    return flags[country] || '⚽';
+  }
       },
       {
         id: 2,
