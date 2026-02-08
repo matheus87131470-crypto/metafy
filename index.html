@@ -49,60 +49,110 @@
             </div>
 
             <div class="tab-content" id="tab-balance">
-                <!-- Gauge Circular (do design original) -->
-                <div class="gauge-wrapper">
-                    <svg class="gauge-svg" viewBox="0 0 200 140" style="max-width: 320px; margin: 0 auto; display: block;">
-                        <defs>
-                            <linearGradient id="gaugeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                                <stop offset="0%" style="stop-color:#a855f7;stop-opacity:1" />
-                                <stop offset="100%" style="stop-color:#ec4899;stop-opacity:1" />
-                            </linearGradient>
-                            <filter id="glow">
-                                <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
-                                <feMerge>
-                                    <feMergeNode in="coloredBlur"/>
-                                    <feMergeNode in="SourceGraphic"/>
-                                </feMerge>
-                            </filter>
-                        </defs>
-                        <!-- Background arc -->
-                        <path d="M 30 110 A 70 70 0 0 1 170 110" fill="none" stroke="rgba(30, 30, 63, 0.5)" stroke-width="16" stroke-linecap="round"/>
-                        <!-- Progress arc (65.5%) -->
-                        <path d="M 30 110 A 70 70 0 1 1 140 60" fill="none" stroke="url(#gaugeGradient)" stroke-width="16" stroke-linecap="round" filter="url(#glow)"/>
-                    </svg>
+                <!-- Formulário Nova Sessão -->
+                <div class="session-form-card">
+                    <h3 class="form-title">💰 Nova Sessão</h3>
                     
-                    <div style="text-align: center; margin-top: -90px; position: relative;">
-                        <div style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 8px; font-weight: 600; letter-spacing: 1px;">TOTAL</div>
-                        <div style="font-size: 2.2rem; font-weight: 700; background: linear-gradient(135deg, #a855f7, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 4px;">
-                            R$ <span id="gauge-total">1.310,00</span>
-                        </div>
-                        <div style="font-size: 1.3rem; font-weight: 600; color: #ec4899; margin-bottom: 8px;">
-                            <span id="gauge-percentage">65.5</span>%
-                        </div>
-                        <div style="font-size: 0.8rem; color: #cbd5e1;">
-                            Meta: R$ <span id="gauge-goal">2.000,00</span>
-                        </div>
+                    <div class="form-group">
+                        <label class="form-label">
+                            <span class="label-icon green">✓</span>
+                            Ganhos (R$)
+                        </label>
+                        <input type="number" id="input-ganhos" class="form-input" placeholder="0.00" step="0.01" min="0">
                     </div>
-                    
-                    <div style="text-align: center; color: #cbd5e1; margin: 24px 0; font-size: 0.9rem;">
-                        <span id="gauge-remaining" style="color: #ec4899; font-weight: 600;">35%</span> faltam para atingir sua meta
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            <span class="label-icon red">✕</span>
+                            Perdas (R$)
+                        </label>
+                        <input type="number" id="input-perdas" class="form-input" placeholder="0.00" step="0.01" min="0">
                     </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            <span class="label-icon purple">🎮</span>
+                            Tipo de Jogo (Opcional)
+                        </label>
+                        <select id="input-tipo" class="form-select">
+                            <option value="">Não especificado</option>
+                            <option value="over">Over/Under</option>
+                            <option value="btts">BTTS</option>
+                            <option value="corners">Corners</option>
+                            <option value="cards">Cartões</option>
+                            <option value="1x2">1X2</option>
+                        </select>
+                    </div>
+
+                    <button type="button" class="btn-add-session" onclick="adicionarSessao()">
+                        ✚ Adicionar Sessão
+                    </button>
                 </div>
 
-                <!-- Cards de Resultado e Meta -->
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin: 0 auto 32px; max-width: 600px;">
-                    <div style="background: rgba(15, 20, 40, 0.6); border: 1px solid rgba(16, 185, 129, 0.3); border-left: 3px solid #10b981; border-radius: 12px; padding: 20px;">
-                        <div style="font-size: 0.7rem; color: #94a3b8; font-weight: 600; letter-spacing: 1.5px; margin-bottom: 12px;">RESULTADO ATUAL</div>
-                        <div style="font-size: 1.6rem; font-weight: 700; color: #10b981;">+R$ <span id="gauge-current">1.310,00</span></div>
+                <!-- Progresso da Meta -->
+                <div class="meta-progress-card">
+                    <div class="meta-header">
+                        <h3 class="meta-title">🎯 Progresso da Meta (Ciclo #<span id="ciclo-numero">1</span>)</h3>
+                        <div class="meta-actions">
+                            <button class="btn-meta edit" onclick="editarMeta()">✏️ Editar Meta</button>
+                            <button class="btn-meta finalize" onclick="finalizarCiclo()">🏁 Finalizar Ciclo</button>
+                            <button class="btn-meta reset" onclick="resetTotal()">🗑️ Reset Total</button>
+                        </div>
                     </div>
-                    <div style="background: rgba(15, 20, 40, 0.6); border: 1px solid rgba(236, 72, 153, 0.3); border-left: 3px solid #ec4899; border-radius: 12px; padding: 20px;">
-                        <div style="font-size: 0.7rem; color: #94a3b8; font-weight: 600; letter-spacing: 1.5px; margin-bottom: 12px;">META DEFINIDA</div>
-                        <div style="font-size: 1.6rem; font-weight: 700; color: #ec4899;">R$ <span id="gauge-goal-value">2.000,00</span></div>
-                    </div>
-                </div>
 
-                <div style="text-align: center; font-size: 0.9rem; color: #cbd5e1; padding: 16px; border-top: 1px solid rgba(99, 102, 241, 0.1); margin-bottom: 32px;">
-                    Faltam <strong style="color: #ec4899;">R$ <span id="gauge-missing">690,00</span></strong> para sua meta
+                    <!-- Gauge Circular -->
+                    <div class="gauge-wrapper">
+                        <svg class="gauge-svg" viewBox="0 0 200 140" style="max-width: 320px; margin: 0 auto; display: block;">
+                            <defs>
+                                <linearGradient id="gaugeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                    <stop offset="0%" style="stop-color:#a855f7;stop-opacity:1" />
+                                    <stop offset="100%" style="stop-color:#ec4899;stop-opacity:1" />
+                                </linearGradient>
+                                <filter id="glow">
+                                    <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+                                    <feMerge>
+                                        <feMergeNode in="coloredBlur"/>
+                                        <feMergeNode in="SourceGraphic"/>
+                                    </feMerge>
+                                </filter>
+                            </defs>
+                            <path d="M 30 110 A 70 70 0 0 1 170 110" fill="none" stroke="rgba(30, 30, 63, 0.5)" stroke-width="16" stroke-linecap="round"/>
+                            <path id="gauge-arc" d="M 30 110 A 70 70 0 0 1 170 110" fill="none" stroke="url(#gaugeGradient)" stroke-width="16" stroke-linecap="round" filter="url(#glow)" style="stroke-dasharray: 220; stroke-dashoffset: 165;"/>
+                        </svg>
+                        
+                        <div style="text-align: center; margin-top: -90px; position: relative;">
+                            <div style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 8px; font-weight: 600; letter-spacing: 1px;">TOTAL ACUMULADO</div>
+                            <div style="font-size: 2.2rem; font-weight: 700; background: linear-gradient(135deg, #a855f7, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 4px;">
+                                R$ <span id="gauge-total">0,00</span>
+                            </div>
+                            <div style="font-size: 1.3rem; font-weight: 600; color: #ec4899; margin-bottom: 8px;">
+                                <span id="gauge-percentage">0</span>%
+                            </div>
+                            <div style="font-size: 0.8rem; color: #cbd5e1;">
+                                Meta: R$ <span id="gauge-goal">2.000,00</span>
+                            </div>
+                        </div>
+                        
+                        <div style="text-align: center; color: #cbd5e1; margin: 24px 0; font-size: 0.9rem;">
+                            <span id="gauge-remaining" style="color: #ec4899; font-weight: 600;">100%</span> faltam para atingir sua meta
+                        </div>
+                    </div>
+
+                    <!-- Cards de Resultado e Meta -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin: 0 auto 32px; max-width: 600px;">
+                        <div style="background: rgba(15, 20, 40, 0.6); border: 1px solid rgba(16, 185, 129, 0.3); border-left: 3px solid #10b981; border-radius: 12px; padding: 20px;">
+                            <div style="font-size: 0.7rem; color: #94a3b8; font-weight: 600; letter-spacing: 1.5px; margin-bottom: 12px;">RESULTADO ATUAL</div>
+                            <div style="font-size: 1.6rem; font-weight: 700; color: #10b981;">R$ <span id="gauge-current">0,00</span></div>
+                        </div>
+                        <div style="background: rgba(15, 20, 40, 0.6); border: 1px solid rgba(236, 72, 153, 0.3); border-left: 3px solid #ec4899; border-radius: 12px; padding: 20px;">
+                            <div style="font-size: 0.7rem; color: #94a3b8; font-weight: 600; letter-spacing: 1.5px; margin-bottom: 12px;">META DEFINIDA</div>
+                            <div style="font-size: 1.6rem; font-weight: 700; color: #ec4899;">R$ <span id="gauge-goal-value">2.000,00</span></div>
+                        </div>
+                    </div>
+
+                    <div style="text-align: center; font-size: 0.9rem; color: #cbd5e1; padding: 16px; border-top: 1px solid rgba(99, 102, 241, 0.1); margin-bottom: 32px;">
+                        Faltam <strong style="color: #ec4899;">R$ <span id="gauge-missing">2.000,00</span></strong> para sua meta
+                    </div>
                 </div>
 
                 <hr style="border: none; border-top: 1px solid rgba(99, 102, 241, 0.1); margin: 32px 0;">
@@ -548,9 +598,136 @@
             }
         }
 
+        // ====================================
+        // SISTEMA DE SESSÕES E METAS
+        // ====================================
+
+        // Estrutura de dados
+        const STORAGE_KEY = 'metafy_balance_data';
+        
+        function getBalanceData() {
+            const data = localStorage.getItem(STORAGE_KEY);
+            return data ? JSON.parse(data) : {
+                meta: 2000,
+                ciclo: 1,
+                sessoes: [],
+                totalGanhos: 0,
+                totalPerdas: 0,
+                saldo: 0
+            };
+        }
+
+        function saveBalanceData(data) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+            atualizarInterface();
+        }
+
+        function adicionarSessao() {
+            const ganhos = parseFloat(document.getElementById('input-ganhos').value) || 0;
+            const perdas = parseFloat(document.getElementById('input-perdas').value) || 0;
+            const tipo = document.getElementById('input-tipo').value;
+
+            if (ganhos === 0 && perdas === 0) {
+                alert('⚠️ Adicione pelo menos um valor (ganhos ou perdas)');
+                return;
+            }
+
+            const data = getBalanceData();
+            
+            const sessao = {
+                id: Date.now(),
+                data: new Date().toISOString(),
+                ganhos,
+                perdas,
+                tipo,
+                resultado: ganhos - perdas
+            };
+
+            data.sessoes.push(sessao);
+            data.totalGanhos += ganhos;
+            data.totalPerdas += perdas;
+            data.saldo = data.totalGanhos - data.totalPerdas;
+
+            saveBalanceData(data);
+
+            // Limpar form
+            document.getElementById('input-ganhos').value = '';
+            document.getElementById('input-perdas').value = '';
+            document.getElementById('input-tipo').value = '';
+
+            alert('✅ Sessão adicionada com sucesso!');
+        }
+
+        function atualizarInterface() {
+            const data = getBalanceData();
+            const percentual = Math.min((data.saldo / data.meta) * 100, 100);
+            const faltam = Math.max(100 - percentual, 0);
+            const faltaValor = Math.max(data.meta - data.saldo, 0);
+
+            // Atualizar valores
+            document.getElementById('gauge-total').textContent = data.saldo.toFixed(2).replace('.', ',');
+            document.getElementById('gauge-percentage').textContent = percentual.toFixed(1);
+            document.getElementById('gauge-remaining').textContent = faltam.toFixed(0);
+            document.getElementById('gauge-goal').textContent = data.meta.toFixed(2).replace('.', ',');
+            document.getElementById('gauge-goal-value').textContent = data.meta.toFixed(2).replace('.', ',');
+            document.getElementById('gauge-current').textContent = data.saldo.toFixed(2).replace('.', ',');
+            document.getElementById('gauge-missing').textContent = faltaValor.toFixed(2).replace('.', ',');
+            document.getElementById('ciclo-numero').textContent = data.ciclo;
+
+            // Animar gauge (220 é o stroke-dasharray total)
+            const offset = 220 - (220 * percentual / 100);
+            const gaugeArc = document.getElementById('gauge-arc');
+            if (gaugeArc) {
+                gaugeArc.style.strokeDashoffset = offset;
+            }
+        }
+
+        function editarMeta() {
+            const data = getBalanceData();
+            const novaMeta = prompt('💰 Nova meta (R$):', data.meta);
+            if (novaMeta && !isNaN(novaMeta) && parseFloat(novaMeta) > 0) {
+                data.meta = parseFloat(novaMeta);
+                saveBalanceData(data);
+                alert('✅ Meta atualizada!');
+            }
+        }
+
+        function finalizarCiclo() {
+            if (!confirm('🏁 Finalizar ciclo atual e iniciar novo?')) return;
+            
+            const data = getBalanceData();
+            data.ciclo++;
+            data.sessoes = [];
+            data.totalGanhos = 0;
+            data.totalPerdas = 0;
+            data.saldo = 0;
+            
+            saveBalanceData(data);
+            alert('✅ Ciclo #' + data.ciclo + ' iniciado!');
+        }
+
+        function resetTotal() {
+            if (!confirm('⚠️ ATENÇÃO: Isso apagará TODOS os dados. Confirmar?')) return;
+            
+            localStorage.removeItem(STORAGE_KEY);
+            atualizarInterface();
+            alert('🗑️ Todos os dados foram resetados.');
+        }
+
+        // Inicializar ao carregar tab de balance
+        document.querySelectorAll('.tab-button').forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (btn.dataset.tab === 'balance') {
+                    atualizarInterface();
+                    initCharts();
+                }
+            });
+        });
+
         // BUSCAR JOGOS REAIS AO CARREGAR
         console.log('⏱️ Iniciando busca de jogos reais...');
         fetchGames();
+        atualizarInterface(); // Carregar dados salvos
     </script>
 </body>
 </html>
