@@ -97,26 +97,25 @@ app.get('/games/today', async (req, res) => {
             });
         }
 
-        // Fallback com jogos mockados se API falhar
+        // Retornar vazio se API não retornou jogos
         return res.json({
             success: true,
-            count: 6,
+            count: 0,
             date: today,
-            source: 'mock',
-            message: 'Usando jogos de exemplo (API limitada)',
-            games: getMockGames()
+            games: [],
+            message: 'Nenhum jogo encontrado para hoje'
         });
 
     } catch (error) {
         console.error('Erro ao buscar jogos:', error.message);
 
-        // Fallback para mockados em caso de erro
-        return res.json({
-            success: true,
-            count: 6,
-            source: 'mock',
-            message: 'Usando jogos mockados (erro na API)',
-            games: getMockGames()
+        // Retornar erro real (SEM MOCK)
+        return res.status(500).json({
+            success: false,
+            count: 0,
+            games: [],
+            error: 'Erro ao buscar jogos da API',
+            details: error.message
         });
     }
 });
@@ -282,95 +281,6 @@ function calculateTeamScore(teamName) {
     // Normalizar entre 0 e 1
     const score = ((hash % 100) / 100);
     return Math.min(1, Math.max(0.2, score)); // entre 0.2 e 1
-}
-
-function getMockGames() {
-    return [
-        {
-            id: 1,
-            date: new Date().toISOString(),
-            status: 'NS',
-            homeTeam: 'Flamengo',
-            homeId: 1,
-            awayTeam: 'Palmeiras',
-            awayId: 2,
-            competition: 'Campeonato Brasileiro',
-            season: 2026,
-            homeOdds: 2.40,
-            drawOdds: 3.20,
-            awayOdds: 2.85
-        },
-        {
-            id: 2,
-            date: new Date().toISOString(),
-            status: 'NS',
-            homeTeam: 'Real Madrid',
-            homeId: 10,
-            awayTeam: 'Barcelona',
-            awayId: 20,
-            competition: 'La Liga',
-            season: 2026,
-            homeOdds: 1.85,
-            drawOdds: 3.50,
-            awayOdds: 3.80
-        },
-        {
-            id: 3,
-            date: new Date().toISOString(),
-            status: 'NS',
-            homeTeam: 'Manchester City',
-            homeId: 30,
-            awayTeam: 'Liverpool',
-            awayId: 40,
-            competition: 'Premier League',
-            season: 2026,
-            homeOdds: 1.95,
-            drawOdds: 3.40,
-            awayOdds: 3.60
-        },
-        {
-            id: 4,
-            date: new Date().toISOString(),
-            status: 'NS',
-            homeTeam: 'PSG',
-            homeId: 50,
-            awayTeam: 'Monaco',
-            awayId: 60,
-            competition: 'Ligue 1',
-            season: 2026,
-            homeOdds: 1.50,
-            drawOdds: 4.00,
-            awayOdds: 5.50
-        },
-        {
-            id: 5,
-            date: new Date().toISOString(),
-            status: 'NS',
-            homeTeam: 'Bayern Munich',
-            homeId: 70,
-            awayTeam: 'Borussia Dortmund',
-            awayId: 80,
-            competition: 'Bundesliga',
-            season: 2026,
-            homeOdds: 1.80,
-            drawOdds: 3.60,
-            awayOdds: 4.00
-        },
-        {
-            id: 6,
-            date: new Date().toISOString(),
-            status: 'NS',
-            homeTeam: 'Inter',
-            homeId: 90,
-            awayTeam: 'AC Milan',
-            awayId: 100,
-            competition: 'Serie A',
-            season: 2026,
-            homeOdds: 2.10,
-            drawOdds: 3.30,
-            awayOdds: 3.20
-        }
-    ];
 }
 
 // ====================================

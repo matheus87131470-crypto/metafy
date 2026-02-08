@@ -46,7 +46,49 @@
             </div>
 
             <div class="tab-content" id="tab-balance">
-                <p style="text-align: center; padding: 40px; color: #888;">Em desenvolvimento</p>
+                <!-- Gauge Circular -->
+                <div class="gauge-container">
+                    <svg class="gauge-svg" viewBox="0 0 200 120">
+                        <!-- Background arc -->
+                        <path class="gauge-bg" d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="#1e1e3f" stroke-width="20" stroke-linecap="round"/>
+                        <!-- Progress arc -->
+                        <path class="gauge-progress" d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="url(#gaugeGradient)" stroke-width="20" stroke-linecap="round" style="stroke-dasharray: 251.2; stroke-dashoffset: 75.36;"/>
+                        
+                        <defs>
+                            <linearGradient id="gaugeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" style="stop-color:#a855f7;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#ec4899;stop-opacity:1" />
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                    
+                    <div class="gauge-center">
+                        <div class="gauge-label">TOTAL</div>
+                        <div class="gauge-value">R$ <span id="balance-total">1.310,00</span></div>
+                        <div class="gauge-percentage"><span id="balance-percentage">65.5</span>%</div>
+                        <div class="gauge-meta">Meta: R$ <span id="balance-goal">2.000,00</span></div>
+                    </div>
+                </div>
+
+                <div class="balance-message" id="balance-message">
+                    <span id="balance-remaining">35</span>% faltam para atingir sua meta
+                </div>
+
+                <!-- Cards de Resultado e Meta -->
+                <div class="balance-cards">
+                    <div class="balance-card balance-current">
+                        <div class="balance-card-label">RESULTADO ATUAL</div>
+                        <div class="balance-card-value positive">+R$ <span id="current-balance">1.310,00</span></div>
+                    </div>
+                    <div class="balance-card balance-goal-card">
+                        <div class="balance-card-label">META DEFINIDA</div>
+                        <div class="balance-card-value goal">R$ <span id="goal-balance">2.000,00</span></div>
+                    </div>
+                </div>
+
+                <div class="balance-footer">
+                    Faltam <strong>R$ <span id="balance-missing">690,00</span></strong> para sua meta
+                </div>
             </div>
 
             <div class="tab-content" id="tab-premium">
