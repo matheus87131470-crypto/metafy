@@ -40,7 +40,10 @@ module.exports = async (req, res) => {
     const apiUrl = `https://v3.football.api-football.com/fixtures?date=${today}`;
     console.log('🌐 URL da API:', apiUrl);
     
-    const response = await fetch(apiUrl, {
+    // Usar fetch nativo (Node 18+) ou importar dinamicamente
+    const fetchFn = globalThis.fetch || (await import('node-fetch')).default;
+    
+    const response = await fetchFn(apiUrl, {
       method: 'GET',
       headers: {
         'x-apisports-key': apiKey
