@@ -6,7 +6,9 @@
     <meta name="description" content="Metafy — Análise inteligente de partidas de futebol">
     <title>Metafy — Análise Inteligente de Futebol</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="balance-new.css">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%238b5cf6'/><text x='50' y='70' font-size='60' text-anchor='middle' fill='white' font-weight='bold'>M</text></svg>" type="image/svg+xml">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
 <body>
     <div class="background-gradient"></div>
@@ -46,48 +48,115 @@
             </div>
 
             <div class="tab-content" id="tab-balance">
-                <!-- Gauge Circular -->
-                <div class="gauge-container">
-                    <svg class="gauge-svg" viewBox="0 0 200 120">
-                        <!-- Background arc -->
-                        <path class="gauge-bg" d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="#1e1e3f" stroke-width="20" stroke-linecap="round"/>
-                        <!-- Progress arc -->
-                        <path class="gauge-progress" d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="url(#gaugeGradient)" stroke-width="20" stroke-linecap="round" style="stroke-dasharray: 251.2; stroke-dashoffset: 75.36;"/>
-                        
+                <!-- Gauge Circular (do design original) -->
+                <div class="gauge-wrapper">
+                    <svg class="gauge-svg" viewBox="0 0 200 140" style="max-width: 320px; margin: 0 auto; display: block;">
                         <defs>
                             <linearGradient id="gaugeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
                                 <stop offset="0%" style="stop-color:#a855f7;stop-opacity:1" />
                                 <stop offset="100%" style="stop-color:#ec4899;stop-opacity:1" />
                             </linearGradient>
+                            <filter id="glow">
+                                <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+                                <feMerge>
+                                    <feMergeNode in="coloredBlur"/>
+                                    <feMergeNode in="SourceGraphic"/>
+                                </feMerge>
+                            </filter>
                         </defs>
+                        <!-- Background arc -->
+                        <path d="M 30 110 A 70 70 0 0 1 170 110" fill="none" stroke="rgba(30, 30, 63, 0.5)" stroke-width="16" stroke-linecap="round"/>
+                        <!-- Progress arc (65.5%) -->
+                        <path d="M 30 110 A 70 70 0 1 1 140 60" fill="none" stroke="url(#gaugeGradient)" stroke-width="16" stroke-linecap="round" filter="url(#glow)"/>
                     </svg>
                     
-                    <div class="gauge-center">
-                        <div class="gauge-label">TOTAL</div>
-                        <div class="gauge-value">R$ <span id="balance-total">1.310,00</span></div>
-                        <div class="gauge-percentage"><span id="balance-percentage">65.5</span>%</div>
-                        <div class="gauge-meta">Meta: R$ <span id="balance-goal">2.000,00</span></div>
+                    <div style="text-align: center; margin-top: -90px; position: relative;">
+                        <div style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 8px; font-weight: 600; letter-spacing: 1px;">TOTAL</div>
+                        <div style="font-size: 2.2rem; font-weight: 700; background: linear-gradient(135deg, #a855f7, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 4px;">
+                            R$ <span id="gauge-total">1.310,00</span>
+                        </div>
+                        <div style="font-size: 1.3rem; font-weight: 600; color: #ec4899; margin-bottom: 8px;">
+                            <span id="gauge-percentage">65.5</span>%
+                        </div>
+                        <div style="font-size: 0.8rem; color: #cbd5e1;">
+                            Meta: R$ <span id="gauge-goal">2.000,00</span>
+                        </div>
                     </div>
-                </div>
-
-                <div class="balance-message" id="balance-message">
-                    <span id="balance-remaining">35</span>% faltam para atingir sua meta
+                    
+                    <div style="text-align: center; color: #cbd5e1; margin: 24px 0; font-size: 0.9rem;">
+                        <span id="gauge-remaining" style="color: #ec4899; font-weight: 600;">35%</span> faltam para atingir sua meta
+                    </div>
                 </div>
 
                 <!-- Cards de Resultado e Meta -->
-                <div class="balance-cards">
-                    <div class="balance-card balance-current">
-                        <div class="balance-card-label">RESULTADO ATUAL</div>
-                        <div class="balance-card-value positive">+R$ <span id="current-balance">1.310,00</span></div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin: 0 auto 32px; max-width: 600px;">
+                    <div style="background: rgba(15, 20, 40, 0.6); border: 1px solid rgba(16, 185, 129, 0.3); border-left: 3px solid #10b981; border-radius: 12px; padding: 20px;">
+                        <div style="font-size: 0.7rem; color: #94a3b8; font-weight: 600; letter-spacing: 1.5px; margin-bottom: 12px;">RESULTADO ATUAL</div>
+                        <div style="font-size: 1.6rem; font-weight: 700; color: #10b981;">+R$ <span id="gauge-current">1.310,00</span></div>
                     </div>
-                    <div class="balance-card balance-goal-card">
-                        <div class="balance-card-label">META DEFINIDA</div>
-                        <div class="balance-card-value goal">R$ <span id="goal-balance">2.000,00</span></div>
+                    <div style="background: rgba(15, 20, 40, 0.6); border: 1px solid rgba(236, 72, 153, 0.3); border-left: 3px solid #ec4899; border-radius: 12px; padding: 20px;">
+                        <div style="font-size: 0.7rem; color: #94a3b8; font-weight: 600; letter-spacing: 1.5px; margin-bottom: 12px;">META DEFINIDA</div>
+                        <div style="font-size: 1.6rem; font-weight: 700; color: #ec4899;">R$ <span id="gauge-goal-value">2.000,00</span></div>
                     </div>
                 </div>
 
-                <div class="balance-footer">
-                    Faltam <strong>R$ <span id="balance-missing">690,00</span></strong> para sua meta
+                <div style="text-align: center; font-size: 0.9rem; color: #cbd5e1; padding: 16px; border-top: 1px solid rgba(99, 102, 241, 0.1); margin-bottom: 32px;">
+                    Faltam <strong style="color: #ec4899;">R$ <span id="gauge-missing">690,00</span></strong> para sua meta
+                </div>
+
+                <hr style="border: none; border-top: 1px solid rgba(99, 102, 241, 0.1); margin: 32px 0;">
+
+                <!-- Header com saldo -->
+                <div class="balance-header">
+                    <div class="balance-header-amount">R$ <span id="header-balance">115,60</span></div>
+                    <div class="balance-header-time" id="header-time">2:55</div>
+                </div>
+
+                <!-- Gráfico: Evolução do Lucro -->
+                <div class="chart-container">
+                    <h3 class="chart-title">Evolução do Lucro</h3>
+                    <canvas id="chartLucro"></canvas>
+                    <div class="chart-info">
+                        <span class="chart-date" id="lucro-date">14 de jun</span>
+                        <span class="chart-value positive">Lucro: R$ <span id="lucro-value">96,35</span></span>
+                    </div>
+                </div>
+
+                <!-- Gráfico: Evolução da Stake -->
+                <div class="chart-container">
+                    <h3 class="chart-title">Evolução da Stake</h3>
+                    <canvas id="chartStake"></canvas>
+                    <div class="chart-info">
+                        <span class="chart-date" id="stake-date">14 de Jan</span>
+                        <span class="chart-value positive">Total: <span id="stake-value">103,5</span> stakes</span>
+                    </div>
+                </div>
+
+                <!-- Estatísticas (4 cards) -->
+                <div class="stats-section">
+                    <h3 class="section-title">Estatísticas</h3>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon diamond">💎</div>
+                            <div class="stat-label">Odd Média</div>
+                            <div class="stat-value">4.85</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon hashtag">#</div>
+                            <div class="stat-label">Total de Apostas</div>
+                            <div class="stat-value">33</div>
+                        </div>
+                        <div class="stat-card wins">
+                            <div class="stat-icon check">✓</div>
+                            <div class="stat-label">Ganhos</div>
+                            <div class="stat-value">15</div>
+                        </div>
+                        <div class="stat-card losses">
+                            <div class="stat-icon cross">✕</div>
+                            <div class="stat-label">Perdas</div>
+                            <div class="stat-value">17</div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -236,8 +305,135 @@
                 
                 btn.classList.add('active');
                 document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+                
+                // Inicializar gráficos ao trocar para tab de balance
+                if (btn.dataset.tab === 'balance') {
+                    initCharts();
+                }
             });
         });
+
+        // ====================================
+        // GRÁFICOS - GANHOS/PERDAS
+        // ====================================
+
+        let chartLucro = null;
+        let chartStake = null;
+
+        function initCharts() {
+            // Só criar gráficos uma vez
+            if (chartLucro && chartStake) return;
+
+            // Dados de exemplo (estrutura preparada)
+            const lucroData = {
+                labels: ['6 Jan', '8 Jan', '10 Jan', '14 Jun'],
+                values: [20, 45, 30, 96.35]
+            };
+
+            const stakeData = {
+                labels: ['Setembro', '2 Outubro', '13 Dezembro', '14 Janeiro'],
+                values: [50, 75, 95, 103.5]
+            };
+
+            // Configuração comum dos gráficos
+            const commonOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: 'rgba(15, 20, 40, 0.95)',
+                        titleColor: '#f8fafc',
+                        bodyColor: '#10b981',
+                        borderColor: 'rgba(99, 102, 241, 0.3)',
+                        borderWidth: 1,
+                        padding: 12,
+                        displayColors: false,
+                        callbacks: {
+                            label: (context) => {
+                                return context.chart.canvas.id === 'chartLucro' 
+                                    ? `R$ ${context.parsed.y.toFixed(2)}`
+                                    : `${context.parsed.y} stakes`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { color: 'rgba(99, 102, 241, 0.1)' },
+                        ticks: { color: '#94a3b8', font: { size: 10 } }
+                    },
+                    y: {
+                        grid: { color: 'rgba(99, 102, 241, 0.1)' },
+                        ticks: { color: '#94a3b8', font: { size: 10 } }
+                    }
+                }
+            };
+
+            // Gráfico Evolução do Lucro
+            const ctxLucro = document.getElementById('chartLucro');
+            if (ctxLucro) {
+                chartLucro = new Chart(ctxLucro, {
+                    type: 'line',
+                    data: {
+                        labels: lucroData.labels,
+                        datasets: [{
+                            data: lucroData.values,
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4,
+                            pointBackgroundColor: '#10b981',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2,
+                            pointRadius: 4,
+                            pointHoverRadius: 6
+                        }]
+                    },
+                    options: commonOptions
+                });
+            }
+
+            // Gráfico Evolução da Stake
+            const ctxStake = document.getElementById('chartStake');
+            if (ctxStake) {
+                chartStake = new Chart(ctxStake, {
+                    type: 'line',
+                    data: {
+                        labels: stakeData.labels,
+                        datasets: [{
+                            data: stakeData.values,
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4,
+                            pointBackgroundColor: '#10b981',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2,
+                            pointRadius: 4,
+                            pointHoverRadius: 6
+                        }]
+                    },
+                    options: commonOptions
+                });
+            }
+
+            // Atualizar hora em tempo real
+            updateTime();
+            setInterval(updateTime, 60000); // Atualiza a cada minuto
+        }
+
+        function updateTime() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const timeEl = document.getElementById('header-time');
+            if (timeEl) {
+                timeEl.textContent = `${hours}:${minutes}`;
+            }
+        }
 
         // BUSCAR JOGOS REAIS AO CARREGAR
         console.log('⏱️ Iniciando busca de jogos reais...');
