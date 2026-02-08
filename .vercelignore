@@ -15,9 +15,6 @@ yarn-error.log
 .vscode
 .idea
 
-# Backend files (deployed on Render, not Vercel)
-api/
+# Backend Express files (não usado em serverless)
 server.js
 services/
-package.json
-package-lock.json
