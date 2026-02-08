@@ -69,21 +69,6 @@
                         <input type="number" id="input-perdas" class="form-input" placeholder="0.00" step="0.01" min="0">
                     </div>
 
-                    <div class="form-group">
-                        <label class="form-label">
-                            <span class="label-icon purple">🎮</span>
-                            Tipo de Jogo (Opcional)
-                        </label>
-                        <select id="input-tipo" class="form-select">
-                            <option value="">Não especificado</option>
-                            <option value="over">Over/Under</option>
-                            <option value="btts">BTTS</option>
-                            <option value="corners">Corners</option>
-                            <option value="cards">Cartões</option>
-                            <option value="1x2">1X2</option>
-                        </select>
-                    </div>
-
                     <button type="button" class="btn-add-session" onclick="adicionarSessao()">
                         ✚ Adicionar Sessão
                     </button>
@@ -727,7 +712,6 @@
         function adicionarSessao() {
             const ganhos = parseFloat(document.getElementById('input-ganhos').value) || 0;
             const perdas = parseFloat(document.getElementById('input-perdas').value) || 0;
-            const tipo = document.getElementById('input-tipo').value;
 
             if (ganhos === 0 && perdas === 0) {
                 alert('⚠️ Adicione pelo menos um valor (ganhos ou perdas)');
@@ -741,7 +725,6 @@
                 data: new Date().toISOString(),
                 ganhos,
                 perdas,
-                tipo,
                 resultado: ganhos - perdas
             };
 
@@ -755,7 +738,6 @@
             // Limpar form
             document.getElementById('input-ganhos').value = '';
             document.getElementById('input-perdas').value = '';
-            document.getElementById('input-tipo').value = '';
 
             alert('✅ Sessão adicionada com sucesso!');
         }
