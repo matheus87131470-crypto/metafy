@@ -14,3 +14,10 @@ yarn-error.log
 *~
 .vscode
 .idea
+
+# Backend files (deployed on Render, not Vercel)
+api/
+server.js
+services/
+package.json
+package-lock.json
