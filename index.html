@@ -215,23 +215,50 @@
         // Buscar jogos REAIS da API
         async function fetchGames() {
             console.log('🔄 Buscando jogos reais da API...');
+            console.log('🕐 Hora local do navegador:', new Date().toString());
+            console.log('🌐 URL da API:', API_URL);
             
             try {
                 const response = await fetch(API_URL);
+                console.log('📡 Status da resposta:', response.status, response.statusText);
+                
                 const data = await response.json();
                 
-                console.log('📊 Resposta da API:', data);
+                // LOG COMPLETO DA RESPOSTA
+                console.log('📦 RESPOSTA COMPLETA DA API:', JSON.stringify(data, null, 2));
+                console.log('📊 Detalhes:', {
+                    success: data.success,
+                    count: data.count,
+                    hasGames: !!data.games,
+                    gamesLength: data.games?.length || 0,
+                    message: data.message,
+                    error: data.error,
+                    debug: data.debug
+                });
                 
                 if (data.success && data.games && data.games.length > 0) {
+                    console.log('✅ Jogos encontrados:', data.games.length);
+                    console.log('🎮 Primeiros 3 jogos:', data.games.slice(0, 3).map(g => ({
+                        id: g.id,
+                        jogo: `${g.homeTeam} vs ${g.awayTeam}`,
+                        liga: g.competition,
+                        horario: g.time
+                    })));
+                    
                     GAMES = data.games;
                     console.log('✅ Jogos reais carregados:', GAMES.length);
                     renderGames();
-                } else {
-                    console.warn('⚠️ Nenhum jogo encontrado para hoje');
+                } else if (data.count === 0) {
+                    console.warn('⚠️ API retornou 0 jogos');
+                    console.log('ℹ️ Informações de debug:', data.debug || 'Não disponível');
                     showNoGames();
+                } else {
+                    console.error('❌ API retornou erro:', data.error);
+                    showError();
                 }
             } catch (error) {
-                console.error('❌ Erro ao buscar jogos:', error);
+                console.error('💥 ERRO CRÍTICO ao buscar jogos:', error);
+                console.error('📋 Stack trace:', error.stack);
                 showError();
             }
         }
