@@ -76,14 +76,14 @@ function setupTabNavigation() {
 
 // Mock data como fallback (sempre ter jogos visíveis)
 const FALLBACK_GAMES = [
-    { id: 1, homeTeam: 'Flamengo', awayTeam: 'Palmeiras', competition: 'Campeonato Brasileiro', time: '20:00', homeOdds: 2.40, drawOdds: 3.20, awayOdds: 2.85, stadium: 'Estádio do Flamengo', country: 'Brasil', homeFlag: '🇧🇷', awayFlag: '🇧🇷' },
-    { id: 2, homeTeam: 'Real Madrid', awayTeam: 'Barcelona', competition: 'La Liga', time: '21:00', homeOdds: 1.85, drawOdds: 3.50, awayOdds: 3.80, stadium: 'Santiago Bernabéu', country: 'Espanha', homeFlag: '🇪🇸', awayFlag: '🇪🇸' },
-    { id: 3, homeTeam: 'Manchester City', awayTeam: 'Arsenal', competition: 'Premier League', time: '15:30', homeOdds: 1.55, drawOdds: 4.00, awayOdds: 5.20, stadium: 'Etihad Stadium', country: 'Inglaterra', homeFlag: '🇬🇧', awayFlag: '🇬🇧' },
-    { id: 4, homeTeam: 'PSG', awayTeam: 'Lyon', competition: 'Ligue 1', time: '20:00', homeOdds: 1.45, drawOdds: 4.50, awayOdds: 6.00, stadium: 'Parc des Princes', country: 'França', homeFlag: '🇫🇷', awayFlag: '🇫🇷' },
-    { id: 5, homeTeam: 'Bayern Munich', awayTeam: 'Borussia Dortmund', competition: 'Bundesliga', time: '19:30', homeOdds: 1.65, drawOdds: 3.80, awayOdds: 4.50, stadium: 'Allianz Arena', country: 'Alemanha', homeFlag: '🇩🇪', awayFlag: '🇩🇪' },
-    { id: 6, homeTeam: 'Juventus', awayTeam: 'Inter', competition: 'Serie A', time: '18:00', homeOdds: 2.20, drawOdds: 3.40, awayOdds: 3.10, stadium: 'Allianz Stadium', country: 'Itália', homeFlag: '🇮🇹', awayFlag: '🇮🇹' },
-    { id: 7, homeTeam: 'Benfica', awayTeam: 'Porto', competition: 'Primeira Liga', time: '20:30', homeOdds: 2.10, drawOdds: 3.60, awayOdds: 3.30, stadium: 'Estádio da Luz', country: 'Portugal', homeFlag: '🇵🇹', awayFlag: '🇵🇹' },
-    { id: 8, homeTeam: 'LAFC', awayTeam: 'Seattle Sounders', competition: 'MLS', time: '22:00', homeOdds: 2.50, drawOdds: 3.10, awayOdds: 2.70, stadium: 'BMO Stadium', country: 'EUA', homeFlag: '🇺🇸', awayFlag: '🇺🇸' }
+    { id: 1, homeTeam: 'Flamengo', awayTeam: 'Palmeiras', competition: 'Campeonato Brasileiro', time: '20:00', homeOdds: 2.40, drawOdds: 3.20, awayOdds: 2.85, stadium: 'Maracanã', country: 'Brasil', homeFlag: '🇧🇷', awayFlag: '🇧🇷', status: 'LIVE', homeScore: 2, awayScore: 1 },
+    { id: 2, homeTeam: 'Real Madrid', awayTeam: 'Barcelona', competition: 'La Liga', time: '21:00', homeOdds: 1.85, drawOdds: 3.50, awayOdds: 3.80, stadium: 'Santiago Bernabéu', country: 'Espanha', homeFlag: '🇪🇸', awayFlag: '🇪🇸', status: 'FT', homeScore: 2, awayScore: 3 },
+    { id: 3, homeTeam: 'Manchester City', awayTeam: 'Arsenal', competition: 'Premier League', time: '15:30', homeOdds: 1.55, drawOdds: 4.00, awayOdds: 5.20, stadium: 'Etihad Stadium', country: 'Inglaterra', homeFlag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', awayFlag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', status: 'HOJE', homeScore: undefined, awayScore: undefined },
+    { id: 4, homeTeam: 'PSG', awayTeam: 'Lyon', competition: 'Ligue 1', time: '20:00', homeOdds: 1.45, drawOdds: 4.50, awayOdds: 6.00, stadium: 'Parc des Princes', country: 'França', homeFlag: '🇫🇷', awayFlag: '🇫🇷', status: 'FT', homeScore: 0, awayScore: 0 },
+    { id: 5, homeTeam: 'Bayern Munich', awayTeam: 'Borussia Dortmund', competition: 'Bundesliga', time: '19:30', homeOdds: 1.65, drawOdds: 3.80, awayOdds: 4.50, stadium: 'Allianz Arena', country: 'Alemanha', homeFlag: '🇩🇪', awayFlag: '🇩🇪', status: 'LIVE', homeScore: 1, awayScore: 1 },
+    { id: 6, homeTeam: 'Juventus', awayTeam: 'Inter', competition: 'Serie A', time: '18:00', homeOdds: 2.20, drawOdds: 3.40, awayOdds: 3.10, stadium: 'Allianz Stadium', country: 'Itália', homeFlag: '🇮🇹', awayFlag: '🇮🇹', status: 'HOJE', homeScore: undefined, awayScore: undefined },
+    { id: 7, homeTeam: 'Benfica', awayTeam: 'Porto', competition: 'Primeira Liga', time: '20:30', homeOdds: 2.10, drawOdds: 3.60, awayOdds: 3.30, stadium: 'Estádio da Luz', country: 'Portugal', homeFlag: '🇵🇹', awayFlag: '🇵🇹', status: 'HOJE', homeScore: undefined, awayScore: undefined },
+    { id: 8, homeTeam: 'LAFC', awayTeam: 'Seattle Sounders', competition: 'MLS', time: '22:00', homeOdds: 2.50, drawOdds: 3.10, awayOdds: 2.70, stadium: 'BMO Stadium', country: 'EUA', homeFlag: '🇺🇸', awayFlag: '🇺🇸', status: 'FT', homeScore: 2, awayScore: 0 }
 ];
 
 async function loadGamesList() {
@@ -140,59 +140,86 @@ function renderGamesList(games) {
         return;
     }
 
+    // Agrupar jogos por competição
+    const groupedGames = {};
     games.forEach(game => {
-        const card = document.createElement('div');
-        card.className = 'game-card';
-        card.innerHTML = `
-            <div class="game-card-header">
-                <div class="game-time">⏰ ${game.time}</div>
-                <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: bold;">${game.country || ''}</span>
-            </div>
-            <div class="game-card-content">
-                <div class="game-card-teams">
-                    <div class="team">
-                        <span class="team-emoji">${game.homeFlag || '⚽'}</span>
-                        <span class="team-name">${game.homeTeam}</span>
-                    </div>
-                    <div class="vs-badge">VS</div>
-                    <div class="team">
-                        <span class="team-emoji">${game.awayFlag || '⚽'}</span>
-                        <span class="team-name">${game.awayTeam}</span>
-                    </div>
-                </div>
-                <div class="game-competition" style="font-size: 0.85rem; font-weight: 600;">🏆 ${game.competition}</div>
-                <div style="margin-top: 10px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; font-size: 0.8rem;">
-                    <div style="text-align: center; padding: 6px; background: rgba(99, 102, 241, 0.1); border-radius: 4px;">
-                        <div style="color: var(--text-muted);">Casa</div>
-                        <div style="color: #6366f1; font-weight: bold;">${game.homeOdds.toFixed(2)}</div>
-                    </div>
-                    <div style="text-align: center; padding: 6px; background: rgba(236, 72, 153, 0.1); border-radius: 4px;">
-                        <div style="color: var(--text-muted);">Empate</div>
-                        <div style="color: #ec4899; font-weight: bold;">${game.drawOdds.toFixed(2)}</div>
-                    </div>
-                    <div style="text-align: center; padding: 6px; background: rgba(20, 184, 166, 0.1); border-radius: 4px;">
-                        <div style="color: var(--text-muted);">Fora</div>
-                        <div style="color: #14b8a6; font-weight: bold;">${game.awayOdds.toFixed(2)}</div>
-                    </div>
-                </div>
-                ${game.stadium ? `<div style="margin-top: 8px; font-size: 0.75rem; color: var(--text-tertiary);">📍 ${game.stadium}</div>` : ''}
-            </div>
-            <button class="btn-analyze" data-game-id="${game.id}">
-                🤖 Analisar com IA
-            </button>
+        const comp = game.competition || 'Outros';
+        if (!groupedGames[comp]) {
+            groupedGames[comp] = [];
+        }
+        groupedGames[comp].push(game);
+    });
+
+    // Renderizar cada grupo
+    Object.keys(groupedGames).forEach(competition => {
+        // Header da competição
+        const compHeader = document.createElement('div');
+        compHeader.className = 'competition-header';
+        compHeader.innerHTML = `
+            <h3>🏆 ${competition}</h3>
+            <span class="game-count">${groupedGames[competition].length} jogos</span>
         `;
+        gamesList.appendChild(compHeader);
 
-        card.addEventListener('click', (e) => {
-            if (!e.target.classList.contains('btn-analyze')) {
+        // Renderizar jogos da competição
+        groupedGames[competition].forEach(game => {
+            const card = document.createElement('div');
+            card.className = 'game-card-compact';
+            
+            // Status do jogo (LIVE, FT, ou horário)
+            const status = game.status || 'HOJE';
+            const isLive = status === 'LIVE';
+            const isFT = status === 'FT';
+            
+            card.innerHTML = `
+                <div class="game-time-status ${isLive ? 'live' : isFT ? 'finished' : ''}">
+                    ${isLive ? '🔴 LIVE' : isFT ? 'FT' : `⏰ ${game.time}`}
+                </div>
+                
+                <div class="game-teams-row">
+                    <div class="team-compact">
+                        <span class="team-flag">${game.homeFlag || '⚽'}</span>
+                        <span class="team-name-compact">${game.homeTeam}</span>
+                    </div>
+                    <div class="score-display">
+                        <span class="score-number">${game.homeScore !== undefined ? game.homeScore : '-'}</span>
+                    </div>
+                </div>
+                
+                <div class="game-teams-row">
+                    <div class="team-compact">
+                        <span class="team-flag">${game.awayFlag || '⚽'}</span>
+                        <span class="team-name-compact">${game.awayTeam}</span>
+                    </div>
+                    <div class="score-display">
+                        <span class="score-number">${game.awayScore !== undefined ? game.awayScore : '-'}</span>
+                    </div>
+                </div>
+                
+                <div class="game-odds-compact">
+                    <span class="odd-item">1: ${game.homeOdds.toFixed(2)}</span>
+                    <span class="odd-item">X: ${game.drawOdds.toFixed(2)}</span>
+                    <span class="odd-item">2: ${game.awayOdds.toFixed(2)}</span>
+                </div>
+                
+                <button class="btn-analyze-compact" data-game-id="${game.id}">
+                    🤖 Analisar
+                </button>
+            `;
+
+            card.addEventListener('click', (e) => {
+                if (!e.target.classList.contains('btn-analyze-compact')) {
+                    openGameModal(game.id);
+                }
+            });
+
+            card.querySelector('.btn-analyze-compact').addEventListener('click', (e) => {
+                e.stopPropagation();
                 openGameModal(game.id);
-            }
-        });
+            });
 
-        card.querySelector('.btn-analyze').addEventListener('click', () => {
-            openGameModal(game.id);
+            gamesList.appendChild(card);
         });
-
-        gamesList.appendChild(card);
     });
 }
 

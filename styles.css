@@ -378,6 +378,47 @@ body {
         padding: 24px;
     }
 
+    /* Novo layout compacto mobile */
+    .game-card-compact {
+        padding: 12px;
+    }
+
+    .team-name-compact {
+        font-size: 0.85rem;
+    }
+
+    .team-flag {
+        font-size: 1.2rem;
+        width: 28px;
+    }
+
+    .score-number {
+        font-size: 1.3rem;
+    }
+
+    .competition-header {
+        padding: 12px 16px;
+    }
+
+    .competition-header h3 {
+        font-size: 0.9rem;
+    }
+
+    .game-count {
+        font-size: 0.75rem;
+        padding: 3px 10px;
+    }
+
+    .odd-item {
+        font-size: 0.75rem;
+        padding: 3px 8px;
+    }
+
+    .btn-analyze-compact {
+        padding: 8px 12px;
+        font-size: 0.8rem;
+    }
+
     .gauge-container {
         height: 180px;
     }
@@ -1570,11 +1611,174 @@ body {
 }
 
 .games-list {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
     margin-bottom: 40px;
 }
+
+/* ====================================
+   COMPETITION HEADER
+   ==================================== */
+
+.competition-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    margin-top: 20px;
+    margin-bottom: 8px;
+    background: rgba(99, 102, 241, 0.08);
+    border-left: 4px solid var(--primary-color);
+    border-radius: 8px;
+}
+
+.competition-header h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.game-count {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    background: rgba(99, 102, 241, 0.1);
+    padding: 4px 12px;
+    border-radius: 12px;
+}
+
+/* ====================================
+   GAME CARD COMPACT (Layout tipo app móvel)
+   ==================================== */
+
+.game-card-compact {
+    background: var(--card-bg);
+    backdrop-filter: var(--blur-effect);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.game-card-compact:hover {
+    transform: translateY(-2px);
+    border-color: var(--primary-color);
+    box-shadow: 0 8px 24px rgba(99, 102, 241, 0.2);
+}
+
+.game-time-status {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 4px 12px;
+    background: rgba(99, 102, 241, 0.1);
+    border-radius: 8px;
+    width: fit-content;
+}
+
+.game-time-status.live {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.15);
+    animation: pulse-live 2s infinite;
+}
+
+.game-time-status.finished {
+    color: var(--text-muted);
+    background: rgba(148, 163, 184, 0.1);
+}
+
+@keyframes pulse-live {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+.game-teams-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+}
+
+.team-compact {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+}
+
+.team-flag {
+    font-size: 1.5rem;
+    width: 32px;
+    text-align: center;
+}
+
+.team-name-compact {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    flex: 1;
+}
+
+.score-display {
+    min-width: 40px;
+    text-align: center;
+}
+
+.score-number {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    text-shadow: 0 0 10px rgba(99, 102, 241, 0.3);
+}
+
+.game-odds-compact {
+    display: flex;
+    gap: 8px;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-top: 1px solid rgba(99, 102, 241, 0.1);
+    margin-top: 4px;
+}
+
+.odd-item {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    background: rgba(99, 102, 241, 0.08);
+    padding: 4px 12px;
+    border-radius: 6px;
+    flex: 1;
+    text-align: center;
+}
+
+.btn-analyze-compact {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 4px;
+}
+
+.btn-analyze-compact:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+}
+
+/* ====================================
+   OLD GAME CARD (mantido para compatibilidade)
+   ==================================== */
 
 .game-card {
     background: var(--card-bg);
