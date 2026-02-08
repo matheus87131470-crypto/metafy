@@ -1,15 +1,9 @@
-/**
- * api/games.js - Endpoint Serverless para Buscar Jogos
- * GET /api/games
- */
-
-module.exports = async (req, res) => {
-  // CORS headers
+export default async function handler(req, res) {
+  // CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-  // Handle preflight
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
@@ -19,41 +13,32 @@ module.exports = async (req, res) => {
   }
 
   try {
-    // Data atual (YYYY-MM-DD)
     const today = new Date().toISOString().split('T')[0];
     const apiKey = process.env.API_FOOTBALL_KEY;
     
     console.log('🔄 Buscando jogos para:', today);
-    console.log('🕐 Timezone servidor:', new Date().toString());
     console.log('🔑 API Key:', apiKey ? 'Configurada' : 'NÃO CONFIGURADA');
     
     if (!apiKey) {
-      console.error('❌ API_FOOTBALL_KEY não está configurada');
       return res.status(200).json({
         success: false,
         count: 0,
         games: [],
-        error: 'API Key não configurada no servidor'
+        error: 'API Key não configurada'
       });
     }
     
     const apiUrl = `https://v3.football.api-football.com/fixtures?date=${today}`;
-    console.log('🌐 URL da API:', apiUrl);
     
-    // Usar fetch nativo (Node 18+) ou importar dinamicamente
-    const fetchFn = globalThis.fetch || (await import('node-fetch')).default;
-    
-    const response = await fetchFn(apiUrl, {
+    const response = await fetch(apiUrl, {
       method: 'GET',
       headers: {
         'x-apisports-key': apiKey
       }
     });
 
-    console.log('📡 Status HTTP:', response.status);
-
     if (!response.ok) {
-      console.error('❌ API retornou erro:', response.status, response.statusText);
+      console.error('❌ API retornou erro:', response.status);
       return res.status(200).json({
         success: false,
         count: 0,
@@ -64,25 +49,18 @@ module.exports = async (req, res) => {
 
     const data = await response.json();
     
-    console.log('📦 Resposta da API:', {
-      results: data.results,
-      hasResponse: !!data.response,
-      isArray: Array.isArray(data.response),
-      totalJogos: data.response?.length || 0
-    });
+    console.log('📦 Total de jogos:', data.response?.length || 0);
     
     if (!data.response || !Array.isArray(data.response)) {
-      console.error('❌ Resposta da API não contém array válido');
       return res.status(200).json({
         success: false,
         count: 0,
         games: [],
-        error: 'Formato de resposta inválido da API'
+        error: 'Resposta inválida da API'
       });
     }
     
     if (data.response.length === 0) {
-      console.warn('⚠️ API retornou 0 jogos para hoje');
       return res.status(200).json({
         success: true,
         count: 0,
@@ -91,9 +69,6 @@ module.exports = async (req, res) => {
       });
     }
 
-    // Processar jogos SEM FILTRO
-    console.log('✅ Processando', data.response.length, 'jogos (SEM FILTRO)');
-    
     const games = data.response.map(fixture => {
       const statusMap = {
         'NS': 'HOJE',
@@ -146,8 +121,7 @@ module.exports = async (req, res) => {
       };
     });
     
-    console.log('✅ Retornando', games.length, 'jogos processados');
-    console.log('🎮 Primeiros 3:', games.slice(0, 3).map(g => `${g.homeTeam} vs ${g.awayTeam} (${g.competition})`));
+    console.log('✅ Retornando', games.length, 'jogos');
     
     return res.status(200).json({
       success: true,
@@ -156,14 +130,13 @@ module.exports = async (req, res) => {
       message: null
     });
   } catch (error) {
-    console.error('💥 ERRO CRÍTICO:', error.message);
-    console.error('📋 Stack:', error.stack);
+    console.error('💥 ERRO:', error.message);
     
     return res.status(200).json({
       success: false,
       count: 0,
       games: [],
-      error: `Erro ao buscar jogos: ${error.message}`
+      error: `Erro: ${error.message}`
     });
   }
-};
+}
