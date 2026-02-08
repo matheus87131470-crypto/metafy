@@ -89,6 +89,12 @@ const FALLBACK_GAMES = [
 async function loadGamesList() {
     const gamesList = document.getElementById('gamesList');
     
+    // Verificar se elemento existe
+    if (!gamesList) {
+        console.error('❌ Elemento gamesList não encontrado!');
+        return;
+    }
+    
     // Mostrar loading
     gamesList.innerHTML = `
         <div style="grid-column: 1/-1; text-align: center; padding: 40px;">
@@ -100,13 +106,19 @@ async function loadGamesList() {
     try {
         console.log('🔄 Buscando jogos de:', BACKEND_URL + '/api/games');
         
+        // Timeout de 5 segundos
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        
         // Buscar jogos REAIS da API do backend (Render)
         const response = await fetch(BACKEND_URL + '/api/games', {
             method: 'GET',
             headers: { 'Content-Type': 'application/json' },
             mode: 'cors',
-            timeout: 10000
+            signal: controller.signal
         });
+
+        clearTimeout(timeoutId);
 
         if (response.ok) {
             const data = await response.json();
@@ -123,15 +135,25 @@ async function loadGamesList() {
 
     // Fallback: usar dados mock quando API falhar
     console.log('📦 Usando fallback com 8 jogos mockados');
+    console.log('📦 FALLBACK_GAMES:', FALLBACK_GAMES);
     gamesCache = FALLBACK_GAMES;
     renderGamesList(FALLBACK_GAMES);
 }
 
 function renderGamesList(games) {
+    console.log('🎮 renderGamesList chamada com:', games ? games.length : 0, 'jogos');
+    
     const gamesList = document.getElementById('gamesList');
+    
+    if (!gamesList) {
+        console.error('❌ Elemento gamesList não encontrado no DOM!');
+        return;
+    }
+    
     gamesList.innerHTML = '';
 
     if (!games || games.length === 0) {
+        console.warn('⚠️ Nenhum jogo para renderizar');
         gamesList.innerHTML = `
             <div style="grid-column: 1/-1; text-align: center; padding: 40px;">
                 <p style="color: var(--text-secondary);">Nenhum jogo disponível</p>
@@ -139,6 +161,8 @@ function renderGamesList(games) {
         `;
         return;
     }
+
+    console.log('✅ Iniciando renderização de', games.length, 'jogos');
 
     // Agrupar jogos por competição
     const groupedGames = {};
@@ -221,6 +245,8 @@ function renderGamesList(games) {
             gamesList.appendChild(card);
         });
     });
+    
+    console.log('✅ Renderização completa! Total de jogos:', games.length);
 }
 
 // ====================================
