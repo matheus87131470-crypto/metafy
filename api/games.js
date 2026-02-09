@@ -81,9 +81,20 @@ export default async function handler(req, res) {
     }
 
     console.log('✅ Parsed:', parsed.response?.length || 0, 'fixtures');
-
+    
+    // Debug: se não há jogos, retornar info de debug
     if (!parsed.response || parsed.response.length === 0) {
-      return res.status(200).json({ success: true, games: [], message: 'Não há jogos hoje' });
+      return res.status(200).json({ 
+        success: true, 
+        games: [], 
+        message: 'Não há jogos hoje',
+        debug: {
+          date: dateToUse,
+          apiErrors: parsed.errors || null,
+          results: parsed.results || 0,
+          paging: parsed.paging || null
+        }
+      });
     }
 
     const games = parsed.response.slice(0, 50).map(f => ({
