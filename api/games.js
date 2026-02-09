@@ -14,17 +14,61 @@ export default async function handler(req, res) {
     console.log('🔑 API Key:', apiKey ? 'Configured' : 'NOT CONFIGURED');
     
     if (!apiKey) {
-      return res.status(200).json({ success: false, games: [], error: 'API Key not configured' });
+      console.error('❌ API Key missing');
+      return res.status(200).json({ success: false, games: [], error: 'API Key not configured in environment variables' });
     }
     
     const apiUrl = `https://v3.football.api-football.com/fixtures?date=${today}`;
-    const response = await fetch(apiUrl, { headers: { 'x-apisports-key': apiKey } });
-
-    if (!response.ok) {
-      return res.status(200).json({ success: false, games: [], error: `API error ${response.status}` });
+    console.log('🌐 Calling API:', apiUrl);
+    
+    let response;
+    try {
+      response = await fetch(apiUrl, {
+        headers: {
+          "x-apisports-key": apiKey
+        }
+      });
+    } catch (fetchError) {
+      console.error('💥 Fetch failed:', fetchError.message);
+      return res.status(200).json({ 
+        success: false, 
+        games: [], 
+        error: `Fetch failed: ${fetchError.message}` 
+      });
     }
 
-    const data = await response.json();
+    console.log('📡 Response status:', response.status);
+    
+    if (response.status !== 200) {
+      const errorText = await response.text();
+      console.error('❌ API returned non-200:', response.status, errorText);
+      return res.status(200).json({ 
+        success: false, 
+        games: [], 
+        error: `API returned status ${response.status}: ${errorText.substring(0, 100)}` 
+      });
+    }
+
+    const responseText = await response.text();
+    console.log('📦 Response text length:', responseText.length);
+    
+    let data;
+    try {
+      data = JSON.parse(responseText);
+    } catch (parseError) {
+      console.error('💥 JSON parse failed:', parseError.message);
+      return res.status(200).json({ 
+        success: false, 
+        games: [], 
+        error: 'Failed to parse API response' 
+      });
+    }
+    
+    console.log('✅ Parsed data:', { 
+      hasResponse: !!data.response, 
+      isArray: Array.isArray(data.response), 
+      count: data.response?.length || 0 
+    });
     
     if (!data.response || !Array.isArray(data.response) || data.response.length === 0) {
       return res.status(200).json({ success: true, games: [], message: 'No games today' });
@@ -54,7 +98,7 @@ export default async function handler(req, res) {
     return res.status(200).json({ success: true, games });
     
   } catch (error) {
-    console.error('💥 ERROR:', error.message);
-    return res.status(200).json({ success: false, games: [], error: error.message });
+    console.error('💥 UNEXPECTED ERROR:', error.message, error.stack);
+    return res.status(200).json({ success: false, games: [], error: `Server error: ${error.message}` });
   }
 }
