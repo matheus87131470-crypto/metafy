@@ -12,7 +12,7 @@ export default async function handler(req, res) {
     // Usar data de hoje ou uma data com jogos conhecidos para teste
     const today = new Date().toISOString().split('T')[0];
     // Para teste, usar data fixa com jogos: 2025-02-08
-    const dateToUse = today; // Altere para '2025-02-08' para testar com jogos reais
+    const dateToUse = '2025-02-08'; // Data com jogos reais para demonstração
     const apiKey = process.env.API_FOOTBALL_KEY;
     
     console.log('📅 Date:', dateToUse);
