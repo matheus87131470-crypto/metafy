@@ -6,83 +6,77 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
+  const https = require('https');
+
   try {
     const today = new Date().toISOString().split('T')[0];
     const apiKey = process.env.API_FOOTBALL_KEY;
     
     console.log('🔄 Fetching games for:', today);
-    console.log('🔑 API Key:', apiKey ? 'Configured' : 'NOT CONFIGURED');
-    console.log('🔧 Node version:', process.version);
-    console.log('🌍 Fetch available:', typeof fetch !== 'undefined');
+    console.log('🔑 API Key:', apiKey ? `${apiKey.substring(0, 10)}...` : 'NOT CONFIGURED');
     
     if (!apiKey) {
-      console.error('❌ API Key missing');
-      return res.status(200).json({ success: false, games: [], error: 'API Key not configured in environment variables' });
+      return res.status(200).json({ success: false, games: [], error: 'API Key not configured' });
     }
-    
-    // Usar fetch nativo ou importar dinamicamente
-    const fetchFunction = typeof fetch !== 'undefined' 
-      ? fetch 
-      : (await import('node-fetch')).default;
     
     const apiUrl = `https://v3.football.api-football.com/fixtures?date=${today}`;
-    console.log('🌐 Calling API:', apiUrl);
+    console.log('🌐 Calling:', apiUrl);
     
-    let response;
-    try {
-      response = await fetchFunction(apiUrl, {
+    // Usar https nativo (mais confiável em serverless)
+    const response = await new Promise((resolve, reject) => {
+      const options = {
+        hostname: 'v3.football.api-football.com',
+        port: 443,
+        path: `/fixtures?date=${today}`,
         method: 'GET',
         headers: {
-          "x-apisports-key": apiKey
+          'x-apisports-key': apiKey
         }
+      };
+      
+      console.log('📤 Request options:', { hostname: options.hostname, path: options.path });
+      
+      const req = https.request(options, (response) => {
+        let data = '';
+        response.on('data', (chunk) => data += chunk);
+        response.on('end', () => resolve({ status: response.statusCode, data }));
       });
-    } catch (fetchError) {
-      console.error('💥 Fetch failed:', fetchError.message);
-      console.error('Stack:', fetchError.stack);
-      return res.status(200).json({ 
-        success: false, 
-        games: [], 
-        error: `Fetch failed: ${fetchError.message}`,
-        debug: {
-          nodeVersion: process.version,
-          hasFetch: typeof fetch !== 'undefined',
-          errorType: fetchError.name
-        }
+      
+      req.on('error', (error) => {
+        console.error('💥 HTTPS request error:', error);
+        reject(error);
       });
-    }
+      
+      req.setTimeout(10000, () => {
+        req.destroy();
+        reject(new Error('Request timeout'));
+      });
+      
+      req.end();
+    });
 
     console.log('📡 Response status:', response.status);
+    console.log('📦 Response length:', response.data.length);
     
     if (response.status !== 200) {
-      const errorText = await response.text();
-      console.error('❌ API returned non-200:', response.status, errorText);
+      console.error('❌ Non-200 status:', response.status, response.data.substring(0, 200));
       return res.status(200).json({ 
         success: false, 
         games: [], 
-        error: `API returned status ${response.status}: ${errorText.substring(0, 100)}` 
+        error: `API returned ${response.status}`,
+        debug: response.data.substring(0, 200)
       });
     }
-
-    const responseText = await response.text();
-    console.log('📦 Response text length:', responseText.length);
     
     let data;
     try {
-      data = JSON.parse(responseText);
+      data = JSON.parse(response.data);
     } catch (parseError) {
-      console.error('💥 JSON parse failed:', parseError.message);
-      return res.status(200).json({ 
-        success: false, 
-        games: [], 
-        error: 'Failed to parse API response' 
-      });
+      console.error('💥 JSON parse failed');
+      return res.status(200).json({ success: false, games: [], error: 'Invalid JSON' });
     }
     
-    console.log('✅ Parsed data:', { 
-      hasResponse: !!data.response, 
-      isArray: Array.isArray(data.response), 
-      count: data.response?.length || 0 
-    });
+    console.log('✅ Parsed:', { hasResponse: !!data.response, count: data.response?.length || 0 });
     
     if (!data.response || !Array.isArray(data.response) || data.response.length === 0) {
       return res.status(200).json({ success: true, games: [], message: 'No games today' });
@@ -112,7 +106,13 @@ export default async function handler(req, res) {
     return res.status(200).json({ success: true, games });
     
   } catch (error) {
-    console.error('💥 UNEXPECTED ERROR:', error.message, error.stack);
-    return res.status(200).json({ success: false, games: [], error: `Server error: ${error.message}` });
+    console.error('💥 ERROR:', error.message);
+    console.error('Stack:', error.stack);
+    return res.status(200).json({ 
+      success: false, 
+      games: [], 
+      error: error.message,
+      errorType: error.name
+    });
   }
 }
