@@ -12,28 +12,42 @@ export default async function handler(req, res) {
     
     console.log('🔄 Fetching games for:', today);
     console.log('🔑 API Key:', apiKey ? 'Configured' : 'NOT CONFIGURED');
+    console.log('🔧 Node version:', process.version);
+    console.log('🌍 Fetch available:', typeof fetch !== 'undefined');
     
     if (!apiKey) {
       console.error('❌ API Key missing');
       return res.status(200).json({ success: false, games: [], error: 'API Key not configured in environment variables' });
     }
     
+    // Usar fetch nativo ou importar dinamicamente
+    const fetchFunction = typeof fetch !== 'undefined' 
+      ? fetch 
+      : (await import('node-fetch')).default;
+    
     const apiUrl = `https://v3.football.api-football.com/fixtures?date=${today}`;
     console.log('🌐 Calling API:', apiUrl);
     
     let response;
     try {
-      response = await fetch(apiUrl, {
+      response = await fetchFunction(apiUrl, {
+        method: 'GET',
         headers: {
           "x-apisports-key": apiKey
         }
       });
     } catch (fetchError) {
       console.error('💥 Fetch failed:', fetchError.message);
+      console.error('Stack:', fetchError.stack);
       return res.status(200).json({ 
         success: false, 
         games: [], 
-        error: `Fetch failed: ${fetchError.message}` 
+        error: `Fetch failed: ${fetchError.message}`,
+        debug: {
+          nodeVersion: process.version,
+          hasFetch: typeof fetch !== 'undefined',
+          errorType: fetchError.name
+        }
       });
     }
 
