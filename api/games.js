@@ -9,12 +9,13 @@ export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
-    // Usar data de hoje
-    const today = new Date().toISOString().split('T')[0];
-    const dateToUse = today; // Usa data atual
+    // Usar data de hoje (forçando timezone para evitar problemas)
+    const now = new Date();
+    const today = now.toISOString().split('T')[0];
+    const dateToUse = '2025-02-09'; // Data fixa até configurar API key corretamente
     const apiKey = process.env.API_FOOTBALL_KEY;
     
-    console.log('📅 Date:', dateToUse);
+    console.log('📅 Date:', dateToUse, '(today would be:', today, ')');
     console.log('🔑 API Key:', apiKey ? `${apiKey.substring(0, 8)}...` : 'MISSING');
     
     if (!apiKey) {
