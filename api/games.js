@@ -9,10 +9,13 @@ export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
+    // Usar data de hoje ou uma data com jogos conhecidos para teste
     const today = new Date().toISOString().split('T')[0];
+    // Para teste, usar data fixa com jogos: 2025-02-08
+    const dateToUse = today; // Altere para '2025-02-08' para testar com jogos reais
     const apiKey = process.env.API_FOOTBALL_KEY;
     
-    console.log('📅 Date:', today);
+    console.log('📅 Date:', dateToUse);
     console.log('🔑 API Key:', apiKey ? `${apiKey.substring(0, 8)}...` : 'MISSING');
     
     if (!apiKey) {
@@ -27,7 +30,7 @@ export default async function handler(req, res) {
       const options = {
         hostname: 'v3.football.api-sports.io',
         port: 443,
-        path: `/fixtures?date=${today}`,
+        path: `/fixtures?date=${dateToUse}`,
         method: 'GET',
         headers: {
           'x-apisports-key': apiKey
