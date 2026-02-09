@@ -25,7 +25,7 @@ export default async function handler(req, res) {
 
     const responseData = await new Promise((resolve, reject) => {
       const options = {
-        hostname: 'v3.football.api-football.com',
+        hostname: 'v3.football.api-sports.io',
         port: 443,
         path: `/fixtures?date=${today}`,
         method: 'GET',
