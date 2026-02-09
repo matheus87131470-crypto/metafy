@@ -209,69 +209,41 @@
     <script>
         console.log('✅ Metafy carregando...');
 
-        const API_URL = '/api/games';
+        // API serverless na Vercel
         let GAMES = [];
 
         // Buscar jogos REAIS da API
         async function fetchGames() {
-            console.log('🔄 Buscando jogos reais da API...');
-            console.log('🕐 Hora local do navegador:', new Date().toString());
-            console.log('🌐 URL da API:', API_URL);
+            console.log('🔄 Buscando jogos da API /api/games');
             
             try {
-                const response = await fetch(API_URL);
-                console.log('📡 Status da resposta:', response.status, response.statusText);
+                const response = await fetch('/api/games');
+                console.log('📡 Status:', response.status);
                 
                 const data = await response.json();
+                console.log('📦 RESPOSTA DA API:', data);
                 
-                // LOG COMPLETO DA RESPOSTA
-                console.log('📦 RESPOSTA COMPLETA DA API:', JSON.stringify(data, null, 2));
-                console.log('📊 Detalhes:', {
-                    success: data.success,
-                    count: data.count,
-                    hasGames: !!data.games,
-                    gamesLength: data.games?.length || 0,
-                    message: data.message,
-                    error: data.error
-                });
-                
-                if (!data.success) {
-                    console.error('❌ API retornou erro:', data.error);
-                    containerJogos.innerHTML = `
-                        <div style="text-align: center; padding: 30px; color: #999;">
-                            <p>❌ ${data.error || 'Erro ao carregar jogos'}</p>
-                        </div>
-                    `;
-                    return;
-                }
-                
-                if (data.count === 0 || !data.games || data.games.length === 0) {
-                    console.warn('⚠️ Não há jogos hoje');
+                if (!data.games || data.games.length === 0) {
+                    console.warn('⚠️ Nenhum jogo disponível');
                     containerJogos.innerHTML = `
                         <div style="text-align: center; padding: 30px; color: #999;">
                             <p>⚽ Não há jogos hoje</p>
+                            ${data.error ? `<p style="font-size: 12px; color: #f66;">${data.error}</p>` : ''}
                         </div>
                     `;
                     return;
                 }
                 
                 console.log('✅ Jogos encontrados:', data.games.length);
-                console.log('🎮 Primeiros 3 jogos:', data.games.slice(0, 3).map(g => ({
-                    id: g.id,
-                    jogo: `${g.homeTeam} vs ${g.awayTeam}`,
-                    liga: g.competition,
-                    horario: g.time
-                })));
+                console.log('🎮 Primeiros 3:', data.games.slice(0, 3));
                 
-                // Renderizar TODOS os jogos SEM filtros
                 renderGames(data.games);
             } catch (error) {
-                console.error('💥 ERRO CRÍTICO ao buscar jogos:', error);
-                console.error('📋 Stack trace:', error.stack);
+                console.error('💥 ERRO:', error);
                 containerJogos.innerHTML = `
                     <div style="text-align: center; padding: 30px; color: #999;">
-                        <p>❌ Erro ao conectar com a API</p>
-                        <p style="font-size: 12px; margin-top: 10px;">${error.message}</p>
+                        <p>❌ Erro ao carregar jogos</p>
+                        <p style="font-size: 12px;">${error.message}</p>
                     </div>
                 `;
             }
