@@ -9,10 +9,9 @@ export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
-    // Usar data de hoje ou uma data com jogos conhecidos para teste
+    // Usar data de hoje
     const today = new Date().toISOString().split('T')[0];
-    // Para teste, usar data fixa com jogos: 2025-02-08
-    const dateToUse = '2025-02-08'; // Data com jogos reais para demonstração
+    const dateToUse = today; // Usa data atual
     const apiKey = process.env.API_FOOTBALL_KEY;
     
     console.log('📅 Date:', dateToUse);
