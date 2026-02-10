@@ -1,5 +1,17 @@
 import https from 'https';
 
+// Dados demo para usar enquanto API não está aprovada
+const DEMO_GAMES = [
+  { id: 1, homeTeam: 'Flamengo', awayTeam: 'Palmeiras', competition: 'Brasileirão', country: 'Brazil', time: '16:00', status: 'HOJE', homeScore: null, awayScore: null, homeOdds: 2.10, drawOdds: 3.25, awayOdds: 3.40 },
+  { id: 2, homeTeam: 'Real Madrid', awayTeam: 'Barcelona', competition: 'La Liga', country: 'Spain', time: '17:00', status: 'HOJE', homeScore: null, awayScore: null, homeOdds: 2.30, drawOdds: 3.10, awayOdds: 2.90 },
+  { id: 3, homeTeam: 'Manchester City', awayTeam: 'Liverpool', competition: 'Premier League', country: 'England', time: '14:30', status: 'LIVE', homeScore: 2, awayScore: 1, homeOdds: 1.85, drawOdds: 3.50, awayOdds: 4.20 },
+  { id: 4, homeTeam: 'PSG', awayTeam: 'Marseille', competition: 'Ligue 1', country: 'France', time: '21:00', status: 'HOJE', homeScore: null, awayScore: null, homeOdds: 1.65, drawOdds: 3.80, awayOdds: 5.50 },
+  { id: 5, homeTeam: 'Bayern Munich', awayTeam: 'Dortmund', competition: 'Bundesliga', country: 'Germany', time: '15:30', status: 'LIVE', homeScore: 1, awayScore: 1, homeOdds: 1.75, drawOdds: 3.60, awayOdds: 4.80 },
+  { id: 6, homeTeam: 'Corinthians', awayTeam: 'São Paulo', competition: 'Brasileirão', country: 'Brazil', time: '19:00', status: 'HOJE', homeScore: null, awayScore: null, homeOdds: 2.50, drawOdds: 3.10, awayOdds: 2.80 },
+  { id: 7, homeTeam: 'Inter Milan', awayTeam: 'AC Milan', competition: 'Serie A', country: 'Italy', time: '20:45', status: 'HOJE', homeScore: null, awayScore: null, homeOdds: 2.20, drawOdds: 3.20, awayOdds: 3.10 },
+  { id: 8, homeTeam: 'Benfica', awayTeam: 'Porto', competition: 'Primeira Liga', country: 'Portugal', time: '22:00', status: 'HOJE', homeScore: null, awayScore: null, homeOdds: 2.35, drawOdds: 3.15, awayOdds: 2.95 },
+];
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
@@ -17,11 +29,14 @@ export default async function handler(req, res) {
     console.log('📅 Date:', dateToUse);
     console.log('🔑 API Key:', apiKey ? `${apiKey.substring(0, 8)}...` : 'MISSING');
     
-    if (!apiKey) {
+    // Se não tem API key ou está vazia, retornar dados demo
+    if (!apiKey || apiKey.length < 10) {
+      console.log('⚠️ Using demo data - no valid API key');
       return res.status(200).json({ 
-        success: false, 
-        games: [], 
-        error: 'API_FOOTBALL_KEY not configured in Vercel environment variables' 
+        success: true, 
+        games: DEMO_GAMES,
+        demo: true,
+        message: 'Usando dados de demonstração'
       });
     }
 
@@ -65,12 +80,13 @@ export default async function handler(req, res) {
     });
 
     if (responseData.statusCode !== 200) {
-      console.error('❌ API Error:', responseData.statusCode, responseData.body.substring(0, 200));
+      console.error('❌ API Error:', responseData.statusCode, '- Using demo data as fallback');
+      // Se API retornar erro (403 = não aprovado), usar dados demo
       return res.status(200).json({ 
-        success: false, 
-        games: [], 
-        error: `API returned ${responseData.statusCode}`,
-        details: responseData.body.substring(0, 200)
+        success: true, 
+        games: DEMO_GAMES,
+        demo: true,
+        message: 'API pendente - usando dados de demonstração'
       });
     }
 
