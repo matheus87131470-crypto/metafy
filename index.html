@@ -225,7 +225,7 @@
                 
                 if (!data.games || data.games.length === 0) {
                     console.warn('⚠️ Nenhum jogo disponível');
-                    containerJogos.innerHTML = `
+                    document.getElementById('gamesList').innerHTML = `
                         <div style="text-align: center; padding: 30px; color: #999;">
                             <p>⚽ Não há jogos hoje</p>
                             ${data.error ? `<p style="font-size: 12px; color: #f66;">${data.error}</p>` : ''}
@@ -237,10 +237,11 @@
                 console.log('✅ Jogos encontrados:', data.games.length);
                 console.log('🎮 Primeiros 3:', data.games.slice(0, 3));
                 
+                GAMES = data.games; // Armazenar para usar no Match Center
                 renderGames(data.games);
             } catch (error) {
                 console.error('💥 ERRO:', error);
-                containerJogos.innerHTML = `
+                document.getElementById('gamesList').innerHTML = `
                     <div style="text-align: center; padding: 30px; color: #999;">
                         <p>❌ Erro ao carregar jogos</p>
                         <p style="font-size: 12px;">${error.message}</p>
