@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Metafy — Análise inteligente de partidas de futebol">
+    <title>Metafy — Análise Inteligente de Futebol</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="balance-new.css">
+    <link rel="stylesheet" href="match-center.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%238b5cf6'/><text x='50' y='70' font-size='60' text-anchor='middle' fill='white' font-weight='bold'>M</text></svg>" type="image/svg+xml">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <div class="background-gradient"></div>
+    
+    <div class="container">
+        <header class="header">
+            <div class="header-content">
+                <h1 class="title">🎯 Metafy</h1>
+                <p class="subtitle">Análise inteligente de partidas de futebol com IA</p>
+            </div>
+
+            <nav class="tabs-nav">
+                <button type="button" class="tab-button active" data-tab="games">
+                    <span class="tab-icon">⚽</span>
+                    <span class="tab-label">Jogos</span>
+                </button>
+                <button type="button" class="tab-button" data-tab="balance">
+                    <span class="tab-icon">📊</span>
+                    <span class="tab-label">Ganhos/Perdas</span>
+                </button>
+                <button type="button" class="tab-button" data-tab="premium">
+                    <span class="tab-icon">💎</span>
+                    <span class="tab-label">Premium</span>
+                </button>
+            </nav>
+        </header>
+
+        <main class="main-content">
+            <div class="tab-content active" id="tab-games">
+                <div class="games-section">
+                    <div class="section-header">
+                        <h2 class="section-title">⚽ Jogos de Hoje</h2>
+                        <p class="section-subtitle">Selecione um jogo para analisar com IA</p>
+                    </div>
+                    <div class="games-list" id="gamesList"></div>
+                </div>
+            </div>
+
+            <div class="tab-content" id="tab-balance">
+                <!-- Formulário Nova Sessão -->
+                <div class="session-form-card">
+                    <h3 class="form-title">💰 Nova Sessão</h3>
+                    
+                    <div class="form-group">
+                        <label class="form-label">
+                            <span class="label-icon green">✓</span>
+                            Ganhos (R$)
+                        </label>
+                        <input type="number" id="input-ganhos" class="form-input" placeholder="0.00" step="0.01" min="0">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            <span class="label-icon red">✕</span>
+                            Perdas (R$)
+                        </label>
+                        <input type="number" id="input-perdas" class="form-input" placeholder="0.00" step="0.01" min="0">
+                    </div>
+
+                    <button type="button" class="btn-add-session" onclick="adicionarSessao()">
+                        ✚ Adicionar Sessão
+                    </button>
+                </div>
+
+                <!-- Progresso da Meta -->
+                <div class="meta-progress-card">
+                    <div class="meta-header">
+                        <h3 class="meta-title">🎯 Progresso da Meta (Ciclo #<span id="ciclo-numero">1</span>)</h3>
+                        <div class="meta-actions">
+                            <button class="btn-meta edit" onclick="editarMeta()">✏️ Editar Meta</button>
+                            <button class="btn-meta finalize" onclick="finalizarCiclo()">🏁 Finalizar Ciclo</button>
+                            <button class="btn-meta reset" onclick="resetTotal()">🗑️ Reset Total</button>
+                        </div>
+                    </div>
+
+                    <!-- Gauge Circular -->
+                    <div class="gauge-wrapper">
+                        <svg class="gauge-svg" viewBox="0 0 200 140" style="max-width: 320px; margin: 0 auto; display: block;">
+                            <defs>
+                                <linearGradient id="gaugeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                    <stop offset="0%" style="stop-color:#a855f7;stop-opacity:1" />
+                                    <stop offset="100%" style="stop-color:#ec4899;stop-opacity:1" />
+                                </linearGradient>
+                                <filter id="glow">
+                                    <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+                                    <feMerge>
+                                        <feMergeNode in="coloredBlur"/>
+                                        <feMergeNode in="SourceGraphic"/>
+                                    </feMerge>
+                                </filter>
+                            </defs>
+                            <path d="M 30 110 A 70 70 0 0 1 170 110" fill="none" stroke="rgba(30, 30, 63, 0.5)" stroke-width="16" stroke-linecap="round"/>
+                            <path id="gauge-arc" d="M 30 110 A 70 70 0 0 1 170 110" fill="none" stroke="url(#gaugeGradient)" stroke-width="16" stroke-linecap="round" filter="url(#glow)" style="stroke-dasharray: 220; stroke-dashoffset: 165;"/>
+                        </svg>
+                        
+                        <div style="text-align: center; margin-top: -90px; position: relative;">
+                            <div style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 8px; font-weight: 600; letter-spacing: 1px;">TOTAL ACUMULADO</div>
+                            <div style="font-size: 2.2rem; font-weight: 700; background: linear-gradient(135deg, #a855f7, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 4px;">
+                                R$ <span id="gauge-total">0,00</span>
+                            </div>
+                            <div style="font-size: 1.3rem; font-weight: 600; color: #ec4899; margin-bottom: 8px;">
+                                <span id="gauge-percentage">0</span>%
+                            </div>
+                            <div style="font-size: 0.8rem; color: #cbd5e1;">
+                                Meta: R$ <span id="gauge-goal">2.000,00</span>
+                            </div>
+                        </div>
+                        
+                        <div style="text-align: center; color: #cbd5e1; margin: 24px 0; font-size: 0.9rem;">
+                            <span id="gauge-remaining" style="color: #ec4899; font-weight: 600;">100%</span> faltam para atingir sua meta
+                        </div>
+                    </div>
+
+                    <!-- Cards de Resultado e Meta -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin: 0 auto 32px; max-width: 600px;">
+                        <div style="background: rgba(15, 20, 40, 0.6); border: 1px solid rgba(16, 185, 129, 0.3); border-left: 3px solid #10b981; border-radius: 12px; padding: 20px;">
+                            <div style="font-size: 0.7rem; color: #94a3b8; font-weight: 600; letter-spacing: 1.5px; margin-bottom: 12px;">RESULTADO ATUAL</div>
+                            <div style="font-size: 1.6rem; font-weight: 700; color: #10b981;">R$ <span id="gauge-current">0,00</span></div>
+                        </div>
+                        <div style="background: rgba(15, 20, 40, 0.6); border: 1px solid rgba(236, 72, 153, 0.3); border-left: 3px solid #ec4899; border-radius: 12px; padding: 20px;">
+                            <div style="font-size: 0.7rem; color: #94a3b8; font-weight: 600; letter-spacing: 1.5px; margin-bottom: 12px;">META DEFINIDA</div>
+                            <div style="font-size: 1.6rem; font-weight: 700; color: #ec4899;">R$ <span id="gauge-goal-value">2.000,00</span></div>
+                        </div>
+                    </div>
+
+                    <div style="text-align: center; font-size: 0.9rem; color: #cbd5e1; padding: 16px; border-top: 1px solid rgba(99, 102, 241, 0.1); margin-bottom: 32px;">
+                        Faltam <strong style="color: #ec4899;">R$ <span id="gauge-missing">2.000,00</span></strong> para sua meta
+                    </div>
+                </div>
+
+                <hr style="border: none; border-top: 1px solid rgba(99, 102, 241, 0.1); margin: 32px 0;">
+
+                <!-- Header com saldo -->
+                <div class="balance-header">
+                    <div class="balance-header-amount">R$ <span id="header-balance">115,60</span></div>
+                    <div class="balance-header-time" id="header-time">2:55</div>
+                </div>
+
+                <!-- Gráfico: Evolução do Lucro -->
+                <div class="chart-container">
+                    <h3 class="chart-title">Evolução do Lucro</h3>
+                    <canvas id="chartLucro"></canvas>
+                    <div class="chart-info">
+                        <span class="chart-date" id="lucro-date">14 de jun</span>
+                        <span class="chart-value positive">Lucro: R$ <span id="lucro-value">96,35</span></span>
+                    </div>
+                </div>
+
+                <!-- Gráfico: Evolução da Stake -->
+                <div class="chart-container">
+                    <h3 class="chart-title">Evolução da Stake</h3>
+                    <canvas id="chartStake"></canvas>
+                    <div class="chart-info">
+                        <span class="chart-date" id="stake-date">14 de Jan</span>
+                        <span class="chart-value positive">Total: <span id="stake-value">103,5</span> stakes</span>
+                    </div>
+                </div>
+
+                <!-- Estatísticas (4 cards) -->
+                <div class="stats-section">
+                    <h3 class="section-title">Estatísticas</h3>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon diamond">💎</div>
+                            <div class="stat-label">Odd Média</div>
+                            <div class="stat-value">4.85</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon hashtag">#</div>
+                            <div class="stat-label">Total de Apostas</div>
+                            <div class="stat-value">33</div>
+                        </div>
+                        <div class="stat-card wins">
+                            <div class="stat-icon check">✓</div>
+                            <div class="stat-label">Ganhos</div>
+                            <div class="stat-value">15</div>
+                        </div>
+                        <div class="stat-card losses">
+                            <div class="stat-icon cross">✕</div>
+                            <div class="stat-label">Perdas</div>
+                            <div class="stat-value">17</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-content" id="tab-premium">
+                <p style="text-align: center; padding: 40px; color: #888;">Em desenvolvimento</p>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <p>Metafy © 2026 | Análise Inteligente de Futebol</p>
+        </footer>
+    </div>
+
+    <script>
+        console.log('✅ Metafy carregando...');
+
+        // API serverless na Vercel
+        let GAMES = [];
+
+        // Buscar jogos REAIS da API
+        async function fetchGames() {
+            console.log('🔄 Buscando jogos da API...');
+            const container = document.getElementById('gamesList');
+            
+            if (!container) {
+                console.error('❌ Container não encontrado!');
+                return;
+            }
+            
+            // Mostrar loading
+            container.innerHTML = '<div style="text-align: center; padding: 30px; color: #999;">⏳ Carregando jogos...</div>';
+            
+            try {
+                const response = await fetch('/api/games');
+                console.log('📡 Status:', response.status);
+                
+                const data = await response.json();
+                console.log('📦 RESPOSTA:', data);
+                console.log('📦 Games:', data.games?.length || 0);
+                
+                if (!data.games || data.games.length === 0) {
+                    container.innerHTML = `
+                        <div style="text-align: center; padding: 30px; color: #999;">
+                            <p>⚽ Não há jogos hoje</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                GAMES = data.games;
+                console.log('✅ Renderizando', GAMES.length, 'jogos...');
+                renderGames(GAMES);
+                
+            } catch (error) {
+                console.error('💥 ERRO:', error);
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 30px; color: #f66;">
+                        <p>❌ Erro: ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Renderizar jogos REAIS
+        function renderGames(games) {
+            console.log('📍 renderGames() iniciando com', games.length, 'jogos...');
+            const container = document.getElementById('gamesList');
+            
+            if (!container) {
+                console.error('❌ Container gamesList não encontrado!');
+                return;
+            }
+
+            container.innerHTML = '';
+
+            games.forEach((game, index) => {
+                console.log(`🏟️ Renderizando jogo ${index + 1}:`, game.homeTeam, 'vs', game.awayTeam);
+                
+                const card = document.createElement('div');
+                card.className = 'game-card-compact';
+                card.innerHTML = `
+                    <div class="game-time-status ${game.status === 'LIVE' ? 'live' : game.status === 'FINALIZADO' ? 'finished' : ''}">
+                        ${game.status === 'LIVE' ? '🔴 AO VIVO' : game.status === 'FINALIZADO' ? 'FINALIZADO' : '⏰ ' + game.time}
+                    </div>
+                    
+                    <div class="game-teams-row">
+                        <div class="team-compact">
+                            <span class="team-flag">${game.homeFlag || '⚽'}</span>
+                            <span class="team-name-compact">${game.homeTeam}</span>
+                        </div>
+                        <div class="score-display">
+                            <span class="score-number">${game.homeScore !== null && game.homeScore !== undefined ? game.homeScore : '-'}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="game-teams-row">
+                        <div class="team-compact">
+                            <span class="team-flag">${game.awayFlag || '⚽'}</span>
+                            <span class="team-name-compact">${game.awayTeam}</span>
+                        </div>
+                        <div class="score-display">
+                            <span class="score-number">${game.awayScore !== null && game.awayScore !== undefined ? game.awayScore : '-'}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="game-odds-compact">
+                        <span class="odd-item">1: ${game.homeOdds.toFixed(2)}</span>
+                        <span class="odd-item">X: ${game.drawOdds.toFixed(2)}</span>
+                        <span class="odd-item">2: ${game.awayOdds.toFixed(2)}</span>
+                    </div>
+                    
+                    <div style="font-size: 0.75rem; color: #888; margin-top: 8px; text-align: center;">
+                        🏆 ${game.competition} ${game.stadium ? '• 📍 ' + game.stadium : ''}
+                    </div>
+                    
+                    <button type="button" class="btn-analyze-compact" onclick="openMatchCenter(${game.id})">
+                        🤖 Analisar com IA
+                    </button>
+                `;
+                
+                container.appendChild(card);
+            });
+
+            console.log('✅ Todos os', GAMES.length, 'jogos foram renderizados!');
+        }
+
+        // Abrir Match Center detalhado
+        function openMatchCenter(gameId) {
+            const game = GAMES.find(g => g.id === gameId);
+            if (!game) return;
+
+            const matchCenter = document.createElement('div');
+            matchCenter.className = 'match-center-overlay';
+            matchCenter.innerHTML = `
+                <div class="match-center-modal">
+                    <button type="button" class="close-modal" onclick="this.parentElement.parentElement.remove()">✕</button>
+                    
+                    <!-- Header do jogo -->
+                    <div class="match-header">
+                        <div class="match-date">08 Fev</div>
+                        <div class="match-main">
+                            <div class="team-logo">${game.homeFlag || '⚽'}</div>
+                            <div class="match-time">23:30</div>
+                            <div class="team-logo">${game.awayFlag || '⚽'}</div>
+                        </div>
+                        <div class="team-names">
+                            <span>${game.homeTeam}</span>
+                            <span>vs</span>
+                            <span>${game.awayTeam}</span>
+                        </div>
+                    </div>
+
+                    <!-- Tabs de estatísticas -->
+                    <div class="match-tabs">
+                        <button class="match-tab active" data-tab="overview">Overview</button>
+                        <button class="match-tab" data-tab="odds">Quot</button>
+                        <button class="match-tab" data-tab="corner">Corner</button>
+                        <button class="match-tab" data-tab="card">Card</button>
+                    </div>
+
+                    <!-- Conteúdo Overview -->
+                    <div class="match-content">
+                        <!-- Stats principais -->
+                        <div class="stats-row">
+                            <div class="stat-item">
+                                <div class="stat-icon green">✓</div>
+                                <div class="stat-info">
+                                    <div class="stat-label">% Odds</div>
+                                    <div class="stat-value">50%</div>
+                                </div>
+                                <div class="stat-badge green">Pont:5</div>
+                            </div>
+                            <div class="stat-divider">VS</div>
+                            <div class="stat-item">
+                                <div class="stat-icon blue">✓</div>
+                                <div class="stat-info">
+                                    <div class="stat-label">% Odds</div>
+                                    <div class="stat-value">85%</div>
+                                </div>
+                                <div class="stat-badge blue">Pont:5</div>
+                            </div>
+                        </div>
+
+                        <!-- Estatísticas secundárias -->
+                        <div class="secondary-stats">
+                            <div class="sec-stat">
+                                <div class="sec-label">% BTTS</div>
+                                <div class="sec-bar">
+                                    <div class="sec-bar-fill" style="width: 55%"></div>
+                                </div>
+                                <div class="sec-value">55%</div>
+                            </div>
+                            <div class="sec-stat">
+                                <div class="sec-label">Gols/média</div>
+                                <div class="sec-bar">
+                                    <div class="sec-bar-fill" style="width: 45%"></div>
+                                </div>
+                                <div class="sec-value">4.5</div>
+                            </div>
+                            <div class="sec-stat">
+                                <div class="sec-label">2.5 Gols</div>
+                                <div class="sec-bar">
+                                    <div class="sec-bar-fill orange" style="width: 25%"></div>
+                                </div>
+                                <div class="sec-value">2.5</div>
+                            </div>
+                            <div class="sec-stat">
+                                <div class="sec-label">13.7 Corners</div>
+                                <div class="sec-bar">
+                                    <div class="sec-bar-fill green" style="width: 65%"></div>
+                                </div>
+                                <div class="sec-value">13.7</div>
+                            </div>
+                        </div>
+
+                        <!-- Últimos jogos -->
+                        <div class="recent-matches">
+                            <div class="recent-match">
+                                <span class="team-logo-sm">${game.homeFlag || '⚽'}</span>
+                                <span class="recent-score">2:3 – 44%</span>
+                            </div>
+                            <div class="recent-match-note">
+                                Vitória em a última 2 a 3, a probabilidade de empate é grande, Maior a chance de over 4,5% do que under
+                            </div>
+                            <div class="recent-match">
+                                <span class="team-logo-sm">${game.awayFlag || '⚽'}</span>
+                                <span class="recent-score">3:25 – 36%</span>
+                            </div>
+                            <div class="recent-match-note">
+                                W: 99%
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(matchCenter);
+        }
+
+        // Mostrar mensagem "Sem jogos hoje"
+        function showNoGames() {
+            const container = document.getElementById('gamesList');
+            if (!container) return;
+
+            container.innerHTML = `
+                <div style="text-align: center; padding: 60px 20px; color: var(--text-secondary);">
+                    <div style="font-size: 3rem; margin-bottom: 20px;">📭</div>
+                    <h3 style="font-size: 1.3rem; margin-bottom: 10px; color: var(--text-primary);">Sem jogos hoje</h3>
+                    <p style="font-size: 0.95rem; color: var(--text-muted);">Nenhum jogo encontrado para hoje nas principais ligas</p>
+                    <button type="button" onclick="fetchGames()" style="margin-top: 20px; padding: 10px 24px; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                        🔄 Atualizar
+                    </button>
+                </div>
+            `;
+        }
+
+        // Mostrar erro
+        function showError() {
+            const container = document.getElementById('gamesList');
+            if (!container) return;
+
+            container.innerHTML = `
+                <div style="text-align: center; padding: 60px 20px; color: var(--text-secondary);">
+                    <div style="font-size: 3rem; margin-bottom: 20px;">⚠️</div>
+                    <h3 style="font-size: 1.3rem; margin-bottom: 10px; color: var(--text-primary);">Erro ao carregar jogos</h3>
+                    <p style="font-size: 0.95rem; color: var(--text-muted);">Não foi possível conectar com a API</p>
+                    <button type="button" onclick="fetchGames()" style="margin-top: 20px; padding: 10px 24px; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                        🔄 Tentar novamente
+                    </button>
+                </div>
+            `;
+        }
+
+        // Navegação de tabs
+        document.querySelectorAll('.tab-button').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                
+                btn.classList.add('active');
+                document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+                
+                // Inicializar gráficos ao trocar para tab de balance
+                if (btn.dataset.tab === 'balance') {
+                    initCharts();
+                }
+            });
+        });
+
+        // ====================================
+        // GRÁFICOS - GANHOS/PERDAS
+        // ====================================
+
+        let chartLucro = null;
+        let chartStake = null;
+
+        function initCharts() {
+            // Só criar gráficos uma vez
+            if (chartLucro && chartStake) return;
+
+            const data = getBalanceData();
+            
+            // Processar dados das sessões para os gráficos
+            const lucroData = processarDadosLucro(data.sessoes);
+            const stakeData = processarDadosStake(data.sessoes);
+
+            // Configuração comum dos gráficos
+            const commonOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: 'rgba(15, 20, 40, 0.95)',
+                        titleColor: '#f8fafc',
+                        bodyColor: '#10b981',
+                        borderColor: 'rgba(99, 102, 241, 0.3)',
+                        borderWidth: 1,
+                        padding: 12,
+                        displayColors: false,
+                        callbacks: {
+                            label: (context) => {
+                                return context.chart.canvas.id === 'chartLucro' 
+                                    ? `R$ ${context.parsed.y.toFixed(2)}`
+                                    : `${context.parsed.y} stakes`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { color: 'rgba(99, 102, 241, 0.1)' },
+                        ticks: { color: '#94a3b8', font: { size: 10 } }
+                    },
+                    y: {
+                        grid: { color: 'rgba(99, 102, 241, 0.1)' },
+                        ticks: { color: '#94a3b8', font: { size: 10 } }
+                    }
+                }
+            };
+
+            // Gráfico Evolução do Lucro
+            const ctxLucro = document.getElementById('chartLucro');
+            if (ctxLucro) {
+                chartLucro = new Chart(ctxLucro, {
+                    type: 'line',
+                    data: {
+                        labels: lucroData.labels,
+                        datasets: [{
+                            data: lucroData.values,
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4,
+                            pointBackgroundColor: '#10b981',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2,
+                            pointRadius: 4,
+                            pointHoverRadius: 6
+                        }]
+                    },
+                    options: commonOptions
+                });
+            }
+
+            // Gráfico Evolução da Stake
+            const ctxStake = document.getElementById('chartStake');
+            if (ctxStake) {
+                chartStake = new Chart(ctxStake, {
+                    type: 'line',
+                    data: {
+                        labels: stakeData.labels,
+                        datasets: [{
+                            data: stakeData.values,
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4,
+                            pointBackgroundColor: '#10b981',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2,
+                            pointRadius: 4,
+                            pointHoverRadius: 6
+                        }]
+                    },
+                    options: commonOptions
+                });
+            }
+
+            // Atualizar hora em tempo real
+            updateTime();
+            setInterval(updateTime, 60000);
+            
+            // Atualizar estatísticas
+            atualizarEstatisticas();
+        }
+
+        function processarDadosLucro(sessoes) {
+            if (!sessoes || sessoes.length === 0) {
+                return {
+                    labels: ['Início'],
+                    values: [0]
+                };
+            }
+
+            let lucroAcumulado = 0;
+            const labels = [];
+            const values = [];
+
+            sessoes.forEach((sessao, index) => {
+                const data = new Date(sessao.data);
+                const label = `${data.getDate()} ${data.toLocaleDateString('pt-BR', { month: 'short' })}`;
+                lucroAcumulado += sessao.resultado;
+                
+                labels.push(label);
+                values.push(lucroAcumulado);
+            });
+
+            // Atualizar info do gráfico
+            if (sessoes.length > 0) {
+                const ultimaSessao = sessoes[sessoes.length - 1];
+                const data = new Date(ultimaSessao.data);
+                document.getElementById('lucro-date').textContent = 
+                    `${data.getDate()} de ${data.toLocaleDateString('pt-BR', { month: 'short' })}`;
+                document.getElementById('lucro-value').textContent = 
+                    lucroAcumulado.toFixed(2).replace('.', ',');
+            }
+
+            return { labels, values };
+        }
+
+        function processarDadosStake(sessoes) {
+            if (!sessoes || sessoes.length === 0) {
+                return {
+                    labels: ['Início'],
+                    values: [0]
+                };
+            }
+
+            let stakeAcumulado = 0;
+            const labels = [];
+            const values = [];
+
+            sessoes.forEach((sessao, index) => {
+                const data = new Date(sessao.data);
+                const label = data.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long' });
+                stakeAcumulado += 1; // Cada sessão = 1 stake
+                
+                labels.push(label);
+                values.push(stakeAcumulado);
+            });
+
+            // Atualizar info do gráfico
+            if (sessoes.length > 0) {
+                const ultimaSessao = sessoes[sessoes.length - 1];
+                const data = new Date(ultimaSessao.data);
+                document.getElementById('stake-date').textContent = 
+                    `${data.getDate()} de ${data.toLocaleDateString('pt-BR', { month: 'long' })}`;
+                document.getElementById('stake-value').textContent = stakeAcumulado;
+            }
+
+            return { labels, values };
+        }
+
+        function atualizarEstatisticas() {
+            const data = getBalanceData();
+            const sessoes = data.sessoes || [];
+            
+            // Calcular Odd Média
+            const totalGanhos = sessoes.filter(s => s.ganhos > 0).length;
+            const totalPerdas = sessoes.filter(s => s.perdas > 0).length;
+            const oddMedia = sessoes.length > 0 
+                ? (data.totalGanhos / sessoes.length).toFixed(2) 
+                : '0.00';
+            
+            // Atualizar cards
+            document.querySelector('.stat-card:nth-child(1) .stat-value').textContent = oddMedia;
+            document.querySelector('.stat-card:nth-child(2) .stat-value').textContent = sessoes.length;
+            document.querySelector('.stat-card:nth-child(3) .stat-value').textContent = totalGanhos;
+            document.querySelector('.stat-card:nth-child(4) .stat-value').textContent = totalPerdas;
+            
+            // Atualizar header-balance
+            document.getElementById('header-balance').textContent = 
+                data.saldo.toFixed(2).replace('.', ',');
+        }
+
+        function updateTime() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const timeEl = document.getElementById('header-time');
+            if (timeEl) {
+                timeEl.textContent = `${hours}:${minutes}`;
+            }
+        }
+
+        // ====================================
+        // SISTEMA DE SESSÕES E METAS
+        // ====================================
+
+        // Estrutura de dados
+        const STORAGE_KEY = 'metafy_balance_data';
+        
+        function getBalanceData() {
+            const data = localStorage.getItem(STORAGE_KEY);
+            return data ? JSON.parse(data) : {
+                meta: 2000,
+                ciclo: 1,
+                sessoes: [],
+                totalGanhos: 0,
+                totalPerdas: 0,
+                saldo: 0
+            };
+        }
+
+        function saveBalanceData(data) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+            atualizarInterface();
+            atualizarGraficos();
+        }
+
+        function atualizarGraficos() {
+            // Destruir gráficos existentes
+            if (chartLucro) {
+                chartLucro.destroy();
+                chartLucro = null;
+            }
+            if (chartStake) {
+                chartStake.destroy();
+                chartStake = null;
+            }
+            // Recriar com novos dados
+            initCharts();
+        }
+
+        function adicionarSessao() {
+            const ganhos = parseFloat(document.getElementById('input-ganhos').value) || 0;
+            const perdas = parseFloat(document.getElementById('input-perdas').value) || 0;
+
+            if (ganhos === 0 && perdas === 0) {
+                alert('⚠️ Adicione pelo menos um valor (ganhos ou perdas)');
+                return;
+            }
+
+            const data = getBalanceData();
+            
+            const sessao = {
+                id: Date.now(),
+                data: new Date().toISOString(),
+                ganhos,
+                perdas,
+                resultado: ganhos - perdas
+            };
+
+            data.sessoes.push(sessao);
+            data.totalGanhos += ganhos;
+            data.totalPerdas += perdas;
+            data.saldo = data.totalGanhos - data.totalPerdas;
+
+            saveBalanceData(data);
+
+            // Limpar form
+            document.getElementById('input-ganhos').value = '';
+            document.getElementById('input-perdas').value = '';
+
+            alert('✅ Sessão adicionada com sucesso!');
+        }
+
+        function atualizarInterface() {
+            const data = getBalanceData();
+            const percentual = Math.min((data.saldo / data.meta) * 100, 100);
+            const faltam = Math.max(100 - percentual, 0);
+            const faltaValor = Math.max(data.meta - data.saldo, 0);
+
+            // Atualizar valores
+            document.getElementById('gauge-total').textContent = data.saldo.toFixed(2).replace('.', ',');
+            document.getElementById('gauge-percentage').textContent = percentual.toFixed(1);
+            document.getElementById('gauge-remaining').textContent = faltam.toFixed(0);
+            document.getElementById('gauge-goal').textContent = data.meta.toFixed(2).replace('.', ',');
+            document.getElementById('gauge-goal-value').textContent = data.meta.toFixed(2).replace('.', ',');
+            document.getElementById('gauge-current').textContent = data.saldo.toFixed(2).replace('.', ',');
+            document.getElementById('gauge-missing').textContent = faltaValor.toFixed(2).replace('.', ',');
+            document.getElementById('ciclo-numero').textContent = data.ciclo;
+
+            // Animar gauge (220 é o stroke-dasharray total)
+            const offset = 220 - (220 * percentual / 100);
+            const gaugeArc = document.getElementById('gauge-arc');
+            if (gaugeArc) {
+                gaugeArc.style.strokeDashoffset = offset;
+            }
+        }
+
+        function editarMeta() {
+            const data = getBalanceData();
+            const novaMeta = prompt('💰 Nova meta (R$):', data.meta);
+            if (novaMeta && !isNaN(novaMeta) && parseFloat(novaMeta) > 0) {
+                data.meta = parseFloat(novaMeta);
+                saveBalanceData(data);
+                alert('✅ Meta atualizada!');
+            }
+        }
+
+        function finalizarCiclo() {
+            if (!confirm('🏁 Finalizar ciclo atual e iniciar novo?')) return;
+            
+            const data = getBalanceData();
+            data.ciclo++;
+            data.sessoes = [];
+            data.totalGanhos = 0;
+            data.totalPerdas = 0;
+            data.saldo = 0;
+            
+            saveBalanceData(data);
+            alert('✅ Ciclo #' + data.ciclo + ' iniciado!');
+        }
+
+        function resetTotal() {
+            if (!confirm('⚠️ ATENÇÃO: Isso apagará TODOS os dados. Confirmar?')) return;
+            
+            localStorage.removeItem(STORAGE_KEY);
+            atualizarInterface();
+            alert('🗑️ Todos os dados foram resetados.');
+        }
+
+        // Inicializar ao carregar tab de balance
+        document.querySelectorAll('.tab-button').forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (btn.dataset.tab === 'balance') {
+                    atualizarInterface();
+                    initCharts();
+                }
+            });
+        });
+
+        // BUSCAR JOGOS REAIS AO CARREGAR
+        console.log('⏱️ Iniciando busca de jogos reais...');
+        fetchGames();
+        atualizarInterface(); // Carregar dados salvos
+    </script>
+</body>
+</html>
