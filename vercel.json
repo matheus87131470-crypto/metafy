@@ -1,5 +1,7 @@
 {
+  "buildCommand": "",
+  "outputDirectory": ".",
   "rewrites": [
-    { "source": "/api/games", "destination": "/api/games" }
+    { "source": "/api/(.*)", "destination": "/api/$1" }
   ]
 }
