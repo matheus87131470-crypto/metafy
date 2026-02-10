@@ -9,13 +9,12 @@ export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
-    // Usar data de hoje (forçando timezone para evitar problemas)
-    const now = new Date();
-    const today = now.toISOString().split('T')[0];
-    const dateToUse = '2025-02-09'; // Data fixa até configurar API key corretamente
+    // Data de hoje
+    const today = new Date().toISOString().split('T')[0];
+    const dateToUse = today;
     const apiKey = process.env.API_FOOTBALL_KEY;
     
-    console.log('📅 Date:', dateToUse, '(today would be:', today, ')');
+    console.log('📅 Date:', dateToUse);
     console.log('🔑 API Key:', apiKey ? `${apiKey.substring(0, 8)}...` : 'MISSING');
     
     if (!apiKey) {
@@ -27,13 +26,15 @@ export default async function handler(req, res) {
     }
 
     const responseData = await new Promise((resolve, reject) => {
+      // RAPIDAPI - headers e hostname diferentes
       const options = {
-        hostname: 'v3.football.api-sports.io',
+        hostname: 'api-football-v1.p.rapidapi.com',
         port: 443,
-        path: `/fixtures?date=${dateToUse}`,
+        path: `/v3/fixtures?date=${dateToUse}`,
         method: 'GET',
         headers: {
-          'x-apisports-key': apiKey
+          'x-rapidapi-key': apiKey,
+          'x-rapidapi-host': 'api-football-v1.p.rapidapi.com'
         }
       };
       
