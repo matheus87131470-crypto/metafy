@@ -218,7 +218,7 @@
             </div>
             <div class="header-right">
                 <div class="analysis-counter" id="analysisCounter">
-                    ⚡ 3/3 análises restantes
+                    ⚡ 2/2 análises restantes
                 </div>
                 <div class="premium-badge" onclick="showPremiumInfo()">
                     <span class="badge-icon">💎</span>
@@ -411,12 +411,22 @@
                         </thead>
                         <tbody>
                             <tr>
-                                <td>Análises/dia</td>
-                                <td>3</td>
-                                <td class="premium-col">∞</td>
+                                <td>Análises de IA</td>
+                                <td>2/dia</td>
+                                <td class="premium-col">∞ Ilimitado</td>
                             </tr>
                             <tr>
-                                <td>Histórico</td>
+                                <td>Estatísticas básicas</td>
+                                <td>✅</td>
+                                <td class="premium-col">✅</td>
+                            </tr>
+                            <tr>
+                                <td>Probabilidades</td>
+                                <td>✅</td>
+                                <td class="premium-col">✅</td>
+                            </tr>
+                            <tr>
+                                <td>Previsões detalhadas</td>
                                 <td>❌</td>
                                 <td class="premium-col">✅</td>
                             </tr>
@@ -431,7 +441,7 @@
                                 <td class="premium-col">✅</td>
                             </tr>
                             <tr>
-                                <td>Stats Avançados</td>
+                                <td>Insights IA</td>
                                 <td>❌</td>
                                 <td class="premium-col">✅</td>
                             </tr>
@@ -439,9 +449,22 @@
                     </table>
                 </div>
 
-                <button class="btn-premium-cta" style="margin-top: 32px;" disabled>
-                    🚀 Em breve
+                <div class="premium-price-section">
+                    <div class="price-card">
+                        <span class="price-label">Preço especial</span>
+                        <div class="price-amount">
+                            <span class="currency">R$</span>
+                            <span class="value">4,50</span>
+                            <span class="period">/semana</span>
+                        </div>
+                        <span class="price-duration">7 dias de acesso completo</span>
+                    </div>
+                </div>
+
+                <button class="btn-premium-cta" onclick="activatePremium()" style="margin-top: 24px;">
+                    💎 Assinar Premium Agora
                 </button>
+                <p style="text-align: center; color: var(--text-muted); font-size: 0.85rem; margin-top: 12px;">Cancele quando quiser • Acesso imediato</p>
             </div>
         </div>
     </main>

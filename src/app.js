@@ -136,7 +136,9 @@ const MOCK_GAMES = [
 let GAMES = [];
 let isDemo = true;
 let analysisCount = 0;
-const MAX_FREE_ANALYSIS = 3;
+const MAX_FREE_ANALYSIS = 2;
+const PREMIUM_PRICE = 4.50;
+const PREMIUM_DURATION_DAYS = 7;
 
 // Inicializar
 document.addEventListener('DOMContentLoaded', () => {
@@ -145,6 +147,39 @@ document.addEventListener('DOMContentLoaded', () => {
   fetchGames();
   updateAnalysisCounter();
 });
+
+// Verificar se usuário é Premium
+function isPremiumUser() {
+  const premiumData = localStorage.getItem('metafy_premium');
+  if (!premiumData) return false;
+  const data = JSON.parse(premiumData);
+  const expiresAt = new Date(data.expiresAt);
+  return expiresAt > new Date();
+}
+
+// Obter dias restantes do Premium
+function getPremiumDaysRemaining() {
+  const premiumData = localStorage.getItem('metafy_premium');
+  if (!premiumData) return 0;
+  const data = JSON.parse(premiumData);
+  const expiresAt = new Date(data.expiresAt);
+  const now = new Date();
+  if (expiresAt <= now) return 0;
+  return Math.ceil((expiresAt - now) / (1000 * 60 * 60 * 24));
+}
+
+// Ativar Premium (simulação)
+function activatePremium() {
+  const expiresAt = new Date();
+  expiresAt.setDate(expiresAt.getDate() + PREMIUM_DURATION_DAYS);
+  localStorage.setItem('metafy_premium', JSON.stringify({
+    activatedAt: new Date().toISOString(),
+    expiresAt: expiresAt.toISOString()
+  }));
+  updateAnalysisCounter();
+  alert('✅ Premium ativado! Você tem acesso ilimitado por 7 dias.');
+  closeAnalysisModal();
+}
 
 // Carregar contador de análises
 function loadAnalysisCount() {
@@ -168,10 +203,23 @@ function saveAnalysisCount() {
 
 // Atualizar contador na UI
 function updateAnalysisCounter() {
-  const remaining = Math.max(0, MAX_FREE_ANALYSIS - analysisCount);
   const counter = document.getElementById('analysisCounter');
-  if (counter) {
-    counter.innerHTML = `⚡ ${remaining}/${MAX_FREE_ANALYSIS} análises restantes`;
+  const badge = document.querySelector('.premium-badge');
+  
+  if (isPremiumUser()) {
+    const days = getPremiumDaysRemaining();
+    if (counter) counter.innerHTML = `💎 Premium • ${days} dias`;
+    if (badge) {
+      badge.innerHTML = `<span class="badge-icon">✓</span><span class="badge-text">Premium Ativo</span>`;
+      badge.classList.add('active');
+    }
+  } else {
+    const remaining = Math.max(0, MAX_FREE_ANALYSIS - analysisCount);
+    if (counter) counter.innerHTML = `⚡ ${remaining}/${MAX_FREE_ANALYSIS} análises restantes`;
+    if (badge) {
+      badge.innerHTML = `<span class="badge-icon">💎</span><span class="badge-text">Premium</span>`;
+      badge.classList.remove('active');
+    }
   }
 }
 
@@ -350,15 +398,18 @@ function analyzeGame(gameId) {
   const game = GAMES.find(g => g.id === gameId);
   if (!game) return;
 
-  // Verificar limite
-  if (analysisCount >= MAX_FREE_ANALYSIS) {
-    showPremiumModal();
-    return;
+  // Premium não tem limite
+  if (!isPremiumUser()) {
+    // Verificar limite para usuários Free
+    if (analysisCount >= MAX_FREE_ANALYSIS) {
+      showPremiumModal();
+      return;
+    }
+    // Incrementar apenas para usuários Free
+    analysisCount++;
+    saveAnalysisCount();
   }
-
-  // Incrementar contador
-  analysisCount++;
-  saveAnalysisCount();
+  
   updateAnalysisCounter();
 
   // Gerar análise
@@ -423,7 +474,8 @@ function generateAnalysis(game) {
     confidence,
     form: { home: homeFormScore, away: awayFormScore },
     reasoning,
-    remaining: MAX_FREE_ANALYSIS - analysisCount
+    remaining: isPremiumUser() ? '∞' : MAX_FREE_ANALYSIS - analysisCount,
+    isPremium: isPremiumUser()
   };
 }
 
@@ -550,7 +602,9 @@ function showAnalysisModal(game, analysis) {
       </div>
 
       <div class="analysis-footer">
-        <div class="remaining-badge">⚡ ${analysis.remaining} análises restantes hoje</div>
+        <div class="remaining-badge ${analysis.isPremium ? 'premium' : ''}">
+          ${analysis.isPremium ? '💎 Premium • Análises ilimitadas' : `⚡ ${analysis.remaining} análises restantes hoje`}
+        </div>
       </div>
     </div>
   `;
@@ -566,20 +620,40 @@ function showPremiumModal() {
   modal.innerHTML = `
     <div class="premium-modal">
       <button class="btn-close" onclick="closeAnalysisModal()">✕</button>
-      <div class="premium-icon">💎</div>
+      <div class="premium-icon">🔒</div>
       <h2 class="premium-title">Limite Atingido</h2>
-      <p class="premium-subtitle">Você usou suas 3 análises gratuitas de hoje</p>
+      <p class="premium-subtitle">Você usou suas <strong>2 análises gratuitas</strong> de hoje</p>
+      
+      <div class="premium-offer">
+        <div class="offer-badge">OFERTA ESPECIAL</div>
+        <div class="offer-price">
+          <span class="price-currency">R$</span>
+          <span class="price-value">4,50</span>
+          <span class="price-period">/semana</span>
+        </div>
+        <p class="offer-duration">7 dias de acesso completo</p>
+      </div>
+
       <div class="premium-features">
-        <h4>Desbloqueie o Premium:</h4>
+        <h4>O que você ganha:</h4>
         <ul>
-          <li>✨ Análises ilimitadas</li>
-          <li>📊 Dados avançados</li>
-          <li>📈 Histórico completo</li>
+          <li>✨ Análises de IA <strong>ilimitadas</strong></li>
+          <li>📊 Previsões detalhadas</li>
+          <li>📈 Probabilidades avançadas</li>
           <li>🎯 Over/Under e BTTS</li>
+          <li>💡 Insights exclusivos</li>
         </ul>
       </div>
-      <button class="btn-premium-cta" disabled>🚀 Em breve</button>
-      <p class="premium-note">Volte amanhã para mais 3 análises gratuitas!</p>
+      
+      <button class="btn-premium-cta" onclick="activatePremium()">
+        💎 Assinar Premium - R$ 4,50/semana
+      </button>
+      
+      <p class="premium-note">Cancele a qualquer momento • Acesso imediato</p>
+      
+      <div class="premium-divider"></div>
+      
+      <p class="premium-free-note">Ou volte amanhã para mais <strong>2 análises gratuitas</strong></p>
     </div>
   `;
   document.body.appendChild(modal);
@@ -594,3 +668,5 @@ function closeAnalysisModal() {
 // Expor funções globais
 window.analyzeGame = analyzeGame;
 window.closeAnalysisModal = closeAnalysisModal;
+window.activatePremium = activatePremium;
+window.isPremiumUser = isPremiumUser;

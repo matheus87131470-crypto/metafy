@@ -508,6 +508,145 @@ body.has-demo-banner {
   color: var(--text-muted);
 }
 
+.premium-free-note {
+  margin-top: 12px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.premium-divider {
+  width: 100%;
+  height: 1px;
+  background: var(--border-light);
+  margin: 20px 0 12px;
+}
+
+/* Premium Offer Section */
+.premium-offer {
+  padding: 20px;
+  margin: 20px 0;
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.15), rgba(139, 92, 246, 0.15));
+  border: 2px solid var(--accent-gold);
+  border-radius: var(--radius-lg);
+}
+
+.offer-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  background: var(--gradient-gold);
+  color: #1a1a2e;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-radius: var(--radius-sm);
+  margin-bottom: 12px;
+}
+
+.offer-price {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 4px;
+}
+
+.offer-price .price-currency {
+  font-size: 1.2rem;
+  color: var(--text-secondary);
+}
+
+.offer-price .price-value {
+  font-size: 3rem;
+  font-weight: 700;
+  color: var(--accent-gold);
+}
+
+.offer-price .price-period {
+  font-size: 1rem;
+  color: var(--text-muted);
+}
+
+.offer-duration {
+  margin-top: 8px;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+/* Premium Price Section (página Premium) */
+.premium-price-section {
+  padding: 0 20px;
+  margin: 24px 0;
+}
+
+.price-card {
+  padding: 24px;
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.1), rgba(139, 92, 246, 0.1));
+  border: 2px solid var(--accent-gold);
+  border-radius: var(--radius-xl);
+  text-align: center;
+}
+
+.price-label {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+}
+
+.price-amount {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 4px;
+}
+
+.price-amount .currency {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.price-amount .value {
+  font-size: 4rem;
+  font-weight: 700;
+  background: var(--gradient-gold);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.price-amount .period {
+  font-size: 1.2rem;
+  color: var(--text-muted);
+}
+
+.price-duration {
+  display: block;
+  margin-top: 8px;
+  font-size: 0.95rem;
+  color: var(--accent-green);
+  font-weight: 500;
+}
+
+/* Premium Badge Active */
+.premium-badge.active {
+  background: linear-gradient(135deg, #10b981, #059669);
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);
+}
+
+.premium-badge.active .badge-icon {
+  animation: none;
+}
+
+/* Remaining badge premium */
+.remaining-badge.premium {
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.2), rgba(139, 92, 246, 0.2));
+  color: var(--accent-gold);
+  border: 1px solid var(--accent-gold);
+}
+
 /* Loader AI */
 .ai-loader {
   display: flex;
