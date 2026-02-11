@@ -464,8 +464,14 @@ function createGameCard(game) {
       <div class="game-card-footer">
         <button class="btn-analyze" onclick="analyzeGame(${game.id})">
           <span class="btn-icon">✨</span>
-          <span class="btn-text">Analisar com IA</span>
+          <span class="btn-text">Análise Rápida</span>
         </button>
+        ${isPremiumUser() ? `
+        <button class="btn-select-game" onclick="toggleGameSelection(${game.id})">
+          <span class="btn-icon">+</span>
+          <span class="btn-text">Selecionar</span>
+        </button>
+        ` : ''}
       </div>
     </div>
   `;
@@ -841,6 +847,244 @@ function closeAnalysisModal() {
   if (modal) modal.remove();
 }
 
+// =========================================
+// ANÁLISE PERSONALIZADA (PREMIUM)
+// =========================================
+let selectedGames = [];
+const MAX_SELECTED_GAMES = 2;
+
+// Toggle seleção de jogo para análise personalizada
+function toggleGameSelection(gameId) {
+  if (!isPremiumUser()) {
+    showPremiumModal();
+    return;
+  }
+
+  const index = selectedGames.indexOf(gameId);
+  
+  if (index > -1) {
+    // Remover
+    selectedGames.splice(index, 1);
+  } else {
+    // Adicionar (se não exceder limite)
+    if (selectedGames.length >= MAX_SELECTED_GAMES) {
+      alert(`⚠️ Máximo de ${MAX_SELECTED_GAMES} jogos para análise personalizada`);
+      return;
+    }
+    selectedGames.push(gameId);
+  }
+
+  // Atualizar UI
+  updateGameSelectionUI();
+  updateAnalyzeSelectedButton();
+}
+
+// Atualizar UI de seleção
+function updateGameSelectionUI() {
+  document.querySelectorAll('.game-card').forEach(card => {
+    const gameId = parseInt(card.dataset.gameId);
+    const isSelected = selectedGames.includes(gameId);
+    card.classList.toggle('selected', isSelected);
+    
+    const selectBtn = card.querySelector('.btn-select-game');
+    if (selectBtn) {
+      selectBtn.innerHTML = isSelected 
+        ? '<span class="btn-icon">✓</span><span class="btn-text">Selecionado</span>'
+        : '<span class="btn-icon">+</span><span class="btn-text">Selecionar</span>';
+      selectBtn.classList.toggle('selected', isSelected);
+    }
+  });
+}
+
+// Atualizar botão de análise personalizada
+function updateAnalyzeSelectedButton() {
+  let floatingBtn = document.getElementById('analyzeSelectedBtn');
+  
+  if (selectedGames.length > 0) {
+    if (!floatingBtn) {
+      floatingBtn = document.createElement('div');
+      floatingBtn.id = 'analyzeSelectedBtn';
+      floatingBtn.className = 'floating-analyze-btn';
+      document.body.appendChild(floatingBtn);
+    }
+    floatingBtn.innerHTML = `
+      <button onclick="analyzeSelectedGames()">
+        <span class="btn-icon">🧠</span>
+        <span>Analisar ${selectedGames.length} jogo${selectedGames.length > 1 ? 's' : ''} com IA</span>
+      </button>
+      <button class="btn-clear" onclick="clearSelection()">✕</button>
+    `;
+    floatingBtn.classList.add('visible');
+  } else {
+    if (floatingBtn) {
+      floatingBtn.classList.remove('visible');
+    }
+  }
+}
+
+// Limpar seleção
+function clearSelection() {
+  selectedGames = [];
+  updateGameSelectionUI();
+  updateAnalyzeSelectedButton();
+}
+
+// Analisar jogos selecionados com IA
+async function analyzeSelectedGames() {
+  if (!isPremiumUser()) {
+    showPremiumModal();
+    return;
+  }
+
+  if (selectedGames.length === 0) {
+    alert('Selecione pelo menos 1 jogo para análise');
+    return;
+  }
+
+  // Mostrar loading
+  showAnalysisLoadingModal();
+
+  try {
+    // Preparar dados para API
+    const fixtures = selectedGames.map(id => {
+      const game = GAMES.find(g => g.id === id);
+      return {
+        fixture_id: game.fixture_id || game.id,
+        // Dados extras para fallback local
+        homeTeam: game.homeTeam,
+        awayTeam: game.awayTeam,
+        competition: game.competition
+      };
+    });
+
+    // Chamar API de análise personalizada
+    const response = await fetch('/api/ai/analyze-fixtures', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ fixtures })
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+      showPersonalizedAnalysisModal(result.analysis);
+    } else {
+      throw new Error(result.message || result.error || 'Erro ao gerar análise');
+    }
+
+  } catch (error) {
+    console.error('Erro na análise:', error);
+    closeAnalysisModal();
+    alert('❌ Erro ao gerar análise: ' + error.message);
+  }
+
+  // Limpar seleção após análise
+  clearSelection();
+}
+
+// Modal de loading da análise
+function showAnalysisLoadingModal() {
+  const modal = document.createElement('div');
+  modal.className = 'analysis-modal-overlay';
+  modal.innerHTML = `
+    <div class="loading-modal">
+      <div class="ai-loading-animation">
+        <div class="brain-icon">🧠</div>
+        <div class="loading-rings">
+          <div class="ring"></div>
+          <div class="ring"></div>
+          <div class="ring"></div>
+        </div>
+      </div>
+      <h3>Analisando jogos...</h3>
+      <p>A IA está processando os dados estatísticos</p>
+      <div class="loading-steps">
+        <div class="step active">📊 Coletando estatísticas</div>
+        <div class="step">⚔️ Analisando confrontos</div>
+        <div class="step">🎯 Gerando previsões</div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  // Animar steps
+  let currentStep = 0;
+  const steps = modal.querySelectorAll('.step');
+  const stepInterval = setInterval(() => {
+    currentStep++;
+    if (currentStep < steps.length) {
+      steps[currentStep].classList.add('active');
+    } else {
+      clearInterval(stepInterval);
+    }
+  }, 1500);
+}
+
+// Modal com análise personalizada
+function showPersonalizedAnalysisModal(analyses) {
+  closeAnalysisModal();
+
+  const modal = document.createElement('div');
+  modal.className = 'analysis-modal-overlay';
+  modal.onclick = (e) => { if (e.target === modal) closeAnalysisModal(); };
+
+  let analysisHTML = '';
+  
+  Object.keys(analyses).forEach((key, index) => {
+    const gameAnalysis = analyses[key];
+    analysisHTML += `
+      <div class="analysis-game-section">
+        <div class="game-header">
+          <span class="game-number">${index + 1}</span>
+          <div class="game-info">
+            <span class="game-match">${gameAnalysis.match}</span>
+            <span class="game-league">${gameAnalysis.league}</span>
+          </div>
+        </div>
+        <div class="analysis-content">
+          ${formatAnalysisText(gameAnalysis.analysis)}
+        </div>
+      </div>
+    `;
+  });
+
+  modal.innerHTML = `
+    <div class="personalized-analysis-modal">
+      <div class="modal-header">
+        <div class="header-title">
+          <span class="ai-badge">🧠 IA</span>
+          <h2>Análise Personalizada</h2>
+        </div>
+        <button class="btn-close" onclick="closeAnalysisModal()">✕</button>
+      </div>
+      
+      <div class="modal-body">
+        ${analysisHTML}
+      </div>
+      
+      <div class="modal-footer">
+        <p class="premium-badge-footer">💎 Análise Premium • ${new Date().toLocaleDateString('pt-BR')}</p>
+        <button class="btn-close-modal" onclick="closeAnalysisModal()">Fechar</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+}
+
+// Formatar texto de análise
+function formatAnalysisText(text) {
+  if (!text) return '<p>Análise não disponível</p>';
+  
+  // Converter markdown simples para HTML
+  return text
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\n/g, '<br>')
+    .replace(/^• /gm, '<span class="bullet">•</span> ');
+}
+
 // Expor funções globais
 window.analyzeGame = analyzeGame;
 window.closeAnalysisModal = closeAnalysisModal;
@@ -849,3 +1093,6 @@ window.confirmPayment = confirmPayment;
 window.isPremiumUser = isPremiumUser;
 window.getPremiumData = getPremiumData;
 window.showPaymentModal = showPaymentModal;
+window.toggleGameSelection = toggleGameSelection;
+window.analyzeSelectedGames = analyzeSelectedGames;
+window.clearSelection = clearSelection;
