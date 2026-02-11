@@ -1,0 +1,666 @@
+/* =====================================================
+   src/styles/premium-analysis.css
+   Estilos para área Premium e análise combinada
+   ===================================================== */
+
+/* ==================== BOTÃO FLUTUANTE ==================== */
+.floating-analyze-container {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.selected-games-preview {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.selected-game-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--card-bg, rgba(26, 26, 46, 0.95));
+  border: 1px solid var(--success-color, #10b981);
+  border-radius: 20px;
+  font-size: 12px;
+  color: var(--text-primary, #fff);
+  backdrop-filter: blur(10px);
+}
+
+.chip-teams {
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chip-remove {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary, #888);
+  cursor: pointer;
+  font-size: 16px;
+  padding: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+
+.chip-remove:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+
+.floating-analyze-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 28px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  border: none;
+  border-radius: 30px;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 8px 32px rgba(99, 102, 241, 0.4);
+  transition: all 0.3s;
+}
+
+.floating-analyze-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px rgba(99, 102, 241, 0.5);
+}
+
+.floating-analyze-btn .btn-icon {
+  font-size: 20px;
+}
+
+/* ==================== LOADING DE ANÁLISE ==================== */
+.analysis-loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  backdrop-filter: blur(5px);
+}
+
+.analysis-loading-content {
+  text-align: center;
+  padding: 40px;
+}
+
+.loading-spinner {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 24px;
+  position: relative;
+}
+
+.spinner-ring {
+  position: absolute;
+  inset: 0;
+  border: 3px solid transparent;
+  border-top-color: #6366f1;
+  border-radius: 50%;
+  animation: spin 1.2s linear infinite;
+}
+
+.spinner-ring:nth-child(2) {
+  inset: 8px;
+  border-top-color: #8b5cf6;
+  animation-delay: -0.4s;
+}
+
+.spinner-ring:nth-child(3) {
+  inset: 16px;
+  border-top-color: #a78bfa;
+  animation-delay: -0.8s;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.analysis-loading-content h3 {
+  font-size: 24px;
+  color: #fff;
+  margin-bottom: 8px;
+}
+
+.analysis-loading-content p {
+  font-size: 14px;
+  color: var(--text-secondary, #888);
+  margin-bottom: 24px;
+}
+
+.loading-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 250px;
+  margin: 0 auto;
+}
+
+.loading-steps .step {
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--text-secondary, #666);
+  opacity: 0.5;
+  transition: all 0.3s;
+}
+
+.loading-steps .step.active {
+  opacity: 1;
+  color: var(--text-primary, #fff);
+  background: rgba(99, 102, 241, 0.2);
+}
+
+/* ==================== MODAL DE ANÁLISE COMBINADA ==================== */
+.combined-analysis-modal {
+  background: var(--card-bg, #1a1a2e);
+  border-radius: 20px;
+  max-width: 800px;
+  width: 95%;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: modalIn 0.3s ease;
+}
+
+@keyframes modalIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.1));
+  border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+}
+
+.modal-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary, #fff);
+}
+
+.title-icon {
+  font-size: 24px;
+}
+
+.btn-close {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary, #888);
+  font-size: 20px;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.btn-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.modal-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+}
+
+/* Jogos analisados */
+.analyzed-games {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.analyzed-game {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--input-bg, rgba(0, 0, 0, 0.2));
+  border-radius: 12px;
+  flex: 1;
+  min-width: 200px;
+}
+
+.game-number {
+  width: 32px;
+  height: 32px;
+  background: var(--primary-color, #6366f1);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: #fff;
+}
+
+.game-info .game-match {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary, #fff);
+  margin-bottom: 2px;
+}
+
+.game-info .game-league {
+  font-size: 12px;
+  color: var(--text-secondary, #888);
+}
+
+/* Análises individuais */
+.individual-analyses {
+  margin-bottom: 32px;
+}
+
+.section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary, #fff);
+  margin: 0 0 16px 0;
+}
+
+.individual-analysis {
+  background: var(--input-bg, rgba(0, 0, 0, 0.15));
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.06));
+}
+
+.analysis-game-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.game-badge {
+  width: 24px;
+  height: 24px;
+  background: var(--primary-color, #6366f1);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.game-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary, #fff);
+}
+
+.analysis-text {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-secondary, #ccc);
+}
+
+.analysis-text strong {
+  color: var(--text-primary, #fff);
+}
+
+/* ==================== ESTRATÉGIAS COMBINADAS ==================== */
+.combined-strategies {
+  margin-bottom: 24px;
+}
+
+.strategies-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.strategy-card {
+  background: var(--input-bg, rgba(0, 0, 0, 0.15));
+  border-radius: 16px;
+  padding: 20px;
+  border: 2px solid transparent;
+  transition: all 0.3s;
+  position: relative;
+}
+
+.strategy-card:hover {
+  transform: translateY(-4px);
+}
+
+/* Conservadora */
+.strategy-card.conservative {
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.strategy-card.conservative .strategy-icon {
+  background: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+}
+
+/* Moderada */
+.strategy-card.moderate {
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.strategy-card.moderate .strategy-icon {
+  background: rgba(245, 158, 11, 0.2);
+  color: #f59e0b;
+}
+
+/* Agressiva */
+.strategy-card.aggressive {
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.strategy-card.aggressive .strategy-icon {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+
+/* Recomendada */
+.strategy-card.recommended {
+  border-color: var(--primary-color, #6366f1);
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.2);
+}
+
+.recommended-badge {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  padding: 4px 14px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+}
+
+.strategy-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.strategy-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+
+.strategy-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary, #fff);
+  flex: 1;
+}
+
+.strategy-prob {
+  font-size: 12px;
+  color: var(--text-secondary, #888);
+  background: var(--input-bg, rgba(0, 0, 0, 0.3));
+  padding: 4px 8px;
+  border-radius: 8px;
+}
+
+.strategy-desc {
+  font-size: 13px;
+  color: var(--text-secondary, #888);
+  margin: 0 0 16px 0;
+}
+
+.strategy-bets {
+  margin-bottom: 16px;
+}
+
+.strategy-bet {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  background: var(--input-bg, rgba(0, 0, 0, 0.2));
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.strategy-bet:last-child {
+  margin-bottom: 0;
+}
+
+.bet-game {
+  font-size: 11px;
+  color: var(--text-secondary, #888);
+}
+
+.bet-market {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary, #fff);
+}
+
+.bet-reason {
+  font-size: 11px;
+  color: var(--text-secondary, #888);
+  font-style: italic;
+}
+
+.strategy-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+}
+
+.odds-label {
+  font-size: 12px;
+  color: var(--text-secondary, #888);
+}
+
+.odds-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--primary-color, #6366f1);
+}
+
+/* Dicas */
+.analysis-tips {
+  background: rgba(99, 102, 241, 0.1);
+  border-radius: 12px;
+  padding: 16px;
+  border: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+.tips-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tips-list li {
+  padding: 8px 0;
+  font-size: 13px;
+  color: var(--text-secondary, #ccc);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.tips-list li:last-child {
+  border-bottom: none;
+}
+
+/* Footer do Modal */
+.modal-footer {
+  display: flex;
+  gap: 12px;
+  padding: 20px 24px;
+  border-top: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+  justify-content: flex-end;
+}
+
+.btn-secondary,
+.btn-primary {
+  padding: 12px 24px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s;
+}
+
+.btn-secondary {
+  background: transparent;
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.2));
+  color: var(--text-secondary, #aaa);
+}
+
+.btn-secondary:hover {
+  background: var(--hover-bg, rgba(255, 255, 255, 0.1));
+  color: var(--text-primary, #fff);
+}
+
+.btn-primary {
+  background: var(--primary-color, #6366f1);
+  border: none;
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background: var(--primary-hover, #5558e3);
+}
+
+/* ==================== NOTIFICAÇÕES ==================== */
+.notification {
+  position: fixed;
+  bottom: 100px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  padding: 14px 24px;
+  background: var(--card-bg, #1a1a2e);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--text-primary, #fff);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  opacity: 0;
+  transition: all 0.3s ease;
+  z-index: 3000;
+}
+
+.notification.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.notification-warning {
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.notification-success {
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.notification-info {
+  border: 1px solid rgba(99, 102, 241, 0.3);
+}
+
+/* ==================== RESPONSIVO ==================== */
+@media (max-width: 768px) {
+  .floating-analyze-container {
+    bottom: 16px;
+    left: 16px;
+    right: 16px;
+    transform: none;
+  }
+  
+  .floating-analyze-btn {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .selected-games-preview {
+    max-width: 100%;
+    overflow-x: auto;
+    justify-content: flex-start;
+    flex-wrap: nowrap;
+  }
+  
+  .combined-analysis-modal {
+    max-height: 95vh;
+    border-radius: 20px 20px 0 0;
+  }
+  
+  .strategies-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .analyzed-games {
+    flex-direction: column;
+  }
+  
+  .analyzed-game {
+    min-width: 100%;
+  }
+}

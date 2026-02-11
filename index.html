@@ -19,6 +19,8 @@
     <link rel="stylesheet" href="src/styles/theme.css">
     <link rel="stylesheet" href="src/styles/cards.css">
     <link rel="stylesheet" href="src/styles/premium.css">
+    <link rel="stylesheet" href="src/styles/filters.css">
+    <link rel="stylesheet" href="src/styles/premium-analysis.css">
     
     <style>
         /* Header */
@@ -252,6 +254,11 @@
                 <h2 class="section-title">⚽ Jogos de Hoje</h2>
                 <p class="section-subtitle">Selecione um jogo para analisar com IA</p>
             </div>
+            
+            <!-- Filtros -->
+            <div id="filtersContainer"></div>
+            
+            <!-- Lista de Jogos -->
             <div id="gamesList"></div>
         </div>
 
@@ -481,6 +488,11 @@
 
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    
+    <!-- UI Components -->
+    <script src="src/ui/LeagueFilter.js"></script>
+    <script src="src/ui/LeagueGames.js"></script>
+    <script src="src/ui/PremiumAnalysis.js"></script>
     
     <!-- App Script -->
     <script src="src/app.js"></script>

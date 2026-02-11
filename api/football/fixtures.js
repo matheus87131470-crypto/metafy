@@ -5,7 +5,7 @@
  * @see https://www.api-football.com/documentation-v3
  */
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   // Apenas GET permitido
   if (req.method !== 'GET') {
     return res.status(405).json({ 

@@ -12,7 +12,7 @@
  * }
  */
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   // Apenas POST permitido
   if (req.method !== 'POST') {
     return res.status(405).json({ 
@@ -113,12 +113,28 @@ export default async function handler(req, res) {
     }
 
     // =========================================
+    // ANÁLISE COMBINADA (se 2 jogos)
+    // =========================================
+    let combinedAnalysis = null;
+    
+    if (fixtures.length === 2) {
+      console.log('🎯 Gerando análise combinada...');
+      combinedAnalysis = await generateCombinedAnalysis(
+        analyses.game1,
+        analyses.game2,
+        fixtureResults,
+        openaiApiKey
+      );
+    }
+
+    // =========================================
     // RETORNAR ANÁLISES
     // =========================================
     return res.status(200).json({
       success: true,
       total_analyzed: fixtures.length,
       analysis: analyses,
+      combined: combinedAnalysis,
       generated_at: new Date().toISOString()
     });
 
@@ -491,4 +507,228 @@ function generateLocalAnalysis(fixtureData, homeForm, awayForm, h2h, odds) {
 ${odds ? `💰 **Odds:** Casa ${odds.home} | Empate ${odds.draw} | Fora ${odds.away}` : ''}
 
 ⚠️ *Análise baseada em estatísticas. Aposte com responsabilidade.*`;
+}
+
+/**
+ * Gera análise combinada de 2 jogos com estratégias
+ */
+async function generateCombinedAnalysis(game1, game2, fixtureResults, openaiApiKey) {
+  const data1 = fixtureResults[0];
+  const data2 = fixtureResults[1];
+  
+  // Processar odds
+  const odds1 = processOdds(data1.odds);
+  const odds2 = processOdds(data2.odds);
+  
+  // Se tem OpenAI, usar IA para análise combinada
+  if (openaiApiKey) {
+    try {
+      const combinedPrompt = buildCombinedPrompt(game1, game2, data1, data2);
+      const aiResponse = await callOpenAICombined(combinedPrompt, openaiApiKey);
+      return parseAICombinedResponse(aiResponse, game1, game2, odds1, odds2);
+    } catch (error) {
+      console.warn('⚠️ OpenAI falhou para análise combinada:', error.message);
+    }
+  }
+  
+  // Fallback: análise local combinada
+  return generateLocalCombinedAnalysis(game1, game2, data1, data2, odds1, odds2);
+}
+
+/**
+ * Prompt para análise combinada
+ */
+function buildCombinedPrompt(game1, game2, data1, data2) {
+  return `Você é um analista de apostas profissional. Analise estes 2 jogos e sugira combinações de apostas.
+
+🎮 JOGO 1: ${game1.match}
+Liga: ${game1.league}
+Análise: ${game1.analysis.substring(0, 500)}...
+
+🎮 JOGO 2: ${game2.match}
+Liga: ${game2.league}
+Análise: ${game2.analysis.substring(0, 500)}...
+
+📊 CRIE 3 ESTRATÉGIAS DE APOSTA:
+
+1️⃣ CONSERVADORA (70-80% de chance):
+- Foque em mercados de menor risco
+- Odds combinadas entre 1.50 e 2.00
+- Ex: Over 0.5 gols + Resultado duplo
+
+2️⃣ MODERADA (50-65% de chance):
+- Equilíbrio entre risco e retorno
+- Odds combinadas entre 2.00 e 4.00
+- Ex: Vitória favorito + BTTS
+
+3️⃣ AGRESSIVA (30-45% de chance):
+- Alto risco, alto retorno
+- Odds combinadas acima de 5.00
+- Ex: Placar exato + Ambos marcam
+
+Para cada estratégia forneça:
+- Aposta sugerida para cada jogo
+- Justificativa estatística
+- Odds aproximadas
+- Probabilidade estimada
+
+Responda em JSON com esta estrutura:
+{
+  "conservative": { "bets": [...], "odds": "X.XX", "probability": "XX%", "reasoning": "..." },
+  "moderate": { "bets": [...], "odds": "X.XX", "probability": "XX%", "reasoning": "..." },
+  "aggressive": { "bets": [...], "odds": "X.XX", "probability": "XX%", "reasoning": "..." },
+  "bestPick": { "type": "...", "description": "..." }
+}`;
+}
+
+/**
+ * Chama OpenAI para análise combinada
+ */
+async function callOpenAICombined(prompt, apiKey) {
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`
+    },
+    body: JSON.stringify({
+      model: 'gpt-3.5-turbo',
+      messages: [
+        {
+          role: 'system',
+          content: 'Você é um analista de apostas esportivas. Responda APENAS em JSON válido, sem markdown.'
+        },
+        {
+          role: 'user',
+          content: prompt
+        }
+      ],
+      temperature: 0.7,
+      max_tokens: 1000
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error(`OpenAI error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data.choices[0].message.content;
+}
+
+/**
+ * Parseia resposta da IA para análise combinada
+ */
+function parseAICombinedResponse(aiResponse, game1, game2, odds1, odds2) {
+  try {
+    // Tentar extrair JSON da resposta
+    const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      return {
+        games: [
+          { match: game1.match, league: game1.league },
+          { match: game2.match, league: game2.league }
+        ],
+        strategies: {
+          conservative: parsed.conservative,
+          moderate: parsed.moderate,
+          aggressive: parsed.aggressive
+        },
+        bestPick: parsed.bestPick,
+        source: 'ai'
+      };
+    }
+  } catch (e) {
+    console.warn('Falha ao parsear JSON da IA:', e.message);
+  }
+  
+  // Retornar fallback local se parsing falhar
+  return generateLocalCombinedAnalysis(game1, game2, null, null, odds1, odds2);
+}
+
+/**
+ * Gera análise combinada local (fallback)
+ */
+function generateLocalCombinedAnalysis(game1, game2, data1, data2, odds1, odds2) {
+  // Estratégias baseadas em lógica simples
+  return {
+    games: [
+      { match: game1.match, league: game1.league },
+      { match: game2.match, league: game2.league }
+    ],
+    strategies: {
+      conservative: {
+        name: "Conservadora",
+        icon: "🛡️",
+        description: "Baixo risco, retorno menor",
+        probability: "70-80%",
+        bets: [
+          {
+            game: game1.match,
+            market: "Over 0.5 Gols",
+            reasoning: "Mercado de alta probabilidade"
+          },
+          {
+            game: game2.match,
+            market: "Dupla Chance (1X ou X2)",
+            reasoning: "Proteção contra empate"
+          }
+        ],
+        combinedOdds: "1.60 - 1.90",
+        potentialReturn: "60% - 90%"
+      },
+      moderate: {
+        name: "Moderada",
+        icon: "⚖️",
+        description: "Equilíbrio risco/retorno",
+        probability: "50-65%",
+        bets: [
+          {
+            game: game1.match,
+            market: odds1 ? (parseFloat(odds1.home) < parseFloat(odds1.away) ? "Vitória Casa" : "Vitória Fora") : "Favorito",
+            reasoning: "Apostar no time com melhor odd"
+          },
+          {
+            game: game2.match,
+            market: "Over 1.5 Gols",
+            reasoning: "Mercado equilibrado"
+          }
+        ],
+        combinedOdds: "2.50 - 3.50",
+        potentialReturn: "150% - 250%"
+      },
+      aggressive: {
+        name: "Agressiva",
+        icon: "🔥",
+        description: "Alto risco, alto retorno",
+        probability: "30-45%",
+        bets: [
+          {
+            game: game1.match,
+            market: "Ambos Marcam (BTTS)",
+            reasoning: "Mercado de maior risco"
+          },
+          {
+            game: game2.match,
+            market: "Over 2.5 Gols",
+            reasoning: "Expectativa de jogo movimentado"
+          }
+        ],
+        combinedOdds: "4.00 - 7.00",
+        potentialReturn: "300% - 600%"
+      }
+    },
+    bestPick: {
+      type: "moderate",
+      title: "Recomendação do Dia",
+      description: "A estratégia moderada oferece o melhor equilíbrio entre risco e retorno para esta combinação de jogos."
+    },
+    tips: [
+      "💡 Nunca aposte mais do que pode perder",
+      "📊 Use gestão de banca (máx 5% por aposta)",
+      "🎯 Foque em mercados que você entende"
+    ],
+    source: 'local'
+  };
 }

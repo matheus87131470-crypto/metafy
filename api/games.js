@@ -12,7 +12,7 @@ const DEMO_GAMES = [
   { id: 8, homeTeam: 'Benfica', awayTeam: 'Porto', competition: 'Primeira Liga', country: 'Portugal', time: '22:00', status: 'HOJE', homeScore: null, awayScore: null, homeOdds: 2.35, drawOdds: 3.15, awayOdds: 2.95 },
 ];
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');

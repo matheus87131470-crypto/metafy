@@ -382,22 +382,135 @@ function renderGames() {
   if (GAMES.length === 0) {
     container.innerHTML = `
       <div class="empty-state">
-        <p>⚽ Nenhum jogo disponível no momento</p>
+        <div class="empty-icon">⚽</div>
+        <h3>Nenhum jogo disponível</h3>
+        <p>Tente ajustar os filtros ou volte mais tarde</p>
       </div>
     `;
     return;
   }
 
-  container.innerHTML = '';
-  const gamesContainer = document.createElement('div');
-  gamesContainer.className = 'games-container';
+  // Usar novo componente se disponível
+  if (typeof renderGamesByLeague === 'function') {
+    // Renderizar jogos ao vivo em destaque
+    let html = '';
+    if (typeof renderLiveGamesSection === 'function') {
+      html += renderLiveGamesSection(GAMES);
+    }
+    
+    // Renderizar filtros se disponível
+    if (typeof createFilterComponent === 'function') {
+      const filterContainer = document.getElementById('filtersContainer');
+      if (filterContainer && !filterContainer.innerHTML) {
+        filterContainer.innerHTML = createFilterComponent();
+      }
+    }
+    
+    // Renderizar jogos organizados por liga
+    html += renderGamesByLeague(GAMES, isPremiumUser());
+    container.innerHTML = html;
+  } else {
+    // Fallback para renderização antiga
+    container.innerHTML = '';
+    const gamesContainer = document.createElement('div');
+    gamesContainer.className = 'games-container';
 
-  GAMES.forEach(game => {
-    gamesContainer.innerHTML += createGameCard(game);
-  });
+    GAMES.forEach(game => {
+      gamesContainer.innerHTML += createGameCard(game);
+    });
 
-  container.appendChild(gamesContainer);
+    container.appendChild(gamesContainer);
+  }
 }
+
+// Função para filtrar e renderizar jogos
+function filterAndRenderGames(filterState) {
+  let filteredGames = [...GAMES];
+  
+  // Filtrar por país
+  if (filterState.country && filterState.country !== 'ALL') {
+    const countryMap = {
+      'BR': ['Brazil', 'Brasil'],
+      'EN': ['England', 'Inglaterra'],
+      'ES': ['Spain', 'Espanha'],
+      'DE': ['Germany', 'Alemanha'],
+      'IT': ['Italy', 'Itália'],
+      'FR': ['France', 'França'],
+      'EU': ['Europe', 'Europa'],
+      'SA': ['South America', 'América do Sul']
+    };
+    const countries = countryMap[filterState.country] || [filterState.country];
+    filteredGames = filteredGames.filter(g => {
+      const gameCountry = g.country || g.league?.country || '';
+      return countries.some(c => gameCountry.toLowerCase().includes(c.toLowerCase()));
+    });
+  }
+  
+  // Filtrar por liga
+  if (filterState.league) {
+    const leagueId = parseInt(filterState.league);
+    filteredGames = filteredGames.filter(g => 
+      (g.leagueId || g.league?.id) === leagueId
+    );
+  }
+  
+  // Filtrar por busca
+  if (filterState.search) {
+    const search = filterState.search.toLowerCase();
+    filteredGames = filteredGames.filter(g => {
+      const homeTeam = (g.homeTeam || g.teams?.home?.name || '').toLowerCase();
+      const awayTeam = (g.awayTeam || g.teams?.away?.name || '').toLowerCase();
+      const league = (g.competition || g.league?.name || '').toLowerCase();
+      return homeTeam.includes(search) || awayTeam.includes(search) || league.includes(search);
+    });
+  }
+  
+  // Filtrar por status
+  if (filterState.status) {
+    filteredGames = filteredGames.filter(g => {
+      const status = g.status || g.fixture?.status?.short || '';
+      if (filterState.status === 'live') {
+        return ['live', '1H', '2H', 'HT', 'LIVE'].includes(status);
+      }
+      if (filterState.status === 'scheduled') {
+        return ['scheduled', 'NS', 'TBD'].includes(status);
+      }
+      if (filterState.status === 'finished') {
+        return ['finished', 'FT', 'AET', 'PEN'].includes(status);
+      }
+      return true;
+    });
+  }
+  
+  // Atualizar GAMES filtrados e renderizar
+  const container = document.getElementById('gamesList');
+  if (!container) return;
+  
+  if (filteredGames.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">🔍</div>
+        <h3>Nenhum jogo encontrado</h3>
+        <p>Tente ajustar os filtros</p>
+        <button class="btn-reset-filters" onclick="resetFilters()">Limpar Filtros</button>
+      </div>
+    `;
+    return;
+  }
+  
+  if (typeof renderGamesByLeague === 'function') {
+    let html = '';
+    if (typeof renderLiveGamesSection === 'function' && !filterState.status) {
+      html += renderLiveGamesSection(filteredGames);
+    }
+    html += renderGamesByLeague(filteredGames, isPremiumUser());
+    container.innerHTML = html;
+  }
+}
+
+// Expor para uso global
+window.filterAndRenderGames = filterAndRenderGames;
+window.GAMES = GAMES;
 
 // Criar card de jogo
 function createGameCard(game) {

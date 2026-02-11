@@ -1,0 +1,628 @@
+/* =====================================================
+   src/styles/filters.css
+   Estilos para filtros e organização por liga
+   ===================================================== */
+
+/* ==================== SEÇÃO DE FILTROS ==================== */
+.filter-section {
+  background: var(--card-bg, rgba(255, 255, 255, 0.05));
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 24px;
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+}
+
+.filter-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.filter-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary, #fff);
+  margin: 0;
+}
+
+.filter-icon {
+  font-size: 20px;
+}
+
+.filter-reset-btn {
+  background: transparent;
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.2));
+  color: var(--text-secondary, #aaa);
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.2s;
+}
+
+.filter-reset-btn:hover {
+  background: var(--primary-color, #6366f1);
+  color: #fff;
+  border-color: var(--primary-color, #6366f1);
+}
+
+/* Busca */
+.filter-search {
+  position: relative;
+  margin-bottom: 16px;
+}
+
+.search-input {
+  width: 100%;
+  padding: 12px 16px 12px 44px;
+  background: var(--input-bg, rgba(0, 0, 0, 0.2));
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+  border-radius: 12px;
+  color: var(--text-primary, #fff);
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--primary-color, #6366f1);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+}
+
+.search-input::placeholder {
+  color: var(--text-secondary, #888);
+}
+
+.search-icon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 16px;
+  opacity: 0.5;
+}
+
+/* Pills de País */
+.country-filter {
+  margin-bottom: 16px;
+}
+
+.country-pills {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 4px 0;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.country-pills::-webkit-scrollbar {
+  display: none;
+}
+
+.country-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: var(--input-bg, rgba(0, 0, 0, 0.2));
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+  border-radius: 20px;
+  color: var(--text-secondary, #aaa);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+  font-size: 13px;
+}
+
+.country-pill:hover {
+  background: var(--hover-bg, rgba(255, 255, 255, 0.1));
+  color: var(--text-primary, #fff);
+}
+
+.country-pill.active {
+  background: var(--primary-color, #6366f1);
+  border-color: var(--primary-color, #6366f1);
+  color: #fff;
+}
+
+.pill-flag {
+  font-size: 16px;
+}
+
+.pill-name {
+  font-weight: 500;
+}
+
+/* Select de Liga */
+.league-filter {
+  margin-bottom: 16px;
+}
+
+.league-select {
+  width: 100%;
+  padding: 12px 16px;
+  background: var(--input-bg, rgba(0, 0, 0, 0.2));
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+  border-radius: 12px;
+  color: var(--text-primary, #fff);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.league-select:focus {
+  outline: none;
+  border-color: var(--primary-color, #6366f1);
+}
+
+.league-select option,
+.league-select optgroup {
+  background: var(--card-bg, #1a1a2e);
+  color: var(--text-primary, #fff);
+}
+
+/* Filtros Rápidos */
+.quick-filters {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.quick-filter-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: transparent;
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+  border-radius: 8px;
+  color: var(--text-secondary, #aaa);
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s;
+}
+
+.quick-filter-btn:hover {
+  background: var(--hover-bg, rgba(255, 255, 255, 0.05));
+  color: var(--text-primary, #fff);
+}
+
+.quick-filter-btn.active {
+  background: var(--primary-color, #6366f1);
+  border-color: var(--primary-color, #6366f1);
+  color: #fff;
+}
+
+.qf-icon {
+  font-size: 14px;
+}
+
+/* ==================== LIGAS E JOGOS ==================== */
+.leagues-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.league-section {
+  background: var(--card-bg, rgba(255, 255, 255, 0.03));
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+}
+
+.league-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: var(--header-bg, rgba(255, 255, 255, 0.05));
+  border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+}
+
+.league-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.league-logo {
+  font-size: 24px;
+}
+
+.league-logo img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+
+.league-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary, #fff);
+}
+
+.league-country {
+  font-size: 18px;
+  opacity: 0.7;
+}
+
+.league-count {
+  font-size: 13px;
+  color: var(--text-secondary, #888);
+  background: var(--input-bg, rgba(0, 0, 0, 0.3));
+  padding: 4px 10px;
+  border-radius: 12px;
+}
+
+.league-games {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ==================== CARD DE JOGO COMPACTO ==================== */
+.game-card-compact {
+  display: grid;
+  grid-template-columns: 80px 1fr auto auto;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 16px;
+  background: var(--card-bg, rgba(255, 255, 255, 0.02));
+  border-radius: 12px;
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.06));
+  transition: all 0.2s;
+}
+
+.game-card-compact:hover {
+  background: var(--hover-bg, rgba(255, 255, 255, 0.05));
+  border-color: var(--primary-color, #6366f1);
+}
+
+.game-card-compact.selected {
+  border-color: var(--success-color, #10b981);
+  box-shadow: 0 0 0 1px var(--success-color, #10b981);
+  background: rgba(16, 185, 129, 0.1);
+}
+
+.game-time-status {
+  text-align: center;
+}
+
+.game-status {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.game-status.status-live {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+  animation: pulse 2s infinite;
+}
+
+.game-status.status-scheduled {
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+}
+
+.game-status.status-finished {
+  background: rgba(156, 163, 175, 0.2);
+  color: #9ca3af;
+}
+
+.game-teams {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.game-teams .team-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.team-logo {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+
+.team-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.game-teams .team-name {
+  flex: 1;
+  font-size: 14px;
+  color: var(--text-primary, #fff);
+  font-weight: 500;
+}
+
+.game-teams .team-score {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary, #fff);
+  min-width: 24px;
+  text-align: center;
+}
+
+.game-odds {
+  display: flex;
+  gap: 8px;
+}
+
+.game-odds .odd {
+  padding: 6px 10px;
+  background: var(--input-bg, rgba(0, 0, 0, 0.2));
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary, #aaa);
+}
+
+.game-odds .odd.favorite {
+  background: rgba(99, 102, 241, 0.2);
+  color: var(--primary-color, #6366f1);
+}
+
+.game-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-analyze-compact,
+.btn-select-compact {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.2s;
+}
+
+.btn-analyze-compact {
+  background: var(--primary-color, #6366f1);
+  color: #fff;
+}
+
+.btn-analyze-compact:hover {
+  transform: scale(1.1);
+}
+
+.btn-select-compact {
+  background: var(--input-bg, rgba(0, 0, 0, 0.3));
+  color: var(--text-secondary, #aaa);
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+}
+
+.btn-select-compact:hover {
+  border-color: var(--success-color, #10b981);
+  color: var(--success-color, #10b981);
+}
+
+.btn-select-compact.selected {
+  background: var(--success-color, #10b981);
+  color: #fff;
+  border-color: var(--success-color, #10b981);
+}
+
+/* ==================== JOGOS AO VIVO ==================== */
+.live-games-section {
+  margin-bottom: 24px;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary, #fff);
+  margin: 0;
+}
+
+.live-dot {
+  width: 10px;
+  height: 10px;
+  background: #ef4444;
+  border-radius: 50%;
+  animation: pulse 1.5s infinite;
+}
+
+.live-count {
+  font-size: 13px;
+  color: var(--text-secondary, #888);
+  background: rgba(239, 68, 68, 0.15);
+  padding: 4px 12px;
+  border-radius: 12px;
+}
+
+.live-games-carousel {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  padding: 4px 0;
+  scrollbar-width: none;
+}
+
+.live-games-carousel::-webkit-scrollbar {
+  display: none;
+}
+
+.live-game-card {
+  min-width: 280px;
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(239, 68, 68, 0.05));
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 16px;
+  padding: 16px;
+  position: relative;
+  transition: all 0.3s;
+}
+
+.live-game-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(239, 68, 68, 0.2);
+}
+
+.live-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(239, 68, 68, 0.9);
+  padding: 4px 10px;
+  border-radius: 12px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.live-badge .live-dot {
+  width: 6px;
+  height: 6px;
+  animation: pulse 1s infinite;
+}
+
+.live-league {
+  font-size: 12px;
+  color: var(--text-secondary, #888);
+  margin-bottom: 12px;
+}
+
+.live-match {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.live-team {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: var(--input-bg, rgba(0, 0, 0, 0.2));
+  border-radius: 8px;
+}
+
+.live-team.winning {
+  background: rgba(16, 185, 129, 0.15);
+}
+
+.live-team .team-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary, #fff);
+}
+
+.live-team .team-score {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary, #fff);
+}
+
+.btn-analyze-live {
+  width: 100%;
+  padding: 10px;
+  background: var(--primary-color, #6366f1);
+  border: none;
+  border-radius: 10px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-analyze-live:hover {
+  background: var(--primary-hover, #5558e3);
+  transform: translateY(-2px);
+}
+
+/* ==================== EMPTY STATE ==================== */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-secondary, #888);
+}
+
+.empty-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.empty-state h3 {
+  font-size: 18px;
+  color: var(--text-primary, #fff);
+  margin-bottom: 8px;
+}
+
+.empty-state p {
+  font-size: 14px;
+}
+
+/* ==================== ANIMAÇÕES ==================== */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* ==================== RESPONSIVO ==================== */
+@media (max-width: 768px) {
+  .game-card-compact {
+    grid-template-columns: 60px 1fr auto;
+    gap: 12px;
+  }
+  
+  .game-odds {
+    display: none;
+  }
+  
+  .league-header {
+    padding: 12px 16px;
+  }
+  
+  .league-name {
+    font-size: 14px;
+  }
+  
+  .country-pills {
+    gap: 6px;
+  }
+  
+  .country-pill {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+}
