@@ -451,20 +451,25 @@
 
                 <div class="premium-price-section">
                     <div class="price-card">
-                        <span class="price-label">Preço especial</span>
+                        <span class="price-label">Pagamento único</span>
                         <div class="price-amount">
                             <span class="currency">R$</span>
                             <span class="value">4,50</span>
-                            <span class="period">/semana</span>
                         </div>
-                        <span class="price-duration">7 dias de acesso completo</span>
+                        <span class="price-duration">7 dias de acesso • Sem renovação automática</span>
                     </div>
                 </div>
 
                 <button class="btn-premium-cta" onclick="activatePremium()" style="margin-top: 24px;">
-                    💎 Assinar Premium Agora
+                    💎 Pagar R$ 4,50 e Liberar Acesso
                 </button>
-                <p style="text-align: center; color: var(--text-muted); font-size: 0.85rem; margin-top: 12px;">Cancele quando quiser • Acesso imediato</p>
+                <p style="text-align: center; color: var(--text-muted); font-size: 0.85rem; margin-top: 12px;">Pagamento único • Acesso imediato • Sem renovação</p>
+                
+                <!-- Status Premium (visível apenas para usuários Premium) -->
+                <div id="premiumStatus" style="display: none; margin-top: 24px; padding: 20px; background: rgba(16, 185, 129, 0.1); border: 1px solid var(--accent-green); border-radius: 12px;">
+                    <h4 style="color: var(--accent-green); margin-bottom: 12px;">✅ Você é Premium!</h4>
+                    <p style="color: var(--text-secondary); font-size: 0.9rem;">Seu acesso expira em: <strong id="premiumExpiry">--</strong></p>
+                </div>
             </div>
         </div>
     </main>
@@ -495,10 +500,54 @@
             if (tabId === 'balance') {
                 setTimeout(() => initCharts(), 100);
             }
+            
+            // Atualizar status premium ao trocar para premium
+            if (tabId === 'premium') {
+                updatePremiumStatusUI();
+            }
         }
 
         function showPremiumInfo() {
             switchTab('premium');
+        }
+        
+        // Atualizar UI do status Premium na aba Premium
+        function updatePremiumStatusUI() {
+            const statusDiv = document.getElementById('premiumStatus');
+            const expirySpan = document.getElementById('premiumExpiry');
+            const ctaButton = document.querySelector('#tab-premium .btn-premium-cta');
+            
+            if (typeof isPremiumUser === 'function' && isPremiumUser()) {
+                const data = getPremiumData();
+                const premiumEnd = new Date(data.premium_end);
+                
+                if (statusDiv) {
+                    statusDiv.style.display = 'block';
+                }
+                if (expirySpan) {
+                    expirySpan.textContent = premiumEnd.toLocaleDateString('pt-BR', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                }
+                if (ctaButton) {
+                    ctaButton.textContent = '✅ Premium Ativo';
+                    ctaButton.disabled = true;
+                    ctaButton.style.background = 'var(--accent-green)';
+                }
+            } else {
+                if (statusDiv) {
+                    statusDiv.style.display = 'none';
+                }
+                if (ctaButton) {
+                    ctaButton.textContent = '💎 Pagar R$ 4,50 e Liberar Acesso';
+                    ctaButton.disabled = false;
+                    ctaButton.style.background = '';
+                }
+            }
         }
 
         // ====================================

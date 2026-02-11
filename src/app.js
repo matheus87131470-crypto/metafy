@@ -143,42 +143,120 @@ const PREMIUM_DURATION_DAYS = 7;
 // Inicializar
 document.addEventListener('DOMContentLoaded', () => {
   console.log('🚀 Metafy iniciando...');
+  checkPremiumStatus();
   loadAnalysisCount();
   fetchGames();
   updateAnalysisCounter();
+  updatePremiumUI();
 });
+
+// Verificar status do Premium
+function checkPremiumStatus() {
+  const premiumData = localStorage.getItem('metafy_premium');
+  if (premiumData) {
+    const data = JSON.parse(premiumData);
+    const premiumEnd = new Date(data.premium_end);
+    const now = new Date();
+    
+    if (now > premiumEnd) {
+      console.log('🔒 Premium expirado');
+      // Não remove os dados, apenas marca como expirado
+    } else {
+      const daysLeft = Math.ceil((premiumEnd - now) / (1000 * 60 * 60 * 24));
+      console.log(`💎 Premium ativo - ${daysLeft} dias restantes`);
+    }
+  }
+}
 
 // Verificar se usuário é Premium
 function isPremiumUser() {
   const premiumData = localStorage.getItem('metafy_premium');
   if (!premiumData) return false;
+  
   const data = JSON.parse(premiumData);
-  const expiresAt = new Date(data.expiresAt);
-  return expiresAt > new Date();
+  const premiumEnd = new Date(data.premium_end);
+  const now = new Date();
+  
+  return now <= premiumEnd;
+}
+
+// Obter dados do Premium
+function getPremiumData() {
+  const premiumData = localStorage.getItem('metafy_premium');
+  if (!premiumData) return null;
+  return JSON.parse(premiumData);
 }
 
 // Obter dias restantes do Premium
 function getPremiumDaysRemaining() {
   const premiumData = localStorage.getItem('metafy_premium');
   if (!premiumData) return 0;
+  
   const data = JSON.parse(premiumData);
-  const expiresAt = new Date(data.expiresAt);
+  const premiumEnd = new Date(data.premium_end);
   const now = new Date();
-  if (expiresAt <= now) return 0;
-  return Math.ceil((expiresAt - now) / (1000 * 60 * 60 * 24));
+  
+  if (now > premiumEnd) return 0;
+  return Math.ceil((premiumEnd - now) / (1000 * 60 * 60 * 24));
 }
 
-// Ativar Premium (simulação)
+// Formatar data
+function formatDate(dateString) {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+}
+
+// Ativar Premium (pagamento único)
 function activatePremium() {
-  const expiresAt = new Date();
-  expiresAt.setDate(expiresAt.getDate() + PREMIUM_DURATION_DAYS);
-  localStorage.setItem('metafy_premium', JSON.stringify({
-    activatedAt: new Date().toISOString(),
-    expiresAt: expiresAt.toISOString()
-  }));
-  updateAnalysisCounter();
-  alert('✅ Premium ativado! Você tem acesso ilimitado por 7 dias.');
+  // Simular processo de pagamento
+  showPaymentModal();
+}
+
+// Confirmar pagamento e ativar Premium
+function confirmPayment() {
+  const now = new Date();
+  const premiumEnd = new Date();
+  premiumEnd.setDate(premiumEnd.getDate() + PREMIUM_DURATION_DAYS);
+  
+  const premiumData = {
+    premium_start: now.toISOString(),
+    premium_end: premiumEnd.toISOString(),
+    price_paid: PREMIUM_PRICE,
+    payment_date: now.toISOString()
+  };
+  
+  localStorage.setItem('metafy_premium', JSON.stringify(premiumData));
+  
   closeAnalysisModal();
+  updateAnalysisCounter();
+  updatePremiumUI();
+  
+  // Mostrar confirmação
+  showPremiumConfirmation(premiumData);
+}
+
+// Atualizar UI baseado no status Premium
+function updatePremiumUI() {
+  const isPremium = isPremiumUser();
+  const premiumData = getPremiumData();
+  
+  // Atualizar body class
+  document.body.classList.toggle('is-premium-user', isPremium);
+  
+  // Atualizar botões de análise
+  document.querySelectorAll('.btn-analyze').forEach(btn => {
+    if (isPremium) {
+      btn.classList.add('premium-enabled');
+    } else {
+      btn.classList.remove('premium-enabled');
+    }
+  });
 }
 
 // Carregar contador de análises
@@ -614,28 +692,36 @@ function showAnalysisModal(game, analysis) {
 
 // Mostrar modal premium
 function showPremiumModal() {
+  const premiumData = getPremiumData();
+  const wasExpired = premiumData && new Date() > new Date(premiumData.premium_end);
+  
+  const title = wasExpired ? 'Premium Expirado' : 'Limite Atingido';
+  const subtitle = wasExpired 
+    ? 'Seu acesso Premium expirou. Renove para continuar!'
+    : 'Você usou suas <strong>2 análises gratuitas</strong> de hoje';
+  const icon = wasExpired ? '⏰' : '🔒';
+  
   const modal = document.createElement('div');
   modal.className = 'analysis-modal-overlay';
   modal.onclick = (e) => { if (e.target === modal) closeAnalysisModal(); };
   modal.innerHTML = `
     <div class="premium-modal">
       <button class="btn-close" onclick="closeAnalysisModal()">✕</button>
-      <div class="premium-icon">🔒</div>
-      <h2 class="premium-title">Limite Atingido</h2>
-      <p class="premium-subtitle">Você usou suas <strong>2 análises gratuitas</strong> de hoje</p>
+      <div class="premium-icon">${icon}</div>
+      <h2 class="premium-title">${title}</h2>
+      <p class="premium-subtitle">${subtitle}</p>
       
       <div class="premium-offer">
-        <div class="offer-badge">OFERTA ESPECIAL</div>
+        <div class="offer-badge">PAGAMENTO ÚNICO</div>
         <div class="offer-price">
           <span class="price-currency">R$</span>
           <span class="price-value">4,50</span>
-          <span class="price-period">/semana</span>
         </div>
-        <p class="offer-duration">7 dias de acesso completo</p>
+        <p class="offer-duration">7 dias de acesso • Sem renovação automática</p>
       </div>
 
       <div class="premium-features">
-        <h4>O que você ganha:</h4>
+        <h4>Desbloqueie agora:</h4>
         <ul>
           <li>✨ Análises de IA <strong>ilimitadas</strong></li>
           <li>📊 Previsões detalhadas</li>
@@ -646,14 +732,104 @@ function showPremiumModal() {
       </div>
       
       <button class="btn-premium-cta" onclick="activatePremium()">
-        💎 Assinar Premium - R$ 4,50/semana
+        💎 Pagar R$ 4,50 e Liberar Acesso
       </button>
       
-      <p class="premium-note">Cancele a qualquer momento • Acesso imediato</p>
+      <p class="premium-note">Pagamento único • Acesso imediato • 7 dias</p>
       
       <div class="premium-divider"></div>
       
       <p class="premium-free-note">Ou volte amanhã para mais <strong>2 análises gratuitas</strong></p>
+    </div>
+  `;
+  document.body.appendChild(modal);
+}
+
+// Modal de pagamento
+function showPaymentModal() {
+  const modal = document.createElement('div');
+  modal.className = 'analysis-modal-overlay';
+  modal.onclick = (e) => { if (e.target === modal) closeAnalysisModal(); };
+  modal.innerHTML = `
+    <div class="payment-modal">
+      <button class="btn-close" onclick="closeAnalysisModal()">✕</button>
+      
+      <div class="payment-header">
+        <div class="payment-icon">💳</div>
+        <h2>Confirmar Pagamento</h2>
+      </div>
+      
+      <div class="payment-summary">
+        <div class="summary-item">
+          <span>Plano</span>
+          <span>Premium 7 dias</span>
+        </div>
+        <div class="summary-item">
+          <span>Acesso</span>
+          <span>Análises Ilimitadas</span>
+        </div>
+        <div class="summary-item total">
+          <span>Total</span>
+          <span class="price">R$ 4,50</span>
+        </div>
+      </div>
+      
+      <div class="payment-info">
+        <p>✅ Pagamento único (sem renovação automática)</p>
+        <p>✅ Acesso liberado imediatamente</p>
+        <p>✅ Válido por 7 dias corridos</p>
+      </div>
+      
+      <button class="btn-confirm-payment" onclick="confirmPayment()">
+        ✅ Confirmar Pagamento - R$ 4,50
+      </button>
+      
+      <button class="btn-cancel" onclick="closeAnalysisModal()">
+        Cancelar
+      </button>
+    </div>
+  `;
+  document.body.appendChild(modal);
+}
+
+// Modal de confirmação do Premium
+function showPremiumConfirmation(premiumData) {
+  const modal = document.createElement('div');
+  modal.className = 'analysis-modal-overlay';
+  modal.onclick = (e) => { if (e.target === modal) closeAnalysisModal(); };
+  modal.innerHTML = `
+    <div class="confirmation-modal">
+      <div class="confirmation-icon">🎉</div>
+      <h2 class="confirmation-title">Premium Ativado!</h2>
+      <p class="confirmation-subtitle">Seu acesso Premium está liberado</p>
+      
+      <div class="confirmation-details">
+        <div class="detail-item">
+          <span class="detail-label">Início</span>
+          <span class="detail-value">${formatDate(premiumData.premium_start)}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Expira em</span>
+          <span class="detail-value">${formatDate(premiumData.premium_end)}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Valor pago</span>
+          <span class="detail-value">R$ ${premiumData.price_paid.toFixed(2)}</span>
+        </div>
+      </div>
+      
+      <div class="confirmation-benefits">
+        <p>💎 Agora você tem acesso a:</p>
+        <ul>
+          <li>Análises de IA ilimitadas</li>
+          <li>Previsões detalhadas</li>
+          <li>Insights exclusivos</li>
+        </ul>
+      </div>
+      
+      <button class="btn-start" onclick="closeAnalysisModal()">
+        🚀 Começar a Usar
+      </button>
     </div>
   `;
   document.body.appendChild(modal);
@@ -669,4 +845,7 @@ function closeAnalysisModal() {
 window.analyzeGame = analyzeGame;
 window.closeAnalysisModal = closeAnalysisModal;
 window.activatePremium = activatePremium;
+window.confirmPayment = confirmPayment;
 window.isPremiumUser = isPremiumUser;
+window.getPremiumData = getPremiumData;
+window.showPaymentModal = showPaymentModal;
