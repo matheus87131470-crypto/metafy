@@ -257,13 +257,139 @@
 
         <!-- Tab: Ganhos/Perdas -->
         <div class="tab-content" id="tab-balance">
-            <div class="section-header">
-                <h2 class="section-title">📊 Ganhos e Perdas</h2>
-                <p class="section-subtitle">Acompanhe seu desempenho nas apostas</p>
+            <!-- Formulário Nova Sessão -->
+            <div class="session-form-card" style="background: var(--bg-card); border-radius: 16px; padding: 24px; margin-bottom: 24px; border: 1px solid var(--border-color);">
+                <h3 style="font-size: 1.2rem; margin-bottom: 20px; color: var(--text-primary);">💰 Nova Sessão</h3>
+                
+                <div style="margin-bottom: 16px;">
+                    <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 0.9rem; color: var(--text-secondary);">
+                        <span style="color: #10b981;">✓</span>
+                        Ganhos (R$)
+                    </label>
+                    <input type="number" id="input-ganhos" placeholder="0.00" step="0.01" min="0" 
+                           style="width: 100%; padding: 12px 16px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary); font-size: 1rem;">
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 0.9rem; color: var(--text-secondary);">
+                        <span style="color: #ef4444;">✕</span>
+                        Perdas (R$)
+                    </label>
+                    <input type="number" id="input-perdas" placeholder="0.00" step="0.01" min="0"
+                           style="width: 100%; padding: 12px 16px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary); font-size: 1rem;">
+                </div>
+
+                <button type="button" onclick="adicionarSessao()" 
+                        style="width: 100%; padding: 14px; background: var(--gradient-purple); color: white; border: none; border-radius: 10px; font-weight: 600; font-size: 1rem; cursor: pointer;">
+                    ✚ Adicionar Sessão
+                </button>
             </div>
-            <div class="empty-state">
-                <p>🚧 Em desenvolvimento</p>
-                <p style="font-size: 0.9rem; margin-top: 8px;">Esta funcionalidade estará disponível em breve!</p>
+
+            <!-- Progresso da Meta -->
+            <div style="background: var(--bg-card); border-radius: 16px; padding: 24px; margin-bottom: 24px; border: 1px solid var(--border-color);">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 24px;">
+                    <h3 style="font-size: 1.1rem; color: var(--text-primary);">🎯 Progresso da Meta (Ciclo #<span id="ciclo-numero">1</span>)</h3>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <button onclick="editarMeta()" style="padding: 8px 12px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-secondary); font-size: 0.8rem; cursor: pointer;">✏️ Editar Meta</button>
+                        <button onclick="finalizarCiclo()" style="padding: 8px 12px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-secondary); font-size: 0.8rem; cursor: pointer;">🏁 Finalizar Ciclo</button>
+                        <button onclick="resetTotal()" style="padding: 8px 12px; background: var(--bg-secondary); border: 1px solid #ef4444; border-radius: 6px; color: #ef4444; font-size: 0.8rem; cursor: pointer;">🗑️ Reset</button>
+                    </div>
+                </div>
+
+                <!-- Gauge Circular -->
+                <div style="text-align: center; margin-bottom: 24px;">
+                    <svg viewBox="0 0 200 140" style="max-width: 280px; margin: 0 auto; display: block;">
+                        <defs>
+                            <linearGradient id="gaugeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" style="stop-color:#8b5cf6;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#ec4899;stop-opacity:1" />
+                            </linearGradient>
+                        </defs>
+                        <path d="M 30 110 A 70 70 0 0 1 170 110" fill="none" stroke="rgba(139, 92, 246, 0.2)" stroke-width="14" stroke-linecap="round"/>
+                        <path id="gauge-arc" d="M 30 110 A 70 70 0 0 1 170 110" fill="none" stroke="url(#gaugeGradient)" stroke-width="14" stroke-linecap="round" style="stroke-dasharray: 220; stroke-dashoffset: 220; transition: stroke-dashoffset 0.5s ease;"/>
+                    </svg>
+                    
+                    <div style="margin-top: -80px; position: relative;">
+                        <div style="font-size: 0.7rem; color: var(--text-muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 1px;">Total Acumulado</div>
+                        <div style="font-size: 2rem; font-weight: 700; background: linear-gradient(135deg, #8b5cf6, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                            R$ <span id="gauge-total">0,00</span>
+                        </div>
+                        <div style="font-size: 1.5rem; font-weight: 600; color: #ec4899;">
+                            <span id="gauge-percentage">0</span>%
+                        </div>
+                        <div style="font-size: 0.8rem; color: var(--text-muted);">
+                            Meta: R$ <span id="gauge-goal">2.000,00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cards de resultado -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-top: 40px;">
+                    <div style="background: var(--bg-secondary); border-left: 3px solid #10b981; border-radius: 8px; padding: 16px;">
+                        <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px;">Resultado Atual</div>
+                        <div style="font-size: 1.4rem; font-weight: 700; color: #10b981;">R$ <span id="gauge-current">0,00</span></div>
+                    </div>
+                    <div style="background: var(--bg-secondary); border-left: 3px solid #ec4899; border-radius: 8px; padding: 16px;">
+                        <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px;">Meta Definida</div>
+                        <div style="font-size: 1.4rem; font-weight: 700; color: #ec4899;">R$ <span id="gauge-goal-value">2.000,00</span></div>
+                    </div>
+                </div>
+
+                <div style="text-align: center; margin-top: 20px; font-size: 0.9rem; color: var(--text-secondary);">
+                    Faltam <strong style="color: #ec4899;">R$ <span id="gauge-missing">2.000,00</span></strong> para sua meta
+                </div>
+            </div>
+
+            <!-- Gráficos -->
+            <div style="display: grid; gap: 24px; margin-bottom: 24px;">
+                <div style="background: var(--bg-card); border-radius: 16px; padding: 24px; border: 1px solid var(--border-color);">
+                    <h3 style="font-size: 1rem; margin-bottom: 16px; color: var(--text-primary);">📈 Evolução do Lucro</h3>
+                    <div style="height: 200px;">
+                        <canvas id="chartLucro"></canvas>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-top: 12px; font-size: 0.85rem; color: var(--text-secondary);">
+                        <span id="lucro-date">--</span>
+                        <span style="color: #10b981;">Lucro: R$ <span id="lucro-value">0,00</span></span>
+                    </div>
+                </div>
+
+                <div style="background: var(--bg-card); border-radius: 16px; padding: 24px; border: 1px solid var(--border-color);">
+                    <h3 style="font-size: 1rem; margin-bottom: 16px; color: var(--text-primary);">📊 Evolução da Stake</h3>
+                    <div style="height: 200px;">
+                        <canvas id="chartStake"></canvas>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-top: 12px; font-size: 0.85rem; color: var(--text-secondary);">
+                        <span id="stake-date">--</span>
+                        <span style="color: #10b981;">Total: <span id="stake-value">0</span> stakes</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Estatísticas -->
+            <div style="background: var(--bg-card); border-radius: 16px; padding: 24px; border: 1px solid var(--border-color);">
+                <h3 style="font-size: 1rem; margin-bottom: 16px; color: var(--text-primary);">📋 Estatísticas</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px;">
+                    <div style="background: var(--bg-secondary); border-radius: 10px; padding: 16px; text-align: center;">
+                        <div style="font-size: 1.5rem; margin-bottom: 4px;">💎</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">Odd Média</div>
+                        <div style="font-size: 1.2rem; font-weight: 600; color: var(--text-primary);" id="stat-odd">0.00</div>
+                    </div>
+                    <div style="background: var(--bg-secondary); border-radius: 10px; padding: 16px; text-align: center;">
+                        <div style="font-size: 1.5rem; margin-bottom: 4px;">#</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">Total Apostas</div>
+                        <div style="font-size: 1.2rem; font-weight: 600; color: var(--text-primary);" id="stat-total">0</div>
+                    </div>
+                    <div style="background: var(--bg-secondary); border-radius: 10px; padding: 16px; text-align: center;">
+                        <div style="font-size: 1.5rem; margin-bottom: 4px;">✓</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">Ganhos</div>
+                        <div style="font-size: 1.2rem; font-weight: 600; color: #10b981;" id="stat-wins">0</div>
+                    </div>
+                    <div style="background: var(--bg-secondary); border-radius: 10px; padding: 16px; text-align: center;">
+                        <div style="font-size: 1.5rem; margin-bottom: 4px;">✕</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">Perdas</div>
+                        <div style="font-size: 1.2rem; font-weight: 600; color: #ef4444;" id="stat-losses">0</div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -325,27 +451,258 @@
         <p>Metafy © 2026 | Análise Inteligente de Futebol</p>
     </footer>
 
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    
     <!-- App Script -->
     <script src="src/app.js"></script>
     
     <script>
         // Tab switching
         function switchTab(tabId) {
-            // Update nav tabs
             document.querySelectorAll('.nav-tab').forEach(tab => {
                 tab.classList.toggle('active', tab.dataset.tab === tabId);
             });
             
-            // Update content
             document.querySelectorAll('.tab-content').forEach(content => {
                 content.classList.toggle('active', content.id === `tab-${tabId}`);
             });
+
+            // Inicializar gráficos ao trocar para balance
+            if (tabId === 'balance') {
+                setTimeout(() => initCharts(), 100);
+            }
         }
 
-        // Show premium info
         function showPremiumInfo() {
             switchTab('premium');
         }
+
+        // ====================================
+        // SISTEMA DE SESSÕES E METAS
+        // ====================================
+        const STORAGE_KEY = 'metafy_balance_data';
+        let chartLucro = null;
+        let chartStake = null;
+
+        function getBalanceData() {
+            const data = localStorage.getItem(STORAGE_KEY);
+            return data ? JSON.parse(data) : {
+                meta: 2000,
+                ciclo: 1,
+                sessoes: [],
+                totalGanhos: 0,
+                totalPerdas: 0,
+                saldo: 0
+            };
+        }
+
+        function saveBalanceData(data) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+            atualizarInterface();
+            atualizarGraficos();
+        }
+
+        function adicionarSessao() {
+            const ganhos = parseFloat(document.getElementById('input-ganhos').value) || 0;
+            const perdas = parseFloat(document.getElementById('input-perdas').value) || 0;
+
+            if (ganhos === 0 && perdas === 0) {
+                alert('⚠️ Adicione pelo menos um valor (ganhos ou perdas)');
+                return;
+            }
+
+            const data = getBalanceData();
+            
+            const sessao = {
+                id: Date.now(),
+                data: new Date().toISOString(),
+                ganhos,
+                perdas,
+                resultado: ganhos - perdas
+            };
+
+            data.sessoes.push(sessao);
+            data.totalGanhos += ganhos;
+            data.totalPerdas += perdas;
+            data.saldo = data.totalGanhos - data.totalPerdas;
+
+            saveBalanceData(data);
+
+            document.getElementById('input-ganhos').value = '';
+            document.getElementById('input-perdas').value = '';
+
+            alert('✅ Sessão adicionada com sucesso!');
+        }
+
+        function atualizarInterface() {
+            const data = getBalanceData();
+            const percentual = Math.min((data.saldo / data.meta) * 100, 100);
+            const faltam = Math.max(100 - percentual, 0);
+            const faltaValor = Math.max(data.meta - data.saldo, 0);
+
+            // Atualizar valores
+            const el = (id) => document.getElementById(id);
+            if (el('gauge-total')) el('gauge-total').textContent = data.saldo.toFixed(2).replace('.', ',');
+            if (el('gauge-percentage')) el('gauge-percentage').textContent = percentual.toFixed(0);
+            if (el('gauge-goal')) el('gauge-goal').textContent = data.meta.toFixed(2).replace('.', ',');
+            if (el('gauge-goal-value')) el('gauge-goal-value').textContent = data.meta.toFixed(2).replace('.', ',');
+            if (el('gauge-current')) el('gauge-current').textContent = data.saldo.toFixed(2).replace('.', ',');
+            if (el('gauge-missing')) el('gauge-missing').textContent = faltaValor.toFixed(2).replace('.', ',');
+            if (el('ciclo-numero')) el('ciclo-numero').textContent = data.ciclo;
+
+            // Animar gauge
+            const offset = 220 - (220 * percentual / 100);
+            const gaugeArc = document.getElementById('gauge-arc');
+            if (gaugeArc) gaugeArc.style.strokeDashoffset = offset;
+
+            // Estatísticas
+            const sessoes = data.sessoes || [];
+            const totalGanhos = sessoes.filter(s => s.ganhos > 0).length;
+            const totalPerdas = sessoes.filter(s => s.perdas > 0).length;
+            const oddMedia = sessoes.length > 0 ? (data.totalGanhos / sessoes.length).toFixed(2) : '0.00';
+
+            if (el('stat-odd')) el('stat-odd').textContent = oddMedia;
+            if (el('stat-total')) el('stat-total').textContent = sessoes.length;
+            if (el('stat-wins')) el('stat-wins').textContent = totalGanhos;
+            if (el('stat-losses')) el('stat-losses').textContent = totalPerdas;
+        }
+
+        function editarMeta() {
+            const data = getBalanceData();
+            const novaMeta = prompt('💰 Nova meta (R$):', data.meta);
+            if (novaMeta && !isNaN(novaMeta) && parseFloat(novaMeta) > 0) {
+                data.meta = parseFloat(novaMeta);
+                saveBalanceData(data);
+                alert('✅ Meta atualizada!');
+            }
+        }
+
+        function finalizarCiclo() {
+            if (!confirm('🏁 Finalizar ciclo atual e iniciar novo?')) return;
+            
+            const data = getBalanceData();
+            data.ciclo++;
+            data.sessoes = [];
+            data.totalGanhos = 0;
+            data.totalPerdas = 0;
+            data.saldo = 0;
+            
+            saveBalanceData(data);
+            alert('✅ Ciclo #' + data.ciclo + ' iniciado!');
+        }
+
+        function resetTotal() {
+            if (!confirm('⚠️ ATENÇÃO: Isso apagará TODOS os dados. Confirmar?')) return;
+            
+            localStorage.removeItem(STORAGE_KEY);
+            atualizarInterface();
+            atualizarGraficos();
+            alert('🗑️ Todos os dados foram resetados.');
+        }
+
+        function initCharts() {
+            if (chartLucro) chartLucro.destroy();
+            if (chartStake) chartStake.destroy();
+
+            const data = getBalanceData();
+            const sessoes = data.sessoes || [];
+
+            // Processar dados do lucro
+            let lucroAcumulado = 0;
+            const lucroLabels = sessoes.length > 0 ? [] : ['Início'];
+            const lucroValues = sessoes.length > 0 ? [] : [0];
+
+            sessoes.forEach(sessao => {
+                const d = new Date(sessao.data);
+                lucroLabels.push(`${d.getDate()}/${d.getMonth() + 1}`);
+                lucroAcumulado += sessao.resultado;
+                lucroValues.push(lucroAcumulado);
+            });
+
+            // Processar dados da stake
+            let stakeAcumulado = 0;
+            const stakeLabels = sessoes.length > 0 ? [] : ['Início'];
+            const stakeValues = sessoes.length > 0 ? [] : [0];
+
+            sessoes.forEach(sessao => {
+                const d = new Date(sessao.data);
+                stakeLabels.push(`${d.getDate()}/${d.getMonth() + 1}`);
+                stakeAcumulado += 1;
+                stakeValues.push(stakeAcumulado);
+            });
+
+            // Atualizar info
+            if (sessoes.length > 0) {
+                const lastDate = new Date(sessoes[sessoes.length - 1].data);
+                const el = (id) => document.getElementById(id);
+                if (el('lucro-date')) el('lucro-date').textContent = `${lastDate.getDate()}/${lastDate.getMonth() + 1}`;
+                if (el('lucro-value')) el('lucro-value').textContent = lucroAcumulado.toFixed(2).replace('.', ',');
+                if (el('stake-date')) el('stake-date').textContent = `${lastDate.getDate()}/${lastDate.getMonth() + 1}`;
+                if (el('stake-value')) el('stake-value').textContent = stakeAcumulado;
+            }
+
+            const commonOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { color: 'rgba(139, 92, 246, 0.1)' }, ticks: { color: '#a0a0b2', font: { size: 10 } } },
+                    y: { grid: { color: 'rgba(139, 92, 246, 0.1)' }, ticks: { color: '#a0a0b2', font: { size: 10 } } }
+                }
+            };
+
+            const ctxLucro = document.getElementById('chartLucro');
+            if (ctxLucro) {
+                chartLucro = new Chart(ctxLucro, {
+                    type: 'line',
+                    data: {
+                        labels: lucroLabels,
+                        datasets: [{
+                            data: lucroValues,
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4,
+                            pointBackgroundColor: '#10b981',
+                            pointRadius: 4
+                        }]
+                    },
+                    options: commonOptions
+                });
+            }
+
+            const ctxStake = document.getElementById('chartStake');
+            if (ctxStake) {
+                chartStake = new Chart(ctxStake, {
+                    type: 'line',
+                    data: {
+                        labels: stakeLabels,
+                        datasets: [{
+                            data: stakeValues,
+                            borderColor: '#8b5cf6',
+                            backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4,
+                            pointBackgroundColor: '#8b5cf6',
+                            pointRadius: 4
+                        }]
+                    },
+                    options: commonOptions
+                });
+            }
+        }
+
+        function atualizarGraficos() {
+            initCharts();
+        }
+
+        // Inicializar dados ao carregar
+        document.addEventListener('DOMContentLoaded', () => {
+            atualizarInterface();
+        });
     </script>
 </body>
 </html>
