@@ -462,14 +462,14 @@
                         <span class="price-label">Pagamento via PIX</span>
                         <div class="price-amount">
                             <span class="currency">R$</span>
-                            <span class="value">19,90</span>
+                            <span class="value" id="premiumPriceDisplay">4,50</span>
                         </div>
                         <span class="price-duration">7 dias de acesso • Liberação automática • Sem renovação</span>
                     </div>
                 </div>
 
-                <button class="btn-premium-cta" onclick="activatePremium()" style="margin-top: 24px;">
-                    💎 Pagar R$ 19,90 via PIX
+                <button class="btn-premium-cta" id="premiumCtaBtn" onclick="activatePremium()" style="margin-top: 24px;">
+                    💎 Pagar R$ 4,50 via PIX
                 </button>
                 <p style="text-align: center; color: var(--text-muted); font-size: 0.85rem; margin-top: 12px;">Pagamento PIX • Liberação automática • 7 dias de acesso</p>
                 
@@ -493,7 +493,7 @@
                 
                 <div class="pix-amount">
                     <span class="currency">R$</span>
-                    <span class="value">19,90</span>
+                    <span class="value">4,50</span>
                 </div>
                 <p class="pix-description">7 dias de acesso Premium</p>
                 
@@ -526,7 +526,7 @@
                 
                 <div class="pix-amount">
                     <span class="currency">R$</span>
-                    <span class="value">19,90</span>
+                    <span class="value" class="pix-price-value">4,50</span>
                 </div>
                 <p class="pix-description">7 dias de acesso Premium</p>
                 
@@ -640,7 +640,7 @@
                     statusDiv.style.display = 'none';
                 }
                 if (ctaButton) {
-                    ctaButton.textContent = '💎 Pagar R$ 19,90 via PIX';
+                    ctaButton.textContent = '💎 Pagar R$ 4,50 via PIX';
                     ctaButton.disabled = false;
                     ctaButton.style.background = '';
                 }

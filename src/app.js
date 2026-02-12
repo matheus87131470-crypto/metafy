@@ -216,6 +216,7 @@ function formatDate(dateString) {
 const BACKEND_URL = 'https://metafy-8qk7.onrender.com';
 const USER_ID = 'matheus1'; // Futuramente substituir por sistema de login real
 const USER_EMAIL = 'matheus@email.com';
+const PREMIUM_PRICE = 4.5; // Preço do Premium em R$
 let paymentCheckInterval = null;
 
 function activatePremium() {
@@ -306,7 +307,7 @@ async function generatePixPayment() {
     userId: USER_ID,
     email: USER_EMAIL,
     cpf: cpf,
-    amount: 19.90
+    amount: PREMIUM_PRICE
   };
   
   console.log('📤 Iniciando requisição PIX:');
@@ -452,7 +453,7 @@ function startPaymentCheck() {
         const premiumData = {
           premium_start: now.toISOString(),
           premium_end: premiumEnd.toISOString(),
-          price_paid: 19.90,
+          price_paid: PREMIUM_PRICE,
           payment_date: now.toISOString(),
           user_id: USER_ID
         };
