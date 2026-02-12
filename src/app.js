@@ -212,10 +212,144 @@ function formatDate(dateString) {
   });
 }
 
-// Ativar Premium (pagamento único)
+// Ativar Premium (pagamento PIX via Mercado Pago)
+const BACKEND_URL = 'https://metafy-8qk7.onrender.com';
+const USER_ID = 'matheus1'; // Futuramente substituir por sistema de login real
+const USER_EMAIL = 'matheus@email.com';
+let paymentCheckInterval = null;
+
 function activatePremium() {
-  // Simular processo de pagamento
-  showPaymentModal();
+  openPixModal();
+}
+
+async function openPixModal() {
+  const modal = document.getElementById('pixPaymentModal');
+  const loading = document.getElementById('pixLoading');
+  const content = document.getElementById('pixContent');
+  const error = document.getElementById('pixError');
+  
+  // Mostrar modal com loading
+  modal.style.display = 'flex';
+  loading.style.display = 'block';
+  content.style.display = 'none';
+  error.style.display = 'none';
+  
+  try {
+    // Chamar API para criar pagamento PIX
+    const response = await fetch(`${BACKEND_URL}/api/payments/pix`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        userId: USER_ID,
+        email: USER_EMAIL,
+        amount: 19.90
+      })
+    });
+    
+    if (!response.ok) {
+      throw new Error('Erro ao gerar pagamento');
+    }
+    
+    const data = await response.json();
+    
+    if (data.success && data.qr_code_base64 && data.qr_code) {
+      // Atualizar modal com QR Code
+      document.getElementById('qrCodeImage').src = data.qr_code_base64;
+      document.getElementById('pixCode').value = data.qr_code;
+      
+      // Salvar paymentId para verificação
+      sessionStorage.setItem('currentPaymentId', data.payment_id);
+      
+      // Mostrar conteúdo
+      loading.style.display = 'none';
+      content.style.display = 'block';
+      
+      // Iniciar verificação automática
+      startPaymentCheck();
+    } else {
+      throw new Error(data.error || 'Resposta inválida do servidor');
+    }
+  } catch (err) {
+    console.error('Erro ao gerar PIX:', err);
+    loading.style.display = 'none';
+    error.style.display = 'block';
+    document.getElementById('errorMessage').textContent = err.message || 'Erro ao gerar pagamento. Tente novamente.';
+  }
+}
+
+function closePixModal() {
+  const modal = document.getElementById('pixPaymentModal');
+  modal.style.display = 'none';
+  
+  // Parar verificação
+  if (paymentCheckInterval) {
+    clearInterval(paymentCheckInterval);
+    paymentCheckInterval = null;
+  }
+}
+
+function copyPixCode() {
+  const pixCodeInput = document.getElementById('pixCode');
+  pixCodeInput.select();
+  
+  navigator.clipboard.writeText(pixCodeInput.value).then(() => {
+    const btn = event.target;
+    const originalText = btn.textContent;
+    
+    btn.textContent = '✅ Copiado!';
+    btn.style.background = 'var(--accent-green)';
+    
+    setTimeout(() => {
+      btn.textContent = originalText;
+      btn.style.background = '';
+    }, 2000);
+  }).catch(err => {
+    console.error('Erro ao copiar:', err);
+    alert('❌ Erro ao copiar código');
+  });
+}
+
+function startPaymentCheck() {
+  // Verificar a cada 5 segundos
+  paymentCheckInterval = setInterval(async () => {
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/user/${USER_ID}`);
+      const data = await response.json();
+      
+      if (data.success && data.isPremium) {
+        // Premium ativado!
+        clearInterval(paymentCheckInterval);
+        paymentCheckInterval = null;
+        
+        // Salvar no localStorage
+        const now = new Date();
+        const premiumEnd = new Date();
+        premiumEnd.setDate(premiumEnd.getDate() + 7);
+        
+        const premiumData = {
+          premium_start: now.toISOString(),
+          premium_end: premiumEnd.toISOString(),
+          price_paid: 19.90,
+          payment_date: now.toISOString(),
+          user_id: USER_ID
+        };
+        
+        localStorage.setItem('metafy_premium', JSON.stringify(premiumData));
+        localStorage.setItem('metafy_premium_user', 'true');
+        
+        // Mostrar tela de sucesso
+        document.getElementById('pixContent').style.display = 'none';
+        document.getElementById('pixSuccess').style.display = 'block';
+        
+        // Atualizar UI
+        updatePremiumUI();
+      }
+    } catch (err) {
+      console.error('Erro ao verificar premium:', err);
+    }
+  }, 5000); // 5 segundos
 }
 
 // Confirmar pagamento e ativar Premium
@@ -1209,3 +1343,5 @@ window.showPaymentModal = showPaymentModal;
 window.toggleGameSelection = toggleGameSelection;
 window.analyzeSelectedGames = analyzeSelectedGames;
 window.clearSelection = clearSelection;
+window.closePixModal = closePixModal;
+window.copyPixCode = copyPixCode;

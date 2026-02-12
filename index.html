@@ -21,6 +21,7 @@
     <link rel="stylesheet" href="src/styles/premium.css">
     <link rel="stylesheet" href="src/styles/filters.css">
     <link rel="stylesheet" href="src/styles/premium-analysis.css">
+    <link rel="stylesheet" href="src/styles/pix-payment.css">
     
     <style>
         /* Header */
@@ -458,19 +459,19 @@
 
                 <div class="premium-price-section">
                     <div class="price-card">
-                        <span class="price-label">Pagamento único</span>
+                        <span class="price-label">Pagamento via PIX</span>
                         <div class="price-amount">
                             <span class="currency">R$</span>
-                            <span class="value">4,50</span>
+                            <span class="value">19,90</span>
                         </div>
-                        <span class="price-duration">7 dias de acesso • Sem renovação automática</span>
+                        <span class="price-duration">7 dias de acesso • Liberação automática • Sem renovação</span>
                     </div>
                 </div>
 
                 <button class="btn-premium-cta" onclick="activatePremium()" style="margin-top: 24px;">
-                    💎 Pagar R$ 4,50 e Liberar Acesso
+                    💎 Pagar R$ 19,90 via PIX
                 </button>
-                <p style="text-align: center; color: var(--text-muted); font-size: 0.85rem; margin-top: 12px;">Pagamento único • Acesso imediato • Sem renovação</p>
+                <p style="text-align: center; color: var(--text-muted); font-size: 0.85rem; margin-top: 12px;">Pagamento PIX • Liberação automática • 7 dias de acesso</p>
                 
                 <!-- Status Premium (visível apenas para usuários Premium) -->
                 <div id="premiumStatus" style="display: none; margin-top: 24px; padding: 20px; background: rgba(16, 185, 129, 0.1); border: 1px solid var(--accent-green); border-radius: 12px;">
@@ -480,6 +481,62 @@
             </div>
         </div>
     </main>
+
+    <!-- Modal de Pagamento PIX -->
+    <div id="pixPaymentModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content pix-modal">
+            <button class="modal-close" onclick="closePixModal()">&times;</button>
+            
+            <div id="pixLoading" class="pix-loading">
+                <div class="spinner"></div>
+                <p>Gerando pagamento PIX...</p>
+            </div>
+            
+            <div id="pixContent" style="display: none;">
+                <h2 class="modal-title">💳 Pagamento PIX</h2>
+                <p class="modal-subtitle">Escaneie o QR Code ou copie o código</p>
+                
+                <div class="pix-amount">
+                    <span class="currency">R$</span>
+                    <span class="value">19,90</span>
+                </div>
+                <p class="pix-description">7 dias de acesso Premium</p>
+                
+                <div class="qr-container">
+                    <img id="qrCodeImage" src="" alt="QR Code PIX" class="qr-code">
+                </div>
+                
+                <div class="pix-code-section">
+                    <label>Código PIX Copia e Cola:</label>
+                    <textarea id="pixCode" readonly class="pix-code-input"></textarea>
+                    <button class="btn-copy" onclick="copyPixCode()">📋 Copiar Código</button>
+                </div>
+                
+                <div class="pix-status">
+                    <div class="status-checking">
+                        <div class="pulse-dot"></div>
+                        <span>Aguardando pagamento...</span>
+                    </div>
+                </div>
+                
+                <p class="pix-info">O pagamento será confirmado automaticamente em alguns segundos.</p>
+            </div>
+            
+            <div id="pixSuccess" style="display: none;">
+                <div class="success-icon">✅</div>
+                <h2 class="modal-title">Premium Ativado!</h2>
+                <p class="modal-subtitle">Seu acesso foi liberado com sucesso</p>
+                <button class="btn-premium-cta" onclick="closePixModal(); updatePremiumStatusUI();">Começar a Usar</button>
+            </div>
+            
+            <div id="pixError" style="display: none;">
+                <div class="error-icon">❌</div>
+                <h2 class="modal-title">Erro ao Gerar Pagamento</h2>
+                <p class="modal-subtitle" id="errorMessage">Tente novamente em alguns instantes</p>
+                <button class="btn-secondary" onclick="closePixModal()">Fechar</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Footer -->
     <footer class="app-footer">

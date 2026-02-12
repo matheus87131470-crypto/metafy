@@ -1,0 +1,359 @@
+/**
+ * PIX Payment Modal Styles
+ */
+
+/* Modal Overlay */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 20px;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Modal Content */
+.modal-content {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-xl);
+  padding: 32px;
+  max-width: 500px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  animation: slideUp 0.4s ease;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.pix-modal {
+  text-align: center;
+}
+
+/* Close Button */
+.modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: transparent;
+  border: none;
+  font-size: 2rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color var(--transition-normal);
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.modal-close:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* Modal Titles */
+.modal-title {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.modal-subtitle {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  margin-bottom: 24px;
+}
+
+/* PIX Amount */
+.pix-amount {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 8px;
+  margin: 24px 0 8px;
+}
+
+.pix-amount .currency {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.pix-amount .value {
+  font-size: 3rem;
+  font-weight: 700;
+  background: var(--gradient-green);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.pix-description {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin-bottom: 32px;
+}
+
+/* QR Code Container */
+.qr-container {
+  background: white;
+  padding: 20px;
+  border-radius: var(--radius-lg);
+  display: inline-block;
+  margin: 0 auto 24px;
+}
+
+.qr-code {
+  display: block;
+  width: 250px;
+  height: 250px;
+  border-radius: var(--radius-md);
+}
+
+/* PIX Code Section */
+.pix-code-section {
+  margin: 24px 0;
+}
+
+.pix-code-section label {
+  display: block;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin-bottom: 8px;
+  text-align: left;
+}
+
+.pix-code-input {
+  width: 100%;
+  padding: 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  resize: none;
+  height: 80px;
+  margin-bottom: 12px;
+  transition: border-color var(--transition-normal);
+}
+
+.pix-code-input:focus {
+  outline: none;
+  border-color: var(--accent-purple);
+}
+
+.btn-copy {
+  width: 100%;
+  padding: 12px 20px;
+  background: var(--accent-purple);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+}
+
+.btn-copy:hover {
+  background: var(--accent-purple-dark);
+  transform: translateY(-1px);
+}
+
+/* PIX Status */
+.pix-status {
+  margin: 24px 0;
+  padding: 16px;
+  background: rgba(139, 92, 246, 0.1);
+  border: 1px solid var(--accent-purple);
+  border-radius: var(--radius-md);
+}
+
+.status-checking {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.pulse-dot {
+  width: 12px;
+  height: 12px;
+  background: var(--accent-purple);
+  border-radius: 50%;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.2);
+  }
+}
+
+.pix-info {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  margin-top: 16px;
+}
+
+/* Loading State */
+.pix-loading {
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid rgba(139, 92, 246, 0.2);
+  border-top-color: var(--accent-purple);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 20px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.pix-loading p {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+
+/* Success State */
+#pixSuccess {
+  padding: 40px 20px;
+}
+
+.success-icon {
+  font-size: 5rem;
+  margin-bottom: 20px;
+  animation: scaleIn 0.5s ease;
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+/* Error State */
+#pixError {
+  padding: 40px 20px;
+}
+
+.error-icon {
+  font-size: 4rem;
+  margin-bottom: 20px;
+}
+
+/* Buttons */
+.btn-premium-cta {
+  width: 100%;
+  padding: 14px 24px;
+  background: var(--gradient-purple);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+}
+
+.btn-premium-cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(139, 92, 246, 0.3);
+}
+
+.btn-premium-cta:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-secondary {
+  width: 100%;
+  padding: 12px 24px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+}
+
+.btn-secondary:hover {
+  background: var(--bg-elevated);
+  border-color: var(--accent-purple);
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .modal-content {
+    padding: 24px;
+    margin: 20px;
+  }
+  
+  .modal-title {
+    font-size: 1.5rem;
+  }
+  
+  .pix-amount .value {
+    font-size: 2.5rem;
+  }
+  
+  .qr-code {
+    width: 200px;
+    height: 200px;
+  }
+}
