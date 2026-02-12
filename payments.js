@@ -6,15 +6,13 @@
 const express = require('express');
 const router = express.Router();
 const { MercadoPagoConfig, Payment } = require('mercadopago');
+const userStore = require('./lib/userStore');
 
 // Configurar Mercado Pago
 const client = new MercadoPagoConfig({ 
   accessToken: process.env.MP_ACCESS_TOKEN 
 });
 const payment = new Payment(client);
-
-// Simulação de banco de dados de usuários (você deve substituir por seu DB real)
-const users = new Map();
 
 /**
  * POST /api/payments/pix
@@ -61,12 +59,11 @@ router.post('/pix', async (req, res) => {
 
     const response = await payment.create({ body: paymentData });
 
-    // Armazenar referência do usuário ao pagamento
-    users.set(response.id.toString(), {
+    console.log('✅ Pagamento PIX criado:', {
+      payment_id: response.id,
+      status: response.status,
       userId,
-      email,
-      status: 'pending',
-      createdAt: new Date()
+      email
     });
 
     // Retornar dados do pagamento
@@ -94,14 +91,21 @@ router.post('/pix', async (req, res) => {
  * POST /api/webhooks/mercadopago
  * Recebe notificações de pagamento do Mercado Pago
  */
-router.post('/mercadopago', async (req, res) => {
+router.post('/webhooks/mercadopago', async (req, res) => {
   try {
     // Mercado Pago envia notificações em diferentes formatos
-    const { type, data } = req.body;
+    let body = req.body;
+    
+    // Se veio como raw, tentar parsear
+    if (Buffer.isBuffer(body)) {
+      body = JSON.parse(body.toString());
+    }
+    
+    const { type, data } = body;
 
     console.log('📩 Webhook recebido:', { type, data });
 
-    // Responder imediatamente ao Mercado Pago
+    // Responder imediatamente ao Mercado Pago (IMPORTANTE)
     res.status(200).send('OK');
 
     // Processar apenas notificações de pagamento
@@ -123,51 +127,36 @@ router.post('/mercadopago', async (req, res) => {
     console.log('💳 Status do pagamento:', {
       id: paymentInfo.id,
       status: paymentInfo.status,
-      status_detail: paymentInfo.status_detail
+      status_detail: paymentInfo.status_detail,
+      metadata: paymentInfo.metadata
     });
 
     // Se pagamento aprovado, liberar premium
     if (paymentInfo.status === 'approved') {
-      const userData = users.get(paymentId.toString());
-      
-      if (userData) {
-        const userId = userData.userId;
-        const email = userData.email;
+      const userId = paymentInfo.metadata?.user_id;
+      const email = paymentInfo.metadata?.email;
 
-        // Atualizar usuário como premium
-        // IMPORTANTE: Substitua isso pela lógica do seu banco de dados
-        users.set(paymentId.toString(), {
-          ...userData,
-          status: 'approved',
-          premium: true,
-          premiumSince: new Date(),
-          approvedAt: new Date()
-        });
+      if (!userId) {
+        console.log('⚠️ userId não encontrado nos metadata do pagamento');
+        return;
+      }
 
-        console.log('✅ Premium ativado para usuário:', {
+      // Ativar premium no arquivo JSON
+      const success = await userStore.setPremium(userId, {
+        email,
+        paymentId: paymentInfo.id,
+        amount: paymentInfo.transaction_amount,
+        paidAt: new Date().toISOString()
+      });
+
+      if (success) {
+        console.log('✅ Premium liberado via webhook:', {
           userId,
           email,
-          paymentId
+          paymentId: paymentInfo.id
         });
-
-        // TODO: Aqui você deve:
-        // 1. Atualizar seu banco de dados
-        // 2. Enviar email de confirmação
-        // 3. Notificar o frontend via WebSocket/etc
-        
-        // Exemplo de como seria com um DB real:
-        /*
-        await User.updateOne(
-          { userId: userId },
-          {
-            premium: true,
-            premiumSince: new Date(),
-            premiumEnd: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-          }
-        );
-        */
       } else {
-        console.log('⚠️ Dados do usuário não encontrados para payment:', paymentId);
+        console.error('❌ Falha ao salvar premium no arquivo');
       }
     }
 
@@ -181,15 +170,12 @@ router.post('/mercadopago', async (req, res) => {
  * GET /api/payments/status/:paymentId
  * Consulta status de um pagamento
  */
-router.get('/status/:paymentId', async (req, res) => {
+router.get('/payments/status/:paymentId', async (req, res) => {
   try {
     const { paymentId } = req.params;
 
     // Consultar pagamento
     const paymentInfo = await payment.get({ id: paymentId });
-
-    // Verificar dados locais
-    const userData = users.get(paymentId);
 
     return res.status(200).json({
       success: true,
@@ -199,7 +185,7 @@ router.get('/status/:paymentId', async (req, res) => {
       transaction_amount: paymentInfo.transaction_amount,
       date_created: paymentInfo.date_created,
       date_approved: paymentInfo.date_approved,
-      user_data: userData || null
+      metadata: paymentInfo.metadata
     });
 
   } catch (error) {
@@ -213,41 +199,50 @@ router.get('/status/:paymentId', async (req, res) => {
 });
 
 /**
- * GET /api/payments/check-premium/:userId
- * Verifica se usuário é premium
+ * GET /api/user/:userId
+ * Verifica dados de um usuário (para debug)
  */
-router.get('/check-premium/:userId', (req, res) => {
+router.get('/user/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
-
-    // Procurar usuário em todos os pagamentos
-    let isPremium = false;
-    let premiumData = null;
-
-    for (const [paymentId, data] of users.entries()) {
-      if (data.userId === userId && data.premium === true) {
-        isPremium = true;
-        premiumData = {
-          paymentId,
-          premiumSince: data.premiumSince,
-          email: data.email
-        };
-        break;
-      }
-    }
+    const user = await userStore.getUser(userId);
+    const isPremium = await userStore.isPremium(userId);
 
     return res.status(200).json({
       success: true,
       userId,
       isPremium,
-      data: premiumData
+      user
     });
 
   } catch (error) {
-    console.error('❌ Erro ao verificar premium:', error);
+    console.error('❌ Erro ao buscar usuário:', error);
     return res.status(500).json({
       success: false,
-      error: 'Failed to check premium status'
+      error: 'Failed to get user data'
+    });
+  }
+});
+
+/**
+ * GET /api/users/all
+ * Lista todos os usuários (para debug)
+ */
+router.get('/users/all', async (req, res) => {
+  try {
+    const users = await userStore.getAllUsers();
+
+    return res.status(200).json({
+      success: true,
+      total: Object.keys(users).length,
+      users
+    });
+
+  } catch (error) {
+    console.error('❌ Erro ao listar usuários:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to list users'
     });
   }
 });
