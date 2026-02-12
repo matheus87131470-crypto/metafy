@@ -234,25 +234,54 @@ async function openPixModal() {
   content.style.display = 'none';
   error.style.display = 'none';
   
+  const requestUrl = `${BACKEND_URL}/api/payments/pix`;
+  const requestBody = {
+    userId: USER_ID,
+    email: USER_EMAIL,
+    amount: 19.90
+  };
+  
+  console.log('📤 Iniciando requisição PIX:');
+  console.log('URL:', requestUrl);
+  console.log('Body:', JSON.stringify(requestBody, null, 2));
+  
   try {
     // Chamar API para criar pagamento PIX
-    const response = await fetch(`${BACKEND_URL}/api/payments/pix`, {
+    const response = await fetch(requestUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        userId: USER_ID,
-        email: USER_EMAIL,
-        amount: 19.90
-      })
+      body: JSON.stringify(requestBody)
     });
     
+    console.log('📥 Resposta recebida:');
+    console.log('Status:', response.status, response.statusText);
+    console.log('URL:', response.url);
+    
     if (!response.ok) {
-      throw new Error('Erro ao gerar pagamento');
+      // Ler texto da resposta para mostrar erro real
+      const errorText = await response.text();
+      console.error('❌ Erro do servidor:', errorText);
+      
+      let errorMessage = `Erro ${response.status}: ${response.statusText}`;
+      
+      // Tentar parsear JSON se possível
+      try {
+        const errorData = JSON.parse(errorText);
+        errorMessage = errorData.error || errorData.message || errorMessage;
+      } catch {
+        // Se não é JSON, usar texto direto (limitado)
+        if (errorText && errorText.length < 200) {
+          errorMessage += ` - ${errorText}`;
+        }
+      }
+      
+      throw new Error(errorMessage);
     }
     
     const data = await response.json();
+    console.log('✅ Resposta parseada:', data);
     
     if (data.success && data.qr_code_base64 && data.qr_code) {
       // Atualizar modal com QR Code
@@ -261,6 +290,7 @@ async function openPixModal() {
       
       // Salvar paymentId para verificação
       sessionStorage.setItem('currentPaymentId', data.payment_id);
+      console.log('💳 Payment ID salvo:', data.payment_id);
       
       // Mostrar conteúdo
       loading.style.display = 'none';
@@ -269,10 +299,15 @@ async function openPixModal() {
       // Iniciar verificação automática
       startPaymentCheck();
     } else {
+      console.error('❌ Resposta inválida:', data);
       throw new Error(data.error || 'Resposta inválida do servidor');
     }
   } catch (err) {
-    console.error('Erro ao gerar PIX:', err);
+    console.error('🔴 ERRO AO GERAR PIX:');
+    console.error('Tipo:', err.name);
+    console.error('Mensagem:', err.message);
+    console.error('Stack:', err.stack);
+    
     loading.style.display = 'none';
     error.style.display = 'block';
     document.getElementById('errorMessage').textContent = err.message || 'Erro ao gerar pagamento. Tente novamente.';
