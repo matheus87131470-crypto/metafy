@@ -8,6 +8,9 @@ const router = express.Router();
 const { MercadoPagoConfig, Payment } = require('mercadopago');
 const userStore = require('./lib/userStore');
 
+// Valor fixo do Premium (NÃO confiar no frontend)
+const PREMIUM_PRICE = 4.50;
+
 // Configurar Mercado Pago
 const client = new MercadoPagoConfig({ 
   accessToken: process.env.MP_ACCESS_TOKEN 
@@ -20,13 +23,13 @@ const payment = new Payment(client);
  */
 router.post('/pix', async (req, res) => {
   try {
-    const { userId, email, amount, cpf } = req.body;
+    const { userId, email, cpf } = req.body;
 
     // Validação de campos obrigatórios
-    if (!userId || !email || !amount) {
+    if (!userId || !email) {
       return res.status(400).json({
         success: false,
-        error: 'Missing required fields: userId, email, amount'
+        error: 'Missing required fields: userId, email'
       });
     }
 
@@ -48,23 +51,16 @@ router.post('/pix', async (req, res) => {
       });
     }
 
-    if (amount < 1) {
-      return res.status(400).json({
-        success: false,
-        error: 'Amount must be at least 1'
-      });
-    }
-
     console.log('📝 Criando pagamento PIX:', {
       userId,
       email,
-      amount,
+      amount: PREMIUM_PRICE, // Valor fixo do servidor
       cpf: cpfNumerico
     });
 
-    // Criar pagamento PIX
+    // Criar pagamento PIX com valor FIXO do servidor
     const paymentData = {
-      transaction_amount: parseFloat(amount),
+      transaction_amount: PREMIUM_PRICE, // Valor fixo - NÃO vem do frontend
       description: 'Metafy Premium - 7 dias',
       payment_method_id: 'pix',
       payer: {

@@ -216,7 +216,6 @@ function formatDate(dateString) {
 const BACKEND_URL = 'https://metafy-8qk7.onrender.com';
 const USER_ID = 'matheus1'; // Futuramente substituir por sistema de login real
 const USER_EMAIL = 'matheus@email.com';
-const PREMIUM_PRICE = 4.5; // Preço do Premium em R$
 let paymentCheckInterval = null;
 
 function activatePremium() {
