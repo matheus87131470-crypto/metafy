@@ -1,4 +1,4 @@
-import https from 'https';
+const https = require('https');
 
 // Dados demo para usar enquanto API não está aprovada
 const DEMO_GAMES = [

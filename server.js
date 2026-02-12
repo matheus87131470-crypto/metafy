@@ -15,11 +15,18 @@ const PORT = process.env.PORT || 3001;
 
 // Middleware
 app.use(cors());
+
+// RAW body parser apenas para webhook do Mercado Pago
+app.use('/api/webhooks/mercadopago', express.raw({ type: 'application/json' }));
+
+// JSON parser para outras rotas
+app.use(express.json());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// Import games API route
+// Import routes
 const gamesApiRoute = require('./api/games');
+const paymentsRoute = require('./payments');
 
 // ====================================
 // HEALTH CHECK
@@ -36,10 +43,12 @@ app.get('/health', (req, res) => {
 });
 
 // ====================================
-// API GAMES ROUTE
+// API ROUTES
 // ====================================
 
 app.get('/api/games', gamesApiRoute);
+app.use('/api/payments', paymentsRoute);
+app.use('/api/webhooks', paymentsRoute);
 
 // ====================================
 // GET GAMES TODAY
