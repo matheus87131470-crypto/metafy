@@ -487,7 +487,35 @@
         <div class="modal-content pix-modal">
             <button class="modal-close" onclick="closePixModal()">&times;</button>
             
-            <div id="pixLoading" class="pix-loading">
+            <div id="pixForm" class="pix-form">
+                <h2 class="modal-title">💎 Assinar Premium</h2>
+                <p class="modal-subtitle">Preencha seus dados para gerar o PIX</p>
+                
+                <div class="pix-amount">
+                    <span class="currency">R$</span>
+                    <span class="value">19,90</span>
+                </div>
+                <p class="pix-description">7 dias de acesso Premium</p>
+                
+                <div class="form-group">
+                    <label for="cpfInput">CPF (somente números)</label>
+                    <input 
+                        type="text" 
+                        id="cpfInput" 
+                        class="form-input" 
+                        placeholder="Digite seu CPF (11 dígitos)"
+                        maxlength="14"
+                        autocomplete="off"
+                    >
+                    <span id="cpfError" class="input-error" style="display: none;">CPF deve ter 11 dígitos</span>
+                </div>
+                
+                <button class="btn-premium-cta" onclick="generatePixPayment()">
+                    Gerar Pagamento PIX
+                </button>
+            </div>
+            
+            <div id="pixLoading" class="pix-loading" style="display: none;">
                 <div class="spinner"></div>
                 <p>Gerando pagamento PIX...</p>
             </div>
@@ -533,7 +561,7 @@
                 <div class="error-icon">❌</div>
                 <h2 class="modal-title">Erro ao Gerar Pagamento</h2>
                 <p class="modal-subtitle" id="errorMessage">Tente novamente em alguns instantes</p>
-                <button class="btn-secondary" onclick="closePixModal()">Fechar</button>
+                <button class="btn-secondary" onclick="resetPixModal()">Tentar Novamente</button>
             </div>
         </div>
     </div>

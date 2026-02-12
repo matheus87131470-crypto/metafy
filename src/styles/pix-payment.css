@@ -126,6 +126,54 @@
   margin-bottom: 32px;
 }
 
+/* Form Section */
+.pix-form {
+  padding: 20px 0;
+}
+
+.form-group {
+  margin-bottom: 24px;
+  text-align: left;
+}
+
+.form-group label {
+  display: block;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.form-input {
+  width: 100%;
+  padding: 14px 16px;
+  background: var(--bg-secondary);
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: 1rem;
+  font-family: var(--font-mono);
+  transition: all var(--transition-normal);
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--accent-purple);
+  background: var(--bg-elevated);
+}
+
+.form-input::placeholder {
+  color: var(--text-muted);
+}
+
+.input-error {
+  display: block;
+  color: #ef4444;
+  font-size: 0.85rem;
+  margin-top: 6px;
+}
+
+
 /* QR Code Container */
 .qr-container {
   background: white;

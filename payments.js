@@ -20,13 +20,31 @@ const payment = new Payment(client);
  */
 router.post('/pix', async (req, res) => {
   try {
-    const { userId, email, amount } = req.body;
+    const { userId, email, amount, cpf } = req.body;
 
-    // Validação
+    // Validação de campos obrigatórios
     if (!userId || !email || !amount) {
       return res.status(400).json({
         success: false,
         error: 'Missing required fields: userId, email, amount'
+      });
+    }
+
+    if (!cpf) {
+      return res.status(400).json({
+        success: false,
+        error: 'CPF é obrigatório'
+      });
+    }
+
+    // Sanitizar CPF - remover tudo que não é número
+    const cpfNumerico = cpf.replace(/\D/g, '');
+
+    // Validar CPF (11 dígitos)
+    if (cpfNumerico.length !== 11) {
+      return res.status(400).json({
+        success: false,
+        error: `CPF inválido. Deve ter 11 dígitos. Recebido: ${cpfNumerico.length} dígitos`
       });
     }
 
@@ -37,6 +55,13 @@ router.post('/pix', async (req, res) => {
       });
     }
 
+    console.log('📝 Criando pagamento PIX:', {
+      userId,
+      email,
+      amount,
+      cpf: cpfNumerico
+    });
+
     // Criar pagamento PIX
     const paymentData = {
       transaction_amount: parseFloat(amount),
@@ -44,10 +69,9 @@ router.post('/pix', async (req, res) => {
       payment_method_id: 'pix',
       payer: {
         email: email,
-        first_name: userId,
         identification: {
           type: 'CPF',
-          number: '12345678900'
+          number: cpfNumerico
         }
       },
       notification_url: `${process.env.PUBLIC_URL}/api/webhooks/mercadopago`,
@@ -63,7 +87,8 @@ router.post('/pix', async (req, res) => {
       payment_id: response.id,
       status: response.status,
       userId,
-      email
+      email,
+      cpf: cpfNumerico.substring(0, 3) + '***' // Log parcial por segurança
     });
 
     // Retornar dados do pagamento
@@ -79,10 +104,19 @@ router.post('/pix', async (req, res) => {
 
   } catch (error) {
     console.error('❌ Erro ao criar pagamento PIX:', error);
+    
+    // Capturar mensagem específica do Mercado Pago
+    let errorMessage = error.message || 'Failed to create payment';
+    
+    // Se o erro tem uma resposta do MP com detalhes
+    if (error.cause && error.cause.length > 0) {
+      errorMessage = error.cause.map(c => c.description || c.message).join('; ');
+    }
+    
     return res.status(500).json({
       success: false,
       error: 'Failed to create payment',
-      message: error.message
+      message: errorMessage
     });
   }
 });

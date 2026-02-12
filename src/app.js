@@ -222,14 +222,81 @@ function activatePremium() {
   openPixModal();
 }
 
-async function openPixModal() {
+function openPixModal() {
   const modal = document.getElementById('pixPaymentModal');
+  const form = document.getElementById('pixForm');
   const loading = document.getElementById('pixLoading');
   const content = document.getElementById('pixContent');
   const error = document.getElementById('pixError');
   
-  // Mostrar modal com loading
+  // Mostrar modal com formulário
   modal.style.display = 'flex';
+  form.style.display = 'block';
+  loading.style.display = 'none';
+  content.style.display = 'none';
+  error.style.display = 'none';
+  
+  // Limpar input de CPF
+  document.getElementById('cpfInput').value = '';
+  document.getElementById('cpfError').style.display = 'none';
+}
+
+function validateCPF(cpf) {
+  // Remove tudo que não é número
+  const numbers = cpf.replace(/\D/g, '');
+  return numbers.length === 11;
+}
+
+function formatCPF(value) {
+  // Remove tudo que não é número
+  const numbers = value.replace(/\D/g, '');
+  
+  // Formata: 000.000.000-00
+  if (numbers.length <= 11) {
+    return numbers
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+  }
+  return numbers.slice(0, 11);
+}
+
+// Auto-formatar CPF ao digitar
+document.addEventListener('DOMContentLoaded', () => {
+  const cpfInput = document.getElementById('cpfInput');
+  if (cpfInput) {
+    cpfInput.addEventListener('input', (e) => {
+      e.target.value = formatCPF(e.target.value);
+    });
+  }
+});
+
+async function generatePixPayment() {
+  const cpfInput = document.getElementById('cpfInput');
+  const cpfError = document.getElementById('cpfError');
+  const cpfValue = cpfInput.value;
+  
+  // Validar CPF
+  if (!validateCPF(cpfValue)) {
+    cpfError.style.display = 'block';
+    cpfError.textContent = 'CPF deve ter 11 dígitos válidos';
+    cpfInput.focus();
+    return;
+  }
+  
+  // CPF válido, esconder erro
+  cpfError.style.display = 'none';
+  
+  // Extrair apenas números
+  const cpf = cpfValue.replace(/\D/g, '');
+  
+  // Mostrar loading
+  const form = document.getElementById('pixForm');
+  const loading = document.getElementById('pixLoading');
+  const content = document.getElementById('pixContent');
+  const error = document.getElementById('pixError');
+  
+  form.style.display = 'none';
   loading.style.display = 'block';
   content.style.display = 'none';
   error.style.display = 'none';
@@ -238,6 +305,7 @@ async function openPixModal() {
   const requestBody = {
     userId: USER_ID,
     email: USER_EMAIL,
+    cpf: cpf,
     amount: 19.90
   };
   
@@ -324,6 +392,24 @@ function closePixModal() {
     paymentCheckInterval = null;
   }
 }
+
+function resetPixModal() {
+  // Volta para o formulário inicial
+  const form = document.getElementById('pixForm');
+  const loading = document.getElementById('pixLoading');
+  const content = document.getElementById('pixContent');
+  const error = document.getElementById('pixError');
+  
+  form.style.display = 'block';
+  loading.style.display = 'none';
+  content.style.display = 'none';
+  error.style.display = 'none';
+  
+  // Limpar campos
+  document.getElementById('cpfInput').value = '';
+  document.getElementById('cpfError').style.display = 'none';
+}
+
 
 function copyPixCode() {
   const pixCodeInput = document.getElementById('pixCode');
@@ -1379,4 +1465,6 @@ window.toggleGameSelection = toggleGameSelection;
 window.analyzeSelectedGames = analyzeSelectedGames;
 window.clearSelection = clearSelection;
 window.closePixModal = closePixModal;
+window.resetPixModal = resetPixModal;
 window.copyPixCode = copyPixCode;
+window.generatePixPayment = generatePixPayment;
