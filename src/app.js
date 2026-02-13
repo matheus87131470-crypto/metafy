@@ -617,36 +617,40 @@ async function fetchGames() {
   container.innerHTML = createLoader('Carregando jogos...');
 
   try {
-    // Tentar API real primeiro
-    const response = await fetch('/api/games');
+    // Usar API real do backend
+    const response = await fetch(`${BACKEND_URL}/api/matches/today`);
     const data = await response.json();
 
-    if (data.success && data.games?.length > 0) {
-      GAMES = data.games.map(g => ({
-        ...g,
-        status: g.status === 'HOJE' ? 'scheduled' : 
-                g.status === 'LIVE' ? 'live' : 
-                g.status === 'FIM' ? 'finished' : g.status,
-        homeForm: ['W', 'D', 'W', 'L', 'W'],
-        awayForm: ['D', 'W', 'W', 'W', 'L'],
-        h2h: { homeWins: 5, draws: 3, awayWins: 4 }
+    if (data.success && data.matches?.length > 0) {
+      GAMES = data.matches.map(match => ({
+        id: match.id,
+        homeTeam: match.home,
+        awayTeam: match.away,
+        competition: match.league,
+        country: match.country,
+        time: new Date(match.kickoff).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+        status: match.status,
+        homeScore: match.homeScore,
+        awayScore: match.awayScore,
+        homeOdds: match.odds.home,
+        drawOdds: match.odds.draw,
+        awayOdds: match.odds.away
       }));
-      isDemo = data.demo || false;
+      
+      console.log(`✅ ${GAMES.length} partidas carregadas da API real`);
     } else {
-      // Usar dados demo
-      GAMES = MOCK_GAMES;
-      isDemo = true;
+      throw new Error('Nenhuma partida encontrada');
     }
   } catch (error) {
-    console.warn('⚠️ API indisponível, usando dados demo');
-    GAMES = MOCK_GAMES;
-    isDemo = true;
-  }
-
-  // Atualizar banner demo
-  if (isDemo) {
-    document.body.classList.add('has-demo-banner');
-    showDemoBanner();
+    console.error('❌ Erro ao buscar partidas:', error);
+    container.innerHTML = `
+      <div class="error-container">
+        <div class="error-icon">⚠️</div>
+        <p class="error-text">Erro ao carregar partidas</p>
+        <button onclick="fetchGames()" class="btn-retry">Tentar Novamente</button>
+      </div>
+    `;
+    return;
   }
 
   // Renderizar jogos
@@ -898,7 +902,7 @@ function createGameCard(game) {
 }
 
 // Analisar jogo
-function analyzeGame(gameId) {
+async function analyzeGame(gameId) {
   const game = GAMES.find(g => g.id === gameId);
   if (!game) return;
 
@@ -918,7 +922,14 @@ function analyzeGame(gameId) {
 
   // Gerar análise
   const analysis = generateAnalysis(game);
-  showAnalysisModal(game, analysis);
+  
+  // Se for premium, buscar insights de IA real
+  if (isPremiumUser()) {
+    showAnalysisModal(game, analysis, true); // true = loading AI insights
+    await fetchAIInsights(game, analysis);
+  } else {
+    showAnalysisModal(game, analysis);
+  }
 }
 
 // Gerar análise
@@ -1038,6 +1049,92 @@ function calculateFormScore(form) {
   const points = { W: 3, D: 1, L: 0 };
   const total = form.reduce((sum, r) => sum + (points[r] || 0), 0);
   return Math.round((total / 15) * 100);
+}
+
+// Buscar insights de IA da OpenAI
+async function fetchAIInsights(game, analysis) {
+  try {
+    const userId = getCurrentUserId();
+    
+    console.log(`🤖 Buscando insights de IA para match ${game.id}...`);
+    
+    const response = await fetch(`${BACKEND_URL}/api/insights-ai`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ 
+        matchId: game.id,
+        userId 
+      })
+    });
+    
+    if (!response.ok) {
+      throw new Error('Erro ao buscar insights');
+    }
+    
+    const data = await response.json();
+    
+    if (data.success && data.insights) {
+      console.log('✅ Insights de IA recebidos:', data.source);
+      updateModalWithAIInsights(data.insights);
+    } else {
+      console.warn('⚠️ Resposta sem insights válidos');
+    }
+    
+  } catch (error) {
+    console.error('❌ Erro ao buscar insights de IA:', error);
+    // Modal continua com insights locais
+  }
+}
+
+// Atualizar modal com insights da IA
+function updateModalWithAIInsights(insights) {
+  const insightsSection = document.querySelector('.premium-insights');
+  
+  if (!insightsSection) return;
+  
+  // Limpar insights locais
+  insightsSection.innerHTML = '';
+  
+  // Adicionar summary
+  if (insights.summary) {
+    const summaryDiv = document.createElement('div');
+    summaryDiv.className = 'ai-summary';
+    summaryDiv.innerHTML = `<strong>📋 Análise Geral:</strong> ${insights.summary}`;
+    insightsSection.appendChild(summaryDiv);
+  }
+  
+  // Adicionar picks
+  if (insights.picks && insights.picks.length > 0) {
+    insights.picks.forEach(pick => {
+      const pickDiv = document.createElement('div');
+      pickDiv.className = 'insight-item ai-pick';
+      
+      const confidenceEmoji = pick.confidence >= 75 ? '🟢' : pick.confidence >= 50 ? '🟡' : '🟠';
+      
+      pickDiv.innerHTML = `
+        <strong>${confidenceEmoji} ${pick.market}</strong> (${pick.confidence}% confiança)
+        <br><span style="color: var(--text-secondary); font-size: 0.85rem;">${pick.reason}</span>
+      `;
+      insightsSection.appendChild(pickDiv);
+    });
+  }
+  
+  // Adicionar bankroll
+  if (insights.bankroll) {
+    const bankrollDiv = document.createElement('div');
+    bankrollDiv.className = 'insight-item ai-bankroll';
+    bankrollDiv.innerHTML = `<strong>💰 Gestão de Banca:</strong> ${insights.bankroll}`;
+    insightsSection.appendChild(bankrollDiv);
+  }
+  
+  // Adicionar badge de IA
+  const aiBadge = document.createElement('div');
+  aiBadge.className = 'ai-powered-badge';
+  aiBadge.innerHTML = '🤖 Powered by OpenAI';
+  aiBadge.style.cssText = 'text-align: center; margin-top: 12px; font-size: 0.8rem; color: var(--text-muted); opacity: 0.7;';
+  insightsSection.appendChild(aiBadge);
 }
 
 // Mostrar modal de análise
