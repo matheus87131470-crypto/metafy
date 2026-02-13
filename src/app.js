@@ -214,9 +214,25 @@ function formatDate(dateString) {
 
 // Ativar Premium (pagamento PIX via Mercado Pago)
 const BACKEND_URL = 'https://metafy-8qk7.onrender.com';
-const USER_ID = 'matheus1'; // Futuramente substituir por sistema de login real
-const USER_EMAIL = 'matheus@email.com';
 let paymentCheckInterval = null;
+
+// Gerar ou recuperar userId único baseado no email
+function getOrCreateUserId(email) {
+  // Tentar recuperar userId existente
+  let userId = localStorage.getItem('metafy_user_id');
+  
+  if (!userId && email) {
+    // Criar userId simples baseado no email
+    userId = 'user_' + btoa(email).replace(/[^a-zA-Z0-9]/g, '').substring(0, 20);
+    localStorage.setItem('metafy_user_id', userId);
+  }
+  
+  return userId || 'guest_' + Date.now();
+}
+
+function getCurrentUserId() {
+  return localStorage.getItem('metafy_user_id') || null;
+}
 
 function activatePremium() {
   openPixModal();
@@ -236,8 +252,10 @@ function openPixModal() {
   content.style.display = 'none';
   error.style.display = 'none';
   
-  // Limpar input de CPF
+  // Limpar inputs
+  document.getElementById('emailInput').value = '';
   document.getElementById('cpfInput').value = '';
+  document.getElementById('emailError').style.display = 'none';
   document.getElementById('cpfError').style.display = 'none';
 }
 
@@ -245,6 +263,12 @@ function validateCPF(cpf) {
   // Remove tudo que não é número
   const numbers = cpf.replace(/\D/g, '');
   return numbers.length === 11;
+}
+
+function validateEmail(email) {
+  // Validação simples de email
+  const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return re.test(email);
 }
 
 function formatCPF(value) {
@@ -272,22 +296,41 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function generatePixPayment() {
+  const emailInput = document.getElementById('emailInput');
   const cpfInput = document.getElementById('cpfInput');
+  const emailError = document.getElementById('emailError');
   const cpfError = document.getElementById('cpfError');
+  const emailValue = emailInput.value.trim();
   const cpfValue = cpfInput.value;
+  
+  let hasError = false;
+  
+  // Validar Email
+  if (!validateEmail(emailValue)) {
+    emailError.style.display = 'block';
+    emailError.textContent = 'Email inválido';
+    emailInput.focus();
+    hasError = true;
+  } else {
+    emailError.style.display = 'none';
+  }
   
   // Validar CPF
   if (!validateCPF(cpfValue)) {
     cpfError.style.display = 'block';
     cpfError.textContent = 'CPF deve ter 11 dígitos válidos';
-    cpfInput.focus();
-    return;
+    if (!hasError) cpfInput.focus();
+    hasError = true;
+  } else {
+    cpfError.style.display = 'none';
   }
   
-  // CPF válido, esconder erro
-  cpfError.style.display = 'none';
+  if (hasError) return;
   
-  // Extrair apenas números
+  // Gerar userId baseado no email
+  const userId = getOrCreateUserId(emailValue);
+  
+  // Extrair apenas números do CPF
   const cpf = cpfValue.replace(/\D/g, '');
   
   // Mostrar loading
@@ -303,8 +346,8 @@ async function generatePixPayment() {
   
   const requestUrl = `${BACKEND_URL}/api/payments/pix`;
   const requestBody = {
-    userId: USER_ID,
-    email: USER_EMAIL,
+    userId: userId,
+    email: emailValue,
     cpf: cpf,
     amount: PREMIUM_PRICE
   };
@@ -406,7 +449,9 @@ function resetPixModal() {
   error.style.display = 'none';
   
   // Limpar campos
+  document.getElementById('emailInput').value = '';
   document.getElementById('cpfInput').value = '';
+  document.getElementById('emailError').style.display = 'none';
   document.getElementById('cpfError').style.display = 'none';
 }
 
@@ -433,10 +478,18 @@ function copyPixCode() {
 }
 
 function startPaymentCheck() {
+  // Pegar userId atual
+  const userId = getCurrentUserId();
+  
+  if (!userId) {
+    console.error('❌ userId não encontrado');
+    return;
+  }
+  
   // Verificar a cada 5 segundos
   paymentCheckInterval = setInterval(async () => {
     try {
-      const response = await fetch(`${BACKEND_URL}/api/user/${USER_ID}`);
+      const response = await fetch(`${BACKEND_URL}/api/user/${userId}`);
       const data = await response.json();
       
       if (data.success && data.isPremium) {
@@ -446,15 +499,14 @@ function startPaymentCheck() {
         
         // Salvar no localStorage
         const now = new Date();
-        const premiumEnd = new Date();
-        premiumEnd.setDate(premiumEnd.getDate() + 7);
+        const premiumEnd = new Date(data.user.premiumEnd || now.getTime() + 7 * 24 * 60 * 60 * 1000);
         
         const premiumData = {
-          premium_start: now.toISOString(),
+          premium_start: data.user.premiumSince || now.toISOString(),
           premium_end: premiumEnd.toISOString(),
           price_paid: PREMIUM_PRICE,
           payment_date: now.toISOString(),
-          user_id: USER_ID
+          user_id: userId
         };
         
         localStorage.setItem('metafy_premium', JSON.stringify(premiumData));
@@ -912,6 +964,50 @@ function generateAnalysis(game) {
   if (game.h2h && game.h2h.homeWins > game.h2h.awayWins + 2) reasoning.push('Histórico favorável ao mandante');
   if (reasoning.length === 0) reasoning.push('Análise baseada em odds, forma e mando de campo');
 
+  // Insights Premium (apenas para usuários premium)
+  const premiumInsights = [];
+  if (isPremiumUser()) {
+    // Insights de Valor
+    if (homeWinProb > 55 && game.homeOdds > 2.0) {
+      premiumInsights.push(`💡 <strong>Valor detectado:</strong> ${game.homeTeam} tem ${Math.round(homeWinProb)}% de chance mas odds de ${game.homeOdds.toFixed(2)}`);
+    }
+    if (awayWinProb > 50 && game.awayOdds > 2.5) {
+      premiumInsights.push(`💡 <strong>Valor detectado:</strong> ${game.awayTeam} tem ${Math.round(awayWinProb)}% de chance mas odds de ${game.awayOdds.toFixed(2)}`);
+    }
+    
+    // Insights de Forma
+    if (homeFormScore > 75) {
+      premiumInsights.push(`🔥 <strong>Forma excepcional:</strong> ${game.homeTeam} está invicto em casa nas últimas partidas`);
+    }
+    if (awayFormScore < 30) {
+      premiumInsights.push(`⚠️ <strong>Alerta:</strong> ${game.awayTeam} não vence há várias rodadas`);
+    }
+    
+    // Insights de Mercado
+    if (overProb > 65) {
+      premiumInsights.push(`⚽ <strong>Recomendação:</strong> Alta probabilidade de Over 2.5 gols (${overProb}%)`);
+    }
+    if (bttsProb > 65) {
+      premiumInsights.push(`🎯 <strong>Oportunidade:</strong> Ambas marcam com ${bttsProb}% de probabilidade`);
+    }
+    
+    // Insights de Confiança
+    if (confidence === 'high') {
+      premiumInsights.push(`✅ <strong>Aposta segura:</strong> Alta confiança na previsão baseada em múltiplos fatores`);
+    }
+    
+    // Adicionar pelo menos 3 insights se tiver menos
+    if (premiumInsights.length < 3) {
+      if (Math.abs(homeWinProb - awayWinProb) < 10) {
+        premiumInsights.push(`⚖️ <strong>Jogo equilibrado:</strong> Considere mercados alternativos como empate ou gols`);
+      }
+      if (game.homeOdds < 1.5) {
+        premiumInsights.push(`📊 <strong>Favorito claro:</strong> ${game.homeTeam} é o grande favorito das casas de apostas`);
+      }
+      premiumInsights.push(`💰 <strong>Gestão de banca:</strong> Considere stake de ${confidence === 'high' ? '2-3%' : '1-2%'} da banca total`);
+    }
+  }
+
   return {
     prediction,
     probabilities: {
@@ -926,6 +1022,7 @@ function generateAnalysis(game) {
     confidence,
     form: { home: homeFormScore, away: awayFormScore },
     reasoning,
+    premiumInsights,
     remaining: isPremiumUser() ? '∞' : MAX_FREE_ANALYSIS - analysisCount,
     isPremium: isPremiumUser()
   };
@@ -1052,6 +1149,32 @@ function showAnalysisModal(game, analysis) {
           ${analysis.reasoning.map(r => `<li>${r}</li>`).join('')}
         </ul>
       </div>
+
+      ${analysis.premiumInsights && analysis.premiumInsights.length > 0 ? `
+        <div class="analysis-section premium-insights-section">
+          <h4 class="section-title">🔮 Insights IA Premium</h4>
+          <div class="premium-insights">
+            ${analysis.premiumInsights.map(insight => `<div class="insight-item">${insight}</div>`).join('')}
+          </div>
+        </div>
+      ` : !analysis.isPremium ? `
+        <div class="analysis-section premium-locked-section">
+          <h4 class="section-title">🔒 Insights IA Premium</h4>
+          <div class="premium-locked">
+            <div class="locked-icon">🔮</div>
+            <p class="locked-text">Desbloqueie insights avançados de IA</p>
+            <ul class="locked-features">
+              <li>💡 Análise de valor e odds</li>
+              <li>🔥 Tendências e padrões</li>
+              <li>⚽ Recomendações de mercado</li>
+              <li>💰 Gestão de banca personalizada</li>
+            </ul>
+            <button class="btn-unlock-premium" onclick="closeAnalysisModal(); activatePremium();">
+              💎 Ativar Premium por R$ 4,50
+            </button>
+          </div>
+        </div>
+      ` : ''}
 
       <div class="analysis-footer">
         <div class="remaining-badge ${analysis.isPremium ? 'premium' : ''}">
