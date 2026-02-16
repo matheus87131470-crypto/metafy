@@ -622,17 +622,39 @@ async function fetchGames() {
     const response = await fetch(`${BACKEND_URL}/api/matches/today`);
     const data = await response.json();
 
-    if (data.success && data.matches?.length > 0) {
-      GAMES = data.matches.map(match => ({
+    // Log de debug para verificar estrutura
+    console.log('API /matches/today response:', data);
+
+    // Normalizar retorno (suportar múltiplos formatos)
+    const rawMatches = Array.isArray(data) ? data : (data.matches || data.events || []);
+    const matches = rawMatches
+      .filter(Boolean)
+      .map((m) => ({
+        id: m.id,
+        league: m.league || m.tournament?.name || m.competition?.name || "—",
+        country: m.country || m.tournament?.category?.name || "—",
+        kickoff: m.kickoff || m.startTimestamp || m.startDate || "",
+        status: m.status || "unknown",
+        home: m.home || m.homeTeam?.name || m.home?.name || "—",
+        away: m.away || m.awayTeam?.name || m.away?.name || "—",
+        homeScore: (typeof m.homeScore === "number" ? m.homeScore : m.homeScore?.current) ?? null,
+        awayScore: (typeof m.awayScore === "number" ? m.awayScore : m.awayScore?.current) ?? null,
+      }));
+
+    // Log de debug das partidas normalizadas
+    console.log('Normalized matches:', matches.slice(0, 3));
+
+    if (matches.length > 0) {
+      GAMES = matches.map(match => ({
         id: match.id,
         homeTeam: match.home,
         awayTeam: match.away,
         competition: match.league,
         country: match.country,
-        time: new Date(match.kickoff).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+        time: match.kickoff ? new Date(match.kickoff).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '—',
         status: match.status,
-        homeScore: match.homeScore || 0,
-        awayScore: match.awayScore || 0,
+        homeScore: match.homeScore ?? 0,
+        awayScore: match.awayScore ?? 0,
         // Odds simuladas (SportAPI7 não fornece odds facilmente)
         homeOdds: 2.0 + Math.random() * 2,
         drawOdds: 3.0 + Math.random(),
