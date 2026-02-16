@@ -8,16 +8,16 @@ dotenv.config();
 
 const app = express();
 
-// CORS configurado para aceitar requisições do frontend
-const corsOptions = {
-  origin: '*', // Permite de qualquer origem (Vercel, localhost, etc)
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: false,
-  maxAge: 86400
-};
-
-app.use(cors(corsOptions));
+// ✅ CORS configurado para aceitar requisições do frontend
+app.use(cors({
+  origin: [
+    "https://metafy-gamma.vercel.app",
+    "http://localhost:5173",
+    "http://localhost:3000"
+  ],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+}));
 app.use(express.json());
 
 // Health check
