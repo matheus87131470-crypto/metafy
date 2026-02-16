@@ -1,6 +1,6 @@
 /**
- * api/matches/today.js
- * Endpoint Express para buscar partidas agendadas de hoje (SportAPI7)
+ * api/matches/live.js
+ * Endpoint Express para buscar partidas ao vivo
  */
 
 const rapidApiClient = require('../../services/rapidapi-client');
@@ -20,12 +20,12 @@ module.exports = async (req, res) => {
   }
 
   try {
-    console.log('🔄 Buscando partidas de hoje (SportAPI7)...');
+    console.log('🔄 Buscando partidas ao vivo...');
     
-    // Buscar dados reais (já tem cache de 60s embutido)
-    const matches = await rapidApiClient.getTodayMatches();
+    // Buscar dados reais
+    const matches = await rapidApiClient.getLiveMatches();
     
-    console.log(`✅ ${matches.length} partidas encontradas para hoje`);
+    console.log(`✅ ${matches.length} partidas ao vivo encontradas`);
     
     return res.status(200).json({
       success: true,
@@ -34,11 +34,11 @@ module.exports = async (req, res) => {
     });
     
   } catch (error) {
-    console.error('❌ Erro ao buscar partidas:', error.message);
+    console.error('❌ Erro ao buscar partidas ao vivo:', error.message);
     
     return res.status(500).json({
       success: false,
-      error: 'Erro ao buscar partidas',
+      error: 'Erro ao buscar partidas ao vivo',
       message: error.message
     });
   }

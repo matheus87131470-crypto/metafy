@@ -30,6 +30,7 @@ const paymentsRoute = require('./payments');
 
 // Import RapidAPI routes (serverless format)
 const matchesToday = require('./api/matches/today');
+const matchesLive = require('./api/matches/live');
 const matchById = require('./api/match/matchById');
 const insightsAI = require('./api/insights-ai');
 
@@ -57,6 +58,7 @@ app.use('/api/webhooks', paymentsRoute);
 
 // RapidAPI Routes
 app.get('/api/matches/today', matchesToday);
+app.get('/api/matches/live', matchesLive);
 app.get('/api/match/:id', matchById);
 app.post('/api/insights-ai', insightsAI);
 

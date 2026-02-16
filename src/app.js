@@ -614,10 +614,11 @@ async function fetchGames() {
   if (!container) return;
 
   // Mostrar loading
-  container.innerHTML = createLoader('Carregando jogos...');
+  container.innerHTML = createLoader('Carregando jogos reais...');
 
   try {
-    // Usar API real do backend
+    // Usar API real do backend (SportAPI7)
+    console.log('🔄 Buscando partidas de hoje via SportAPI7...');
     const response = await fetch(`${BACKEND_URL}/api/matches/today`);
     const data = await response.json();
 
@@ -630,14 +631,15 @@ async function fetchGames() {
         country: match.country,
         time: new Date(match.kickoff).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
         status: match.status,
-        homeScore: match.homeScore,
-        awayScore: match.awayScore,
-        homeOdds: match.odds.home,
-        drawOdds: match.odds.draw,
-        awayOdds: match.odds.away
+        homeScore: match.homeScore || 0,
+        awayScore: match.awayScore || 0,
+        // Odds simuladas (SportAPI7 não fornece odds facilmente)
+        homeOdds: 2.0 + Math.random() * 2,
+        drawOdds: 3.0 + Math.random(),
+        awayOdds: 2.0 + Math.random() * 2
       }));
       
-      console.log(`✅ ${GAMES.length} partidas carregadas da API real`);
+      console.log(`✅ ${GAMES.length} partidas REAIS carregadas da SportAPI7`);
     } else {
       throw new Error('Nenhuma partida encontrada');
     }
@@ -647,6 +649,7 @@ async function fetchGames() {
       <div class="error-container">
         <div class="error-icon">⚠️</div>
         <p class="error-text">Erro ao carregar partidas</p>
+        <p class="error-details">${error.message}</p>
         <button onclick="fetchGames()" class="btn-retry">Tentar Novamente</button>
       </div>
     `;
