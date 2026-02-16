@@ -138,6 +138,7 @@ class RapidAPIClient {
     const matches = events.map(event => ({
       id: event.id,
       league: event.tournament?.name || event.season?.name || 'N/A',
+      leagueSlug: event.tournament?.slug || event.season?.slug || '',
       country: event.tournament?.category?.name || 'N/A',
       kickoff: new Date(event.startTimestamp * 1000).toISOString(),
       home: event.homeTeam?.name || 'N/A',
@@ -183,6 +184,7 @@ class RapidAPIClient {
     const matches = data.data.map(event => ({
       id: event.id,
       league: event.tournament?.name || event.season?.name || 'N/A',
+      leagueSlug: event.tournament?.slug || event.season?.slug || '',
       country: event.tournament?.category?.name || 'N/A',
       kickoff: new Date(event.startTimestamp * 1000).toISOString(),
       home: event.homeTeam?.name || 'N/A',
