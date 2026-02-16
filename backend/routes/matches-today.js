@@ -8,32 +8,41 @@
 
 import rapidApiClient from '../services/rapidapi-client.js';
 
-// TOP 6 ligas mundiais (slugs permitidos)
-const ALLOWED_LEAGUE_SLUGS = new Set([
-  'premier-league',
-  'laliga',
-  'serie-a',
-  'bundesliga',
-  'ligue-1',
-  'brasileirao-serie-a'
+// TOP 6 ligas mundiais com validação de país
+const ALLOWED_LEAGUES = new Map([
+  ['premier-league', ['England', 'United Kingdom', 'UK']],
+  ['laliga', ['Spain']],
+  ['serie-a', ['Italy']],
+  ['bundesliga', ['Germany']],
+  ['ligue-1', ['France']],
+  ['brasileirao-serie-a', ['Brazil', 'Brasil']]
 ]);
 
 /**
  * Verificar se uma partida é de uma liga permitida
- * Com bloqueios extras de segurança (feminino, juvenil, 2ª divisão)
+ * Valida SLUG + PAÍS para evitar ligas homônimas
  */
 function isAllowed(match) {
   const slug = (match.leagueSlug || '').toLowerCase().trim();
   const name = (match.league || '').toLowerCase();
+  const country = (match.country || '').trim();
   
-  if (!slug) return false;
+  if (!slug || !country) return false;
 
   // Bloqueios extras (segurança)
   if (name.includes('women') || name.includes('fem') || name.includes('frauen')) return false;
   if (name.includes('u21') || name.includes('u20') || name.includes('u19') || name.includes('youth')) return false;
   if (name.includes('2') || slug.includes('2')) return false;
 
-  return ALLOWED_LEAGUE_SLUGS.has(slug);
+  // Verificar se o slug está na lista E se o país corresponde
+  if (ALLOWED_LEAGUES.has(slug)) {
+    const validCountries = ALLOWED_LEAGUES.get(slug);
+    return validCountries.some(validCountry => 
+      country.toLowerCase().includes(validCountry.toLowerCase())
+    );
+  }
+
+  return false;
 }
 
 /**
