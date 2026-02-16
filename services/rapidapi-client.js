@@ -7,8 +7,9 @@ const axios = require('axios');
 
 class RapidAPIClient {
   constructor() {
-    this.apiKey = process.env.RAPIDAPI_KEY;
-    this.apiHost = process.env.RAPIDAPI_HOST || 'api-football-v1.p.rapidapi.com';
+    // Sanitização forte: garantir string limpa sem espaços ou caracteres inválidos
+    this.apiKey = String(process.env.RAPIDAPI_KEY || '').replace(/\s+/g, '').trim();
+    this.apiHost = String(process.env.RAPIDAPI_HOST || 'api-football-v1.p.rapidapi.com').replace(/\s+/g, '').trim();
     this.baseURL = `https://${this.apiHost}/v3`;
     
     if (!this.apiKey) {
@@ -24,12 +25,16 @@ class RapidAPIClient {
       throw new Error('RAPIDAPI_KEY não configurada');
     }
 
+    // Garantir que headers são strings simples (não arrays ou objetos)
+    const rapidApiKey = String(this.apiKey).replace(/\s+/g, '').trim();
+    const rapidApiHost = String(this.apiHost).replace(/\s+/g, '').trim();
+
     try {
       const response = await axios.get(`${this.baseURL}${endpoint}`, {
         params,
         headers: {
-          'X-RapidAPI-Key': this.apiKey,
-          'X-RapidAPI-Host': this.apiHost
+          'X-RapidAPI-Key': rapidApiKey,
+          'X-RapidAPI-Host': rapidApiHost
         },
         timeout: 10000 // 10 segundos
       });
