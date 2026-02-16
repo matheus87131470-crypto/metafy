@@ -2,126 +2,49 @@
  * api/matches/today.js
  * Endpoint Express para buscar partidas agendadas de hoje (SportAPI7)
  * Suporta override de data via query: ?date=YYYY-MM-DD
- * Retorna apenas principais ligas europeias e sul-americanas
+ * Retorna apenas as TOP 6 ligas principais do mundo
  * Suporta modo debug: ?debug=1
  */
 
 const rapidApiClient = require('../../services/rapidapi-client');
 
-// Competições internacionais (não precisam validar país)
-const INTERNATIONAL_SLUGS = new Set([
-  'uefa-champions-league',
-  'uefa-europa-league',
-  'uefa-europa-conference-league',
-  'copa-libertadores',
-  'copa-sudamericana'
+// TOP 6 ligas mundiais (slugs permitidos)
+const ALLOWED_LEAGUE_SLUGS = new Set([
+  'premier-league',
+  'laliga',
+  'serie-a',
+  'bundesliga',
+  'ligue-1',
+  'brasileirao-serie-a'
 ]);
-
-const INTERNATIONAL_NAMES = new Set([
-  'UEFA Champions League',
-  'UEFA Europa League',
-  'UEFA Europa Conference League',
-  'Copa Libertadores',
-  'Copa Sudamericana'
-]);
-
-// Ligas domésticas principais (country + slug/name)
-// Cada entrada: { country, slugs, names }
-const DOMESTIC_LEAGUES = [
-  {
-    country: 'England',
-    slugs: ['premier-league'],
-    names: ['Premier League']
-  },
-  {
-    country: 'Spain',
-    slugs: ['laliga', 'la-liga'],
-    names: ['LaLiga', 'La Liga']
-  },
-  {
-    country: 'Italy',
-    slugs: ['serie-a'],
-    names: ['Serie A']
-  },
-  {
-    country: 'Germany',
-    slugs: ['bundesliga'],
-    names: ['Bundesliga']
-  },
-  {
-    country: 'France',
-    slugs: ['ligue-1'],
-    names: ['Ligue 1']
-  },
-  {
-    country: 'Brazil',
-    slugs: ['brasileirao-serie-a', 'brasileirao-serie-b', 'copa-do-brasil'],
-    names: [
-      'Brasileirão Série A',
-      'Brasileirao Serie A',
-      'Serie A (Brazil)',
-      'Brasileirão Série B',
-      'Brasileirao Serie B',
-      'Copa do Brasil'
-    ]
-  }
-];
 
 /**
- * Verificar se uma partida é de uma liga principal
- * @param {Object} match - { league, leagueSlug, country }
- * @returns {boolean}
+ * Verificar se uma partida é de uma liga permitida
+ * Com bloqueios extras de segurança (feminino, juvenil, 2ª divisão)
  */
-function isTopLeague(match) {
-  const { league, leagueSlug, country } = match;
+function isAllowed(match) {
+  const slug = (match.leagueSlug || '').toLowerCase().trim();
+  const name = (match.league || '').toLowerCase();
   
-  // 1. Verificar competições internacionais (não precisam de país)
-  if (leagueSlug && INTERNATIONAL_SLUGS.has(leagueSlug.toLowerCase())) {
-    return true;
-  }
-  if (league && INTERNATIONAL_NAMES.has(league)) {
-    return true;
-  }
-  
-  // 2. Verificar ligas domésticas (precisam de country + slug/name)
-  if (!country) {
-    return false; // Sem país, não pode validar liga doméstica
-  }
-  
-  for (const domestic of DOMESTIC_LEAGUES) {
-    // Verificar se o país bate
-    if (country.toLowerCase() !== domestic.country.toLowerCase()) {
-      continue;
-    }
-    
-    // País correto: verificar slug
-    if (leagueSlug) {
-      const slugLower = leagueSlug.toLowerCase();
-      if (domestic.slugs.some(s => slugLower === s.toLowerCase() || slugLower.includes(s.toLowerCase()))) {
-        return true;
-      }
-    }
-    
-    // País correto: verificar nome
-    if (league) {
-      if (domestic.names.some(n => league === n || league.includes(n))) {
-        return true;
-      }
-    }
-  }
-  
-  return false;
+  if (!slug) return false;
+
+  // Bloqueios extras (segurança)
+  if (name.includes('women') || name.includes('fem') || name.includes('frauen')) return false;
+  if (name.includes('u21') || name.includes('u20') || name.includes('u19') || name.includes('youth')) return false;
+  if (name.includes('2') || slug.includes('2')) return false;
+
+  return ALLOWED_LEAGUE_SLUGS.has(slug);
 }
 
 /**
- * Filtrar apenas partidas de ligas principais
+ * Filtrar partidas usando whitelist restrita
  */
 function filterMajorLeagues(matches, debugMode = false) {
   const dropped = [];
   const kept = [];
   
   const filtered = matches.filter(match => {
-    const isTop = isTopLeague(match);
+    const allowed = isAllowed(match);
     
     if (debugMode) {
       const sample = {
@@ -130,14 +53,14 @@ function filterMajorLeagues(matches, debugMode = false) {
         leagueSlug: match.leagueSlug
       };
       
-      if (isTop && kept.length < 10) {
+      if (allowed && kept.length < 10) {
         kept.push(sample);
-      } else if (!isTop && dropped.length < 10) {
+      } else if (!allowed && dropped.length < 10) {
         dropped.push(sample);
       }
     }
     
-    return isTop;
+    return allowed;
   });
   
   return { filtered, dropped, kept };
