@@ -1,6 +1,15 @@
 /**
  * services/rapidapi-client.js
  * Cliente para RapidAPI SportAPI (API-Football)
+ * 
+ * IMPORTANTE: Configure as variáveis de ambiente:
+ * - RAPIDAPI_KEY: Sua chave da RapidAPI
+ * - RAPIDAPI_HOST: Host da API (encontre em https://rapidapi.com/api-sports/api/api-football/)
+ * 
+ * Hosts comuns:
+ * - api-football-v1.p.rapidapi.com (versão 1)
+ * - api-football-beta.p.rapidapi.com (versão beta)
+ * - v3.football.api-sports.io (API Sports direto)
  */
 
 const axios = require('axios');
@@ -9,8 +18,13 @@ class RapidAPIClient {
   constructor() {
     // Sanitização forte: garantir string limpa sem espaços ou caracteres inválidos
     this.apiKey = String(process.env.RAPIDAPI_KEY || '').replace(/\s+/g, '').trim();
-    this.apiHost = String(process.env.RAPIDAPI_HOST || 'api-football-v1.p.rapidapi.com').replace(/\s+/g, '').trim();
+    this.apiHost = String(process.env.RAPIDAPI_HOST || 'api-football-beta.p.rapidapi.com').replace(/\s+/g, '').trim();
     this.baseURL = `https://${this.apiHost}/v3`;
+    
+    console.log('🔧 RapidAPI Client configurado:');
+    console.log('   Host:', this.apiHost);
+    console.log('   Base URL:', this.baseURL);
+    console.log('   API Key:', this.apiKey ? '✅ Configurada' : '❌ Não configurada');
     
     if (!this.apiKey) {
       console.warn('⚠️ RAPIDAPI_KEY não configurada');
@@ -29,6 +43,15 @@ class RapidAPIClient {
     const rapidApiKey = String(this.apiKey).replace(/\s+/g, '').trim();
     const rapidApiHost = String(this.apiHost).replace(/\s+/g, '').trim();
 
+    // Log detalhado da requisição
+    const fullURL = `${this.baseURL}${endpoint}`;
+    console.log('🔵 RapidAPI Request:');
+    console.log('   baseURL:', this.baseURL);
+    console.log('   endpoint:', endpoint);
+    console.log('   params:', JSON.stringify(params));
+    console.log('   fullURL:', fullURL);
+    console.log('   host:', rapidApiHost);
+
     try {
       const response = await axios.get(`${this.baseURL}${endpoint}`, {
         params,
@@ -39,11 +62,17 @@ class RapidAPIClient {
         timeout: 10000 // 10 segundos
       });
 
+      console.log('✅ RapidAPI Response:', response.status);
       return response.data;
     } catch (error) {
       console.error('❌ Erro RapidAPI:', error.message);
+      console.error('   URL tentada:', fullURL);
+      console.error('   Params:', JSON.stringify(params));
       
       if (error.response) {
+        console.error('   Status:', error.response.status);
+        console.error('   StatusText:', error.response.statusText);
+        console.error('   Data:', JSON.stringify(error.response.data));
         throw new Error(`RapidAPI error: ${error.response.status} - ${error.response.statusText}`);
       }
       
