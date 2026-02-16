@@ -87,30 +87,55 @@ class RapidAPIClient {
   }
 
   /**
-   * Buscar partidas agendadas para hoje
+   * Buscar partidas agendadas para hoje ou data específica
    * Endpoint: /api/v1/sport/football/scheduled-events/{date}
+   * @param {string} customDate - Data no formato YYYY-MM-DD (opcional)
    */
-  async getTodayMatches() {
+  async getTodayMatches(customDate = null) {
     const now = Date.now();
     
-    // Verificar cache
-    if (cache.today.data && cache.today.timestamp && (now - cache.today.timestamp) < CACHE_DURATION_TODAY) {
-      console.log('✅ Retornando partidas de hoje do CACHE');
+    // Gerar ou usar data customizada
+    const dateStr = customDate || new Date().toISOString().split('T')[0];
+    console.log('📅 Data para busca:', dateStr);
+    
+    // Verificar cache (se não for data customizada)
+    if (!customDate && cache.today.data && cache.today.timestamp && (now - cache.today.timestamp) < CACHE_DURATION_TODAY) {
+      console.log('✅ Retornando partidas do CACHE');
       return cache.today.data;
     }
 
-    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-    console.log('🔄 Buscando partidas agendadas para:', today);
+    console.log('🔄 Buscando partidas agendadas via SportAPI7...');
+    console.log('🎯 Endpoint:', `/scheduled-events/${dateStr}`);
     
-    const data = await this.request(`/scheduled-events/${today}`);
+    const data = await this.request(`/scheduled-events/${dateStr}`);
 
-    if (!data?.data || data.data.length === 0) {
-      console.log('⚠️ Nenhuma partida encontrada para hoje');
+    // Log da resposta raw para debug
+    console.log('📦 Resposta SportAPI7 (raw):', JSON.stringify(data).substring(0, 300));
+    console.log('🔑 Chaves da resposta:', Object.keys(data || {}));
+
+    // Verificar diferentes possíveis estruturas de resposta
+    let events = null;
+    if (data?.data) {
+      events = data.data;
+      console.log('✅ Eventos encontrados em: data.data');
+    } else if (data?.events) {
+      events = data.events;
+      console.log('✅ Eventos encontrados em: data.events');
+    } else if (Array.isArray(data)) {
+      events = data;
+      console.log('✅ Resposta é array direto');
+    }
+
+    if (!events || events.length === 0) {
+      console.log('⚠️ Nenhuma partida encontrada para', dateStr);
+      console.log('⚠️ Estrutura da resposta:', JSON.stringify(data));
       return [];
     }
 
+    console.log(`🎯 ${events.length} eventos retornados pela API`);
+
     // Transformar para formato simplificado
-    const matches = data.data.map(event => ({
+    const matches = events.map(event => ({
       id: event.id,
       league: event.tournament?.name || event.season?.name || 'N/A',
       country: event.tournament?.category?.name || 'N/A',
@@ -122,11 +147,13 @@ class RapidAPIClient {
       awayScore: event.awayScore?.current || null
     }));
 
-    // Atualizar cache
-    cache.today.data = matches;
-    cache.today.timestamp = now;
+    // Atualizar cache (somente se não for data customizada)
+    if (!customDate) {
+      cache.today.data = matches;
+      cache.today.timestamp = now;
+    }
 
-    console.log(`✅ ${matches.length} partidas encontradas para hoje`);
+    console.log(`✅ ${matches.length} partidas processadas e retornadas`);
     return matches;
   }
 
