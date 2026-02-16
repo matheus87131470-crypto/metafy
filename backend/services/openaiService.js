@@ -1,8 +1,14 @@
 import OpenAI from "openai";
 
-const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-});
+let client = null;
+
+function getClient() {
+  if (!client) {
+    const apiKey = process.env.OPENAI_API_KEY || 'sk-dummy';
+    client = new OpenAI({ apiKey });
+  }
+  return client;
+}
 
 export async function analyzeWithAI(data) {
   const prompt = `
@@ -21,7 +27,7 @@ Gere:
 - recomendação final
 `;
 
-  const response = await client.chat.completions.create({
+  const response = await getClient().chat.completions.create({
     model: "gpt-4o-mini",
     messages: [{ role: "user", content: prompt }],
     temperature: 0.4

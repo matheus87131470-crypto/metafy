@@ -25,14 +25,14 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 // Import routes
-const gamesApiRoute = require('./api/games');
+const gamesApiRoute = require('./backend/api-serverless/games');
 const paymentsRoute = require('./payments');
 
-// Import RapidAPI routes (serverless format)
-const matchesToday = require('./api/matches/today');
-const matchesLive = require('./api/matches/live');
-const matchById = require('./api/match/matchById');
-const insightsAI = require('./api/insights-ai');
+// Import RapidAPI routes (serverless format) - ajustado após mover para backend/api-serverless
+const matchesToday = require('./backend/api-serverless/matches/today');
+const matchesLive = require('./backend/api-serverless/matches/live');
+const matchById = require('./backend/api-serverless/match/matchById');
+const insightsAI = require('./backend/api-serverless/insights-ai');
 
 // ====================================
 // HEALTH CHECK

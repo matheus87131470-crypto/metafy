@@ -3,6 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import analyzeRoute from "./routes/analyze.js";
 import gamesRoute from "./routes/games.js";
+import matchesTodayHandler from "./routes/matches-today.js";
 
 dotenv.config();
 
@@ -27,6 +28,9 @@ app.get('/health', (req, res) => {
 
 app.use("/api/analyze", analyzeRoute);
 app.use("/api/games", gamesRoute);
+
+// RapidAPI routes
+app.get('/api/matches/today', matchesTodayHandler);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
