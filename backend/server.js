@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import analyzeRoute from "./routes/analyze.js";
 import gamesRoute from "./routes/games.js";
 import matchesTodayHandler from "./routes/matches-today.js";
+import matchesLiveHandler from "./routes/matches-live.js";
 
 dotenv.config();
 
@@ -31,6 +32,7 @@ app.use("/api/games", gamesRoute);
 
 // RapidAPI routes
 app.get('/api/matches/today', matchesTodayHandler);
+app.get('/api/matches/live', matchesLiveHandler);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
