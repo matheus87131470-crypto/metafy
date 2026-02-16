@@ -3,69 +3,66 @@
  * Endpoint Express para buscar partidas agendadas de hoje (SportAPI7)
  * Suporta override de data via query: ?date=YYYY-MM-DD
  * Retorna apenas principais ligas europeias e sul-americanas
+ * Suporta modo debug: ?debug=1
  */
 
 const rapidApiClient = require('../../services/rapidapi-client');
 
-// Whitelist de principais ligas (por nome e slug)
-const MAJOR_LEAGUES = {
-  names: [
-    'Premier League',
-    'LaLiga',
-    'La Liga',
-    'Serie A',
-    'Bundesliga',
-    'Ligue 1',
-    'UEFA Champions League',
-    'UEFA Europa League',
-    'UEFA Europa Conference League',
-    'Copa Libertadores',
-    'Copa Sudamericana',
-    'Serie A',
-    'Serie B',
-    'Copa do Brasil',
-    'Brasileirão Série A',
-    'Brasileirão Série B'
-  ],
-  slugs: [
-    'premier-league',
-    'laliga',
-    'la-liga',
-    'serie-a',
-    'bundesliga',
-    'ligue-1',
-    'uefa-champions-league',
-    'uefa-europa-league',
-    'uefa-europa-conference-league',
-    'copa-libertadores',
-    'copa-sudamericana',
-    'brasileirao-serie-a',
-    'brasileirao-serie-b',
-    'copa-do-brasil',
-    'serie-a-brazil',
-    'serie-b-brazil'
-  ]
-};
+// Whitelist de principais ligas (usando Sets para lookup O(1))
+const ALLOWED_SLUGS = new Set([
+  'premier-league',
+  'laliga',
+  'la-liga',
+  'serie-a',
+  'bundesliga',
+  'ligue-1',
+  'uefa-champions-league',
+  'uefa-europa-league',
+  'uefa-europa-conference-league',
+  'copa-libertadores',
+  'copa-sudamericana',
+  'brasileirao-serie-a',
+  'brasileirao-serie-b',
+  'copa-do-brasil'
+]);
+
+const ALLOWED_NAMES = new Set([
+  'Premier League',
+  'LaLiga',
+  'La Liga',
+  'Serie A',
+  'Bundesliga',
+  'Ligue 1',
+  'UEFA Champions League',
+  'UEFA Europa League',
+  'UEFA Europa Conference League',
+  'Copa Libertadores',
+  'Copa Sudamericana',
+  'Brasileirão Série A',
+  'Brasileirao Serie A',
+  'Serie A (Brazil)',
+  'Brasileirão Série B',
+  'Brasileirao Serie B',
+  'Copa do Brasil'
+]);
 
 /**
  * Filtrar apenas partidas de ligas principais
+ * Prioriza slug (mais estável), usa nome como fallback
  */
 function filterMajorLeagues(matches) {
   return matches.filter(match => {
-    const leagueName = (match.league || '').toLowerCase();
-    const leagueSlug = (match.leagueSlug || '').toLowerCase();
+    // Prioridade 1: verificar slug (mais confiável)
+    if (match.leagueSlug && ALLOWED_SLUGS.has(match.leagueSlug.toLowerCase())) {
+      return true;
+    }
     
-    // Verificar se o nome da liga está na whitelist
-    const nameMatch = MAJOR_LEAGUES.names.some(name => 
-      leagueName.includes(name.toLowerCase())
-    );
+    // Prioridade 2: verificar nome exato
+    if (match.league && ALLOWED_NAMES.has(match.league)) {
+      return true;
+    }
     
-    // Verificar se o slug da liga está na whitelist
-    const slugMatch = MAJOR_LEAGUES.slugs.some(slug => 
-      leagueSlug.includes(slug)
-    );
-    
-    return nameMatch || slugMatch;
+    return false;
   });
 }
 
@@ -73,27 +70,30 @@ function filterMajorLeagues(matches) {
  * Ordenar partidas por status (live > notstarted > finished) e depois por kickoff
  */
 function sortMatches(matches) {
-  const statusPriority = {
-    'live': 1,
-    'inprogress': 1,
-    'notstarted': 2,
-    'scheduled': 2,
-    'finished': 3,
-    'ended': 3,
-    'canceled': 4,
-    'postponed': 4
+  const statusRank = {
+    'live': 0,
+    'inprogress': 0,
+    'notstarted': 1,
+    'scheduled': 1,
+    'finished': 2,
+    'ended': 2,
+    'canceled': 3,
+    'postponed': 3,
+    'unknown': 4
   };
 
   return matches.sort((a, b) => {
     // Primeiro: ordenar por status
-    const priorityA = statusPriority[a.status] || 99;
-    const priorityB = statusPriority[b.status] || 99;
+    const rankA = statusRank[a.status] ?? 99;
+    const rankB = statusRank[b.status] ?? 99;
     
-    if (priorityA !== priorityB) {
-      return priorityA - priorityB;
+    if (rankA !== rankB) {
+      return rankA - rankB;
     }
     
     // Segundo: ordenar por kickoff (ascendente)
+    if (!a.kickoff) return 1;
+    if (!b.kickoff) return -1;
     const timeA = new Date(a.kickoff).getTime();
     const timeB = new Date(b.kickoff).getTime();
     return timeA - timeB;
@@ -115,6 +115,9 @@ module.exports = async (req, res) => {
   }
 
   try {
+    // Modo debug
+    const debugMode = req.query.debug === '1';
+    
     // Permitir override de data via query string
     let customDate = null;
     if (req.query.date) {
@@ -133,26 +136,47 @@ module.exports = async (req, res) => {
     const dateStr = customDate || new Date().toISOString().split('T')[0];
     console.log('🔄 GET /api/matches/today');
     console.log('   📅 Data para busca:', dateStr);
-    console.log('   🌐 Endpoint SportAPI7: /scheduled-events/' + dateStr);
     
     // Buscar dados reais (já tem cache de 60s embutido se não for customDate)
     let matches = await rapidApiClient.getTodayMatches(customDate);
-    console.log(`📊 Total de partidas retornadas: ${matches.length}`);
+    const totalBeforeFilter = matches.length;
+    
+    // Debug: coletar sample de slugs
+    let sampleSlugs = [];
+    if (debugMode && matches.length > 0) {
+      sampleSlugs = [...new Set(matches.slice(0, 20).map(m => m.leagueSlug || m.league).filter(Boolean))];
+    }
     
     // Filtrar apenas ligas principais
     matches = filterMajorLeagues(matches);
-    console.log(`🎯 Partidas de ligas principais: ${matches.length}`);
+    const totalAfterFilter = matches.length;
+    
+    if (debugMode) {
+      console.log(`📊 DEBUG: Total antes do filtro: ${totalBeforeFilter}`);
+      console.log(`🎯 DEBUG: Total após filtro: ${totalAfterFilter}`);
+      console.log(`🏆 DEBUG: Sample slugs:`, sampleSlugs);
+    }
     
     // Ordenar por status e kickoff
     matches = sortMatches(matches);
-    console.log(`✅ Partidas ordenadas e prontas para retorno`);
     
-    return res.status(200).json({
+    const response = {
       success: true,
       count: matches.length,
       date: dateStr,
       matches
-    });
+    };
+
+    // Adicionar info de debug se solicitado
+    if (debugMode) {
+      response.debug = {
+        totalBeforeFilter,
+        totalAfterFilter,
+        sampleSlugs
+      };
+    }
+    
+    return res.status(200).json(response);
     
   } catch (error) {
     console.error('❌ Erro ao buscar partidas:', error.message);

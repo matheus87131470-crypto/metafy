@@ -134,19 +134,29 @@ class RapidAPIClient {
 
     console.log(`🎯 ${events.length} eventos retornados pela API`);
 
-    // Transformar para formato simplificado
-    const matches = events.map(event => ({
-      id: event.id,
-      league: event.tournament?.name || event.season?.name || 'N/A',
-      leagueSlug: event.tournament?.slug || event.season?.slug || '',
-      country: event.tournament?.category?.name || 'N/A',
-      kickoff: new Date(event.startTimestamp * 1000).toISOString(),
-      home: event.homeTeam?.name || 'N/A',
-      away: event.awayTeam?.name || 'N/A',
-      status: event.status?.type || 'notstarted',
-      homeScore: event.homeScore?.current || null,
-      awayScore: event.awayScore?.current || null
-    }));
+    // Transformar para formato simplificado (normalização completa)
+    const matches = events.map(event => {
+      // Kickoff: tentar startTimestamp primeiro, depois startDate
+      let kickoff = null;
+      if (event.startTimestamp) {
+        kickoff = new Date(event.startTimestamp * 1000).toISOString();
+      } else if (event.startDate) {
+        kickoff = new Date(event.startDate).toISOString();
+      }
+
+      return {
+        id: event.id,
+        league: event.tournament?.name || event.season?.name || null,
+        leagueSlug: event.tournament?.slug || event.season?.slug || null,
+        country: event.tournament?.category?.name || event.category?.name || null,
+        kickoff: kickoff,
+        status: event.status?.type || event.status || 'unknown',
+        home: event.homeTeam?.name || event.home?.name || null,
+        away: event.awayTeam?.name || event.away?.name || null,
+        homeScore: event.homeScore?.current ?? event.homeScore ?? null,
+        awayScore: event.awayScore?.current ?? event.awayScore ?? null
+      };
+    });
 
     // Atualizar cache (somente se não for data customizada)
     if (!customDate) {
@@ -180,20 +190,29 @@ class RapidAPIClient {
       return [];
     }
 
-    // Transformar para formato simplificado
-    const matches = data.data.map(event => ({
-      id: event.id,
-      league: event.tournament?.name || event.season?.name || 'N/A',
-      leagueSlug: event.tournament?.slug || event.season?.slug || '',
-      country: event.tournament?.category?.name || 'N/A',
-      kickoff: new Date(event.startTimestamp * 1000).toISOString(),
-      home: event.homeTeam?.name || 'N/A',
-      away: event.awayTeam?.name || 'N/A',
-      status: 'live',
-      homeScore: event.homeScore?.current || 0,
-      awayScore: event.awayScore?.current || 0,
-      minute: event.time?.currentPeriodStartTimestamp ? Math.floor((Date.now() - event.time.currentPeriodStartTimestamp * 1000) / 60000) : null
-    }));
+    // Transformar para formato simplificado (normalização completa)
+    const matches = data.data.map(event => {
+      let kickoff = null;
+      if (event.startTimestamp) {
+        kickoff = new Date(event.startTimestamp * 1000).toISOString();
+      } else if (event.startDate) {
+        kickoff = new Date(event.startDate).toISOString();
+      }
+
+      return {
+        id: event.id,
+        league: event.tournament?.name || event.season?.name || null,
+        leagueSlug: event.tournament?.slug || event.season?.slug || null,
+        country: event.tournament?.category?.name || event.category?.name || null,
+        kickoff: kickoff,
+        status: event.status?.type || event.status || 'live',
+        home: event.homeTeam?.name || event.home?.name || null,
+        away: event.awayTeam?.name || event.away?.name || null,
+        homeScore: event.homeScore?.current ?? event.homeScore ?? 0,
+        awayScore: event.awayScore?.current ?? event.awayScore ?? 0,
+        minute: event.time?.currentPeriodStartTimestamp ? Math.floor((Date.now() - event.time.currentPeriodStartTimestamp * 1000) / 60000) : null
+      };
+    });
 
     // Atualizar cache
     cache.live.data = matches;
