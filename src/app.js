@@ -620,6 +620,14 @@ async function fetchGames() {
     // Usar API real do backend (SportAPI7)
     console.log('🔄 Buscando partidas de hoje via SportAPI7...');
     const response = await fetch(`${BACKEND_URL}/api/matches/today`);
+    
+    // Verificar se resposta HTTP foi bem-sucedida
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`❌ Erro HTTP ${response.status}:`, errorText);
+      throw new Error(`Erro ${response.status}: ${errorText.substring(0, 100)}`);
+    }
+
     const data = await response.json();
 
     // Log de debug para verificar estrutura
@@ -663,7 +671,8 @@ async function fetchGames() {
       
       console.log(`✅ ${GAMES.length} partidas REAIS carregadas da SportAPI7`);
     } else {
-      throw new Error('Nenhuma partida encontrada');
+      // API respondeu 200 mas sem partidas (count = 0)
+      throw new Error('Nenhuma partida encontrada para hoje nas ligas principais');
     }
   } catch (error) {
     console.error('❌ Erro ao buscar partidas:', error);
