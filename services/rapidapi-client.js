@@ -11,12 +11,13 @@
 
 const axios = require('axios');
 
-// Cache em memória (60 segundos)
+// Cache em memória
 const cache = {
   today: { data: null, timestamp: null },
   live: { data: null, timestamp: null }
 };
-const CACHE_DURATION = 60000; // 60 segundos
+const CACHE_DURATION_TODAY = 60000; // 60 segundos
+const CACHE_DURATION_LIVE = 15000; // 15 segundos
 
 class RapidAPIClient {
   constructor() {
@@ -71,12 +72,14 @@ class RapidAPIClient {
       console.error('❌ Erro SportAPI7:', error.message);
       console.error('   URL tentada:', fullURL);
       console.error('   Params:', JSON.stringify(params));
+      console.error('   Headers:', { 'X-RapidAPI-Key': '***', 'X-RapidAPI-Host': rapidApiHost });
       
       if (error.response) {
-        console.error('   Status:', error.response.status);
-        console.error('   StatusText:', error.response.statusText);
-        console.error('   Data:', JSON.stringify(error.response.data).substring(0, 500));
-        throw new Error(`SportAPI7 error: ${error.response.status} - ${error.response.statusText}`);
+        console.error('   ❌ Response Status:', error.response.status);
+        console.error('   ❌ Response StatusText:', error.response.statusText);
+        console.error('   ❌ Response Headers:', JSON.stringify(error.response.headers));
+        console.error('   ❌ Response Body:', JSON.stringify(error.response.data).substring(0, 1000));
+        throw new Error(`SportAPI7 error: ${error.response.status} - ${error.response.statusText} - ${JSON.stringify(error.response.data).substring(0, 200)}`);
       }
       
       throw error;
@@ -91,7 +94,7 @@ class RapidAPIClient {
     const now = Date.now();
     
     // Verificar cache
-    if (cache.today.data && cache.today.timestamp && (now - cache.today.timestamp) < CACHE_DURATION) {
+    if (cache.today.data && cache.today.timestamp && (now - cache.today.timestamp) < CACHE_DURATION_TODAY) {
       console.log('✅ Retornando partidas de hoje do CACHE');
       return cache.today.data;
     }
@@ -134,8 +137,8 @@ class RapidAPIClient {
   async getLiveMatches() {
     const now = Date.now();
     
-    // Verificar cache
-    if (cache.live.data && cache.live.timestamp && (now - cache.live.timestamp) < CACHE_DURATION) {
+    // Verificar cache (15s para live)
+    if (cache.live.data && cache.live.timestamp && (now - cache.live.timestamp) < CACHE_DURATION_LIVE) {
       console.log('✅ Retornando partidas ao vivo do CACHE');
       return cache.live.data;
     }
