@@ -8,62 +8,139 @@
 
 const rapidApiClient = require('../../services/rapidapi-client');
 
-// Whitelist de principais ligas (usando Sets para lookup O(1))
-const ALLOWED_SLUGS = new Set([
-  'premier-league',
-  'laliga',
-  'la-liga',
-  'serie-a',
-  'bundesliga',
-  'ligue-1',
+// Competições internacionais (não precisam validar país)
+const INTERNATIONAL_SLUGS = new Set([
   'uefa-champions-league',
   'uefa-europa-league',
   'uefa-europa-conference-league',
   'copa-libertadores',
-  'copa-sudamericana',
-  'brasileirao-serie-a',
-  'brasileirao-serie-b',
-  'copa-do-brasil'
+  'copa-sudamericana'
 ]);
 
-const ALLOWED_NAMES = new Set([
-  'Premier League',
-  'LaLiga',
-  'La Liga',
-  'Serie A',
-  'Bundesliga',
-  'Ligue 1',
+const INTERNATIONAL_NAMES = new Set([
   'UEFA Champions League',
   'UEFA Europa League',
   'UEFA Europa Conference League',
   'Copa Libertadores',
-  'Copa Sudamericana',
-  'Brasileirão Série A',
-  'Brasileirao Serie A',
-  'Serie A (Brazil)',
-  'Brasileirão Série B',
-  'Brasileirao Serie B',
-  'Copa do Brasil'
+  'Copa Sudamericana'
 ]);
+
+// Ligas domésticas principais (country + slug/name)
+// Cada entrada: { country, slugs, names }
+const DOMESTIC_LEAGUES = [
+  {
+    country: 'England',
+    slugs: ['premier-league'],
+    names: ['Premier League']
+  },
+  {
+    country: 'Spain',
+    slugs: ['laliga', 'la-liga'],
+    names: ['LaLiga', 'La Liga']
+  },
+  {
+    country: 'Italy',
+    slugs: ['serie-a'],
+    names: ['Serie A']
+  },
+  {
+    country: 'Germany',
+    slugs: ['bundesliga'],
+    names: ['Bundesliga']
+  },
+  {
+    country: 'France',
+    slugs: ['ligue-1'],
+    names: ['Ligue 1']
+  },
+  {
+    country: 'Brazil',
+    slugs: ['brasileirao-serie-a', 'brasileirao-serie-b', 'copa-do-brasil'],
+    names: [
+      'Brasileirão Série A',
+      'Brasileirao Serie A',
+      'Serie A (Brazil)',
+      'Brasileirão Série B',
+      'Brasileirao Serie B',
+      'Copa do Brasil'
+    ]
+  }
+];
+
+/**
+ * Verificar se uma partida é de uma liga principal
+ * @param {Object} match - { league, leagueSlug, country }
+ * @returns {boolean}
+ */
+function isTopLeague(match) {
+  const { league, leagueSlug, country } = match;
+  
+  // 1. Verificar competições internacionais (não precisam de país)
+  if (leagueSlug && INTERNATIONAL_SLUGS.has(leagueSlug.toLowerCase())) {
+    return true;
+  }
+  if (league && INTERNATIONAL_NAMES.has(league)) {
+    return true;
+  }
+  
+  // 2. Verificar ligas domésticas (precisam de country + slug/name)
+  if (!country) {
+    return false; // Sem país, não pode validar liga doméstica
+  }
+  
+  for (const domestic of DOMESTIC_LEAGUES) {
+    // Verificar se o país bate
+    if (country.toLowerCase() !== domestic.country.toLowerCase()) {
+      continue;
+    }
+    
+    // País correto: verificar slug
+    if (leagueSlug) {
+      const slugLower = leagueSlug.toLowerCase();
+      if (domestic.slugs.some(s => slugLower === s.toLowerCase() || slugLower.includes(s.toLowerCase()))) {
+        return true;
+      }
+    }
+    
+    // País correto: verificar nome
+    if (league) {
+      if (domestic.names.some(n => league === n || league.includes(n))) {
+        return true;
+      }
+    }
+  }
+  
+  return false;
+}
 
 /**
  * Filtrar apenas partidas de ligas principais
- * Prioriza slug (mais estável), usa nome como fallback
  */
-function filterMajorLeagues(matches) {
-  return matches.filter(match => {
-    // Prioridade 1: verificar slug (mais confiável)
-    if (match.leagueSlug && ALLOWED_SLUGS.has(match.leagueSlug.toLowerCase())) {
-      return true;
+function filterMajorLeagues(matches, debugMode = false) {
+  const dropped = [];
+  const kept = [];
+  
+  const filtered = matches.filter(match => {
+    const isTop = isTopLeague(match);
+    
+    if (debugMode) {
+      const sample = {
+        country: match.country,
+        league: match.league,
+        leagueSlug: match.leagueSlug
+      };
+      
+      if (isTop && kept.length < 10) {
+        kept.push(sample);
+      } else if (!isTop && dropped.length < 10) {
+        dropped.push(sample);
+      }
     }
     
-    // Prioridade 2: verificar nome exato
-    if (match.league && ALLOWED_NAMES.has(match.league)) {
-      return true;
-    }
-    
-    return false;
+    return isTop;
   });
+  
+  return { filtered, dropped, kept };
 }
 
 /**
@@ -141,20 +218,16 @@ module.exports = async (req, res) => {
     let matches = await rapidApiClient.getTodayMatches(customDate);
     const totalBeforeFilter = matches.length;
     
-    // Debug: coletar sample de slugs
-    let sampleSlugs = [];
-    if (debugMode && matches.length > 0) {
-      sampleSlugs = [...new Set(matches.slice(0, 20).map(m => m.leagueSlug || m.league).filter(Boolean))];
-    }
-    
-    // Filtrar apenas ligas principais
-    matches = filterMajorLeagues(matches);
+    // Filtrar apenas ligas principais (com amostras para debug)
+    const { filtered, dropped, kept } = filterMajorLeagues(matches, debugMode);
+    matches = filtered;
     const totalAfterFilter = matches.length;
     
     if (debugMode) {
       console.log(`📊 DEBUG: Total antes do filtro: ${totalBeforeFilter}`);
       console.log(`🎯 DEBUG: Total após filtro: ${totalAfterFilter}`);
-      console.log(`🏆 DEBUG: Sample slugs:`, sampleSlugs);
+      console.log(`❌ DEBUG: Dropped sample:`, dropped);
+      console.log(`✅ DEBUG: Kept sample:`, kept);
     }
     
     // Ordenar por status e kickoff
@@ -172,7 +245,8 @@ module.exports = async (req, res) => {
       response.debug = {
         totalBeforeFilter,
         totalAfterFilter,
-        sampleSlugs
+        droppedSample: dropped,
+        keptSample: kept
       };
     }
     
