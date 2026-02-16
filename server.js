@@ -28,6 +28,11 @@ app.use(bodyParser.urlencoded({ extended: true }));
 const gamesApiRoute = require('./api/games');
 const paymentsRoute = require('./payments');
 
+// Import RapidAPI routes (serverless format)
+const matchesToday = require('./api/matches/today');
+const matchById = require('./api/match/matchById');
+const insightsAI = require('./api/insights-ai');
+
 // ====================================
 // HEALTH CHECK
 // ====================================
@@ -49,6 +54,11 @@ app.get('/health', (req, res) => {
 app.get('/api/games', gamesApiRoute);
 app.use('/api/payments', paymentsRoute);
 app.use('/api/webhooks', paymentsRoute);
+
+// RapidAPI Routes
+app.get('/api/matches/today', matchesToday);
+app.get('/api/match/:id', matchById);
+app.post('/api/insights-ai', insightsAI);
 
 // ====================================
 // GET GAMES TODAY
