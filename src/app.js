@@ -134,6 +134,7 @@ const MOCK_GAMES = [
 
 // Estado global
 let GAMES = [];
+let LIVE_GAMES = [];
 let isDemo = true;
 let analysisCount = 0;
 const MAX_FREE_ANALYSIS = 2;
@@ -146,8 +147,12 @@ document.addEventListener('DOMContentLoaded', () => {
   checkPremiumStatus();
   loadAnalysisCount();
   fetchGames();
+  fetchLiveMatches();
   updateAnalysisCounter();
   updatePremiumUI();
+  
+  // Atualizar jogos ao vivo a cada 30 segundos
+  setInterval(fetchLiveMatches, 30000);
 });
 
 // Verificar status do Premium
@@ -691,6 +696,46 @@ async function fetchGames() {
   renderGames();
 }
 
+// Buscar partidas ao vivo
+async function fetchLiveMatches() {
+  try {
+    const response = await fetch(`${BACKEND_URL}/api/matches/live`);
+    
+    if (!response.ok) {
+      console.warn(`⚠️ Erro ao buscar jogos ao vivo: ${response.status}`);
+      return;
+    }
+
+    const data = await response.json();
+
+    if (data.success && data.matches?.length > 0) {
+      LIVE_GAMES = data.matches.map(match => ({
+        id: match.id,
+        homeTeam: match.home,
+        awayTeam: match.away,
+        competition: match.league,
+        country: match.country,
+        time: 'AO VIVO',
+        status: 'LIVE',
+        homeScore: match.homeScore ?? 0,
+        awayScore: match.awayScore ?? 0,
+        homeOdds: 2.0 + Math.random() * 2,
+        drawOdds: 3.0 + Math.random(),
+        awayOdds: 2.0 + Math.random() * 2,
+        minute: match.minute || '45\''
+      }));
+      
+      console.log(`🔴 ${LIVE_GAMES.length} partidas AO VIVO`);
+      renderGames(); // Re-renderizar para incluir jogos ao vivo
+    } else {
+      LIVE_GAMES = [];
+    }
+  } catch (error) {
+    console.error('❌ Erro ao buscar jogos ao vivo:', error);
+    LIVE_GAMES = [];
+  }
+}
+
 // Mostrar banner demo
 function showDemoBanner() {
   if (document.getElementById('demoBanner')) return;
@@ -724,7 +769,31 @@ function renderGames() {
   const container = document.getElementById('gamesList');
   if (!container) return;
 
-  if (GAMES.length === 0) {
+  let html = '';
+
+  // Seção de jogos ao vivo
+  if (LIVE_GAMES.length > 0) {
+    html += `
+      <div class="live-games-section">
+        <h2 class="section-title">
+          <span class="live-indicator">🔴</span>
+          AO VIVO <span class="live-count">(${LIVE_GAMES.length})</span>
+        </h2>
+        <div class="games-grid">
+    `;
+    
+    LIVE_GAMES.forEach(game => {
+      html += createGameCard(game, true);
+    });
+    
+    html += `
+        </div>
+      </div>
+    `;
+  }
+
+  // Jogos agendados
+  if (GAMES.length === 0 && LIVE_GAMES.length === 0) {
     container.innerHTML = `
       <div class="empty-state">
         <div class="empty-icon">⚽</div>
