@@ -101,7 +101,7 @@ function calculateMarket(game, marketType) {
 }
 
 /**
- * Calcular value para todos os mercados e determinar o melhor
+ * Calcular value para todos os mercados e retornar apenas o melhor
  */
 export function calculateValue(game) {
   // Calcular para os 3 mercados
@@ -111,22 +111,22 @@ export function calculateValue(game) {
   
   // Determinar o melhor mercado (maior edge)
   const markets = [
-    { type: 'home', ...homeMarket },
-    { type: 'draw', ...drawMarket },
-    { type: 'away', ...awayMarket }
+    { type: 'home', label: 'Vitória Casa', ...homeMarket },
+    { type: 'draw', label: 'Empate', ...drawMarket },
+    { type: 'away', label: 'Vitória Fora', ...awayMarket }
   ];
   
   const bestMarketData = markets.reduce((best, current) => {
     return current.edge > best.edge ? current : best;
   });
   
+  // Retornar apenas o melhor mercado
   return {
-    valueMarkets: {
-      home: homeMarket,
-      draw: drawMarket,
-      away: awayMarket
-    },
     bestMarket: bestMarketData.type,
-    bestEdge: bestMarketData.edge
+    marketLabel: bestMarketData.label,
+    impliedProb: bestMarketData.implied,
+    adjustedProb: bestMarketData.adjusted,
+    edge: bestMarketData.edge,
+    rating: bestMarketData.rating
   };
 }
