@@ -147,12 +147,12 @@ document.addEventListener('DOMContentLoaded', () => {
   checkPremiumStatus();
   loadAnalysisCount();
   fetchGames();
-  fetchLiveMatches();
+  // fetchLiveMatches(); // DESABILITADO: evitar erro 429 (Too Many Requests)
   updateAnalysisCounter();
   updatePremiumUI();
   
   // Atualizar jogos ao vivo a cada 30 segundos
-  setInterval(fetchLiveMatches, 30000);
+  // setInterval(fetchLiveMatches, 30000); // DESABILITADO: evitar erro 429
 });
 
 // Verificar status do Premium
