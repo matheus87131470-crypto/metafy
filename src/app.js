@@ -151,6 +151,14 @@ document.addEventListener('DOMContentLoaded', () => {
   updateAnalysisCounter();
   updatePremiumUI();
   
+  // Auto-formatar CPF ao digitar
+  const cpfInput = document.getElementById('cpfInput');
+  if (cpfInput) {
+    cpfInput.addEventListener('input', (e) => {
+      e.target.value = formatCPF(e.target.value);
+    });
+  }
+  
   // Atualizar jogos ao vivo a cada 30 segundos
   // setInterval(fetchLiveMatches, 30000); // DESABILITADO: evitar erro 429
 });
@@ -289,16 +297,6 @@ function formatCPF(value) {
   }
   return numbers.slice(0, 11);
 }
-
-// Auto-formatar CPF ao digitar
-document.addEventListener('DOMContentLoaded', () => {
-  const cpfInput = document.getElementById('cpfInput');
-  if (cpfInput) {
-    cpfInput.addEventListener('input', (e) => {
-      e.target.value = formatCPF(e.target.value);
-    });
-  }
-});
 
 async function generatePixPayment() {
   const emailInput = document.getElementById('emailInput');
