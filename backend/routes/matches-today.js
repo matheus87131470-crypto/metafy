@@ -1,7 +1,7 @@
 /**
  * routes/matches-today.js
- * Endpoint Express para retornar partidas agendadas de hoje
- * Usa dados locais estáticos
+ * Endpoint Express para retornar partidas de hoje
+ * Lê dados locais de daily-games.json
  */
 
 import { readFileSync } from 'fs';
@@ -12,23 +12,22 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // Carregar dados locais
-const gamesDataPath = join(__dirname, '../data/enhanced-games.json');
+const gamesDataPath = join(__dirname, '../data/daily-games.json');
 let gamesData = null;
 
 function loadGamesData() {
   try {
     const rawData = readFileSync(gamesDataPath, 'utf-8');
     gamesData = JSON.parse(rawData);
-    console.log('✅ Dados de jogos carregados:', gamesData.matches.length, 'partidas');
+    console.log('✅ Dados carregados:', gamesData.matches.length, 'jogos');
   } catch (error) {
-    console.error('❌ Erro ao carregar enhanced-games.json:', error.message);
+    console.error('❌ Erro ao carregar daily-games.json:', error.message);
     gamesData = { date: new Date().toISOString().split('T')[0], matches: [] };
   }
 }
 
 // Carregar dados na inicialização
 loadGamesData();
-
 
 const handler = async (req, res) => {
   // CORS
