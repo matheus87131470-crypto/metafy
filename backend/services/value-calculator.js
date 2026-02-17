@@ -1,6 +1,6 @@
 /**
  * services/value-calculator.js
- * Modelo híbrido de cálculo de value betting
+ * Modelo híbrido de cálculo de value betting para home, draw e away
  */
 
 /**
@@ -20,55 +20,67 @@ function calculateFormScore(last5) {
 }
 
 /**
- * Calcular value de uma aposta
+ * Calcular value de um mercado específico
  */
-export function calculateValue(game) {
-  // 1. Probabilidade implícita das odds
-  const impliedProb = 1 / game.odds.home;
+function calculateMarket(game, marketType) {
+  // 1. Pegar odd correspondente
+  let odd;
+  if (marketType === 'home') odd = game.odds.home;
+  else if (marketType === 'draw') odd = game.odds.draw;
+  else if (marketType === 'away') odd = game.odds.away;
+  else return null;
   
-  // 2. Calcular fatores de ajuste
+  // 2. Probabilidade implícita
+  const implied = 1 / odd;
+  
+  // 3. Calcular ajuste baseado no mercado
   let adjustment = 0;
   
-  // Se o jogo tem estatísticas detalhadas
   if (game.stats) {
     const homeFormScore = calculateFormScore(game.stats.homeLast5);
     const awayFormScore = calculateFormScore(game.stats.awayLast5);
-    
-    // Forma recente favorece casa
-    if (homeFormScore > awayFormScore) {
-      adjustment += 0.04;
-    }
-    
-    // Ataque casa vs Defesa visitante
-    if (game.stats.homeGoalsAvg > game.stats.awayConcededAvg) {
-      adjustment += 0.03;
-    }
-    
-    // Força em casa (baseado em gols marcados)
     const homeStrengthHome = game.stats.homeGoalsAvg * 3.5; // Escala 0-10
-    if (homeStrengthHome >= 7) {
-      adjustment += 0.02;
-    }
+    const awayStrengthAway = game.stats.awayGoalsAvg * 3.5; // Escala 0-10
+    const avgGoalsCombined = (game.stats.homeGoalsAvg + game.stats.awayGoalsAvg) / 2;
+    const formDiff = Math.abs(homeFormScore - awayFormScore);
     
-    // Ataque visitante vs Defesa casa (penaliza casa)
-    if (game.stats.awayGoalsAvg > game.stats.homeConcededAvg) {
-      adjustment -= 0.02;
+    if (marketType === 'home') {
+      // Regras para HOME
+      if (homeFormScore > awayFormScore) adjustment += 0.04;
+      if (game.stats.homeGoalsAvg > game.stats.awayConcededAvg) adjustment += 0.03;
+      if (homeStrengthHome >= 7) adjustment += 0.02;
+      if (game.stats.awayGoalsAvg > game.stats.homeConcededAvg) adjustment -= 0.02;
+      
+    } else if (marketType === 'away') {
+      // Regras para AWAY
+      if (awayFormScore > homeFormScore) adjustment += 0.04;
+      if (game.stats.awayGoalsAvg > game.stats.homeConcededAvg) adjustment += 0.03;
+      if (awayStrengthAway >= 7) adjustment += 0.02;
+      if (game.stats.homeGoalsAvg > game.stats.awayConcededAvg) adjustment -= 0.02;
+      
+    } else if (marketType === 'draw') {
+      // Regras para DRAW
+      if (formDiff <= 0.15) adjustment += 0.03; // Forma similar
+      if (avgGoalsCombined < 2.0) adjustment += 0.03; // Jogo defensivo
+      // Histórico de empates seria analisado aqui, mas simplificado
+      if (Math.abs(game.stats.homeGoalsAvg - game.stats.awayGoalsAvg) < 0.3) {
+        adjustment += 0.02;
+      }
     }
   } else {
-    // Sem estatísticas: ajuste conservador baseado apenas nas odds
-    // Se odds casa < 2.0 (favorito claro)
-    if (game.odds.home < 2.0) {
-      adjustment += 0.02;
-    }
+    // Sem estatísticas: ajuste conservador baseado nas odds
+    if (marketType === 'home' && odd < 2.0) adjustment += 0.02;
+    else if (marketType === 'away' && odd < 2.5) adjustment += 0.02;
+    else if (marketType === 'draw' && odd >= 3.0 && odd <= 3.5) adjustment += 0.02;
   }
   
-  // 3. Probabilidade ajustada
-  const adjustedProb = Math.min(0.95, Math.max(0.05, impliedProb + adjustment));
+  // 4. Probabilidade ajustada
+  const adjusted = Math.min(0.95, Math.max(0.05, implied + adjustment));
   
-  // 4. Edge (vantagem)
-  const edge = adjustedProb - impliedProb;
+  // 5. Edge
+  const edge = adjusted - implied;
   
-  // 5. Classificação
+  // 6. Classificação
   let rating;
   if (edge >= 0.08) {
     rating = "Forte oportunidade";
@@ -81,9 +93,40 @@ export function calculateValue(game) {
   }
   
   return {
-    impliedProb: Number((impliedProb * 100).toFixed(2)),
-    adjustedProb: Number((adjustedProb * 100).toFixed(2)),
+    implied: Number((implied * 100).toFixed(2)),
+    adjusted: Number((adjusted * 100).toFixed(2)),
     edge: Number((edge * 100).toFixed(2)),
     rating
+  };
+}
+
+/**
+ * Calcular value para todos os mercados e determinar o melhor
+ */
+export function calculateValue(game) {
+  // Calcular para os 3 mercados
+  const homeMarket = calculateMarket(game, 'home');
+  const drawMarket = calculateMarket(game, 'draw');
+  const awayMarket = calculateMarket(game, 'away');
+  
+  // Determinar o melhor mercado (maior edge)
+  const markets = [
+    { type: 'home', ...homeMarket },
+    { type: 'draw', ...drawMarket },
+    { type: 'away', ...awayMarket }
+  ];
+  
+  const bestMarketData = markets.reduce((best, current) => {
+    return current.edge > best.edge ? current : best;
+  });
+  
+  return {
+    valueMarkets: {
+      home: homeMarket,
+      draw: drawMarket,
+      away: awayMarket
+    },
+    bestMarket: bestMarketData.type,
+    bestEdge: bestMarketData.edge
   };
 }
