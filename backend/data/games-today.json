@@ -1,0 +1,77 @@
+{
+  "date": "2026-02-17",
+  "matches": [
+    {
+      "id": 1,
+      "league": "Premier League",
+      "leagueSlug": "premier-league",
+      "country": "England",
+      "home": "Arsenal",
+      "away": "Chelsea",
+      "kickoff": "2026-02-17T18:30:00.000Z",
+      "status": "notstarted",
+      "homeScore": null,
+      "awayScore": null
+    },
+    {
+      "id": 2,
+      "league": "Serie A",
+      "leagueSlug": "serie-a",
+      "country": "Italy",
+      "home": "Inter",
+      "away": "Milan",
+      "kickoff": "2026-02-17T20:00:00.000Z",
+      "status": "notstarted",
+      "homeScore": null,
+      "awayScore": null
+    },
+    {
+      "id": 3,
+      "league": "LaLiga",
+      "leagueSlug": "laliga",
+      "country": "Spain",
+      "home": "Real Madrid",
+      "away": "Barcelona",
+      "kickoff": "2026-02-17T21:00:00.000Z",
+      "status": "notstarted",
+      "homeScore": null,
+      "awayScore": null
+    },
+    {
+      "id": 4,
+      "league": "Bundesliga",
+      "leagueSlug": "bundesliga",
+      "country": "Germany",
+      "home": "Bayern Munich",
+      "away": "Borussia Dortmund",
+      "kickoff": "2026-02-17T19:30:00.000Z",
+      "status": "notstarted",
+      "homeScore": null,
+      "awayScore": null
+    },
+    {
+      "id": 5,
+      "league": "Ligue 1",
+      "leagueSlug": "ligue-1",
+      "country": "France",
+      "home": "PSG",
+      "away": "Marseille",
+      "kickoff": "2026-02-17T20:45:00.000Z",
+      "status": "notstarted",
+      "homeScore": null,
+      "awayScore": null
+    },
+    {
+      "id": 6,
+      "league": "Brasileirão Série A",
+      "leagueSlug": "brasileirao-serie-a",
+      "country": "Brazil",
+      "home": "Flamengo",
+      "away": "Palmeiras",
+      "kickoff": "2026-02-17T22:00:00.000Z",
+      "status": "notstarted",
+      "homeScore": null,
+      "awayScore": null
+    }
+  ]
+}

@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 import analyzeRoute from "./routes/analyze.js";
 import gamesRoute from "./routes/games.js";
 import matchesTodayHandler from "./routes/matches-today.js";
-import matchesLiveHandler from "./routes/matches-live.js";
+// import matchesLiveHandler from "./routes/matches-live.js"; // REMOVIDO: não usa mais RapidAPI
 
 dotenv.config();
 
@@ -30,9 +30,9 @@ app.get('/health', (req, res) => {
 app.use("/api/analyze", analyzeRoute);
 app.use("/api/games", gamesRoute);
 
-// RapidAPI routes
+// Local data routes
 app.get('/api/matches/today', matchesTodayHandler);
-app.get('/api/matches/live', matchesLiveHandler);
+// app.get('/api/matches/live', matchesLiveHandler); // REMOVIDO: não usa mais RapidAPI
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
