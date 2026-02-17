@@ -7,6 +7,7 @@
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { calculateValue } from '../services/value-calculator.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -46,12 +47,21 @@ const handler = async (req, res) => {
   try {
     console.log('🔄 GET /api/matches/today');
     
-    // Retornar dados locais
+    // Processar jogos com análise de value
+    const matchesWithValue = gamesData.matches.map(game => {
+      const valueAnalysis = calculateValue(game);
+      return {
+        ...game,
+        valueAnalysis
+      };
+    });
+    
+    // Retornar dados com análise de value
     const response = {
       success: true,
-      count: gamesData.matches.length,
+      count: matchesWithValue.length,
       date: gamesData.date,
-      matches: gamesData.matches
+      matches: matchesWithValue
     };
     
     return res.status(200).json(response);

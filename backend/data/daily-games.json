@@ -12,6 +12,14 @@
         "home": 2.10,
         "draw": 3.40,
         "away": 3.50
+      },
+      "stats": {
+        "homeLast5": ["W", "W", "W", "D", "W"],
+        "awayLast5": ["L", "W", "D", "W", "D"],
+        "homeGoalsAvg": 2.1,
+        "awayGoalsAvg": 1.6,
+        "homeConcededAvg": 0.8,
+        "awayConcededAvg": 1.3
       }
     },
     {
@@ -25,6 +33,14 @@
         "home": 1.95,
         "draw": 3.60,
         "away": 3.80
+      },
+      "stats": {
+        "homeLast5": ["W", "W", "W", "W", "D"],
+        "awayLast5": ["W", "D", "W", "L", "W"],
+        "homeGoalsAvg": 2.5,
+        "awayGoalsAvg": 1.9,
+        "homeConcededAvg": 0.7,
+        "awayConcededAvg": 1.1
       }
     },
     {
@@ -38,6 +54,14 @@
         "home": 2.20,
         "draw": 3.30,
         "away": 3.20
+      },
+      "stats": {
+        "homeLast5": ["W", "W", "D", "W", "W"],
+        "awayLast5": ["W", "W", "W", "L", "W"],
+        "homeGoalsAvg": 2.3,
+        "awayGoalsAvg": 2.2,
+        "homeConcededAvg": 0.9,
+        "awayConcededAvg": 1.0
       }
     },
     {
