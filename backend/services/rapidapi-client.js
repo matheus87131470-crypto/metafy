@@ -185,16 +185,13 @@ class RapidAPIClient {
     
     const data = await this.request('/events/live');
 
-    // Verificar múltiplos formatos de resposta
-    const events = data?.data || data?.events || data || [];
-    
-    if (!Array.isArray(events) || events.length === 0) {
+    if (!data?.data || data.data.length === 0) {
       console.log('⚠️ Nenhuma partida ao vivo no momento');
       return [];
     }
 
     // Transformar para formato simplificado (normalização completa)
-    const matches = events.map(event => {
+    const matches = data.data.map(event => {
       let kickoff = null;
       if (event.startTimestamp) {
         kickoff = new Date(event.startTimestamp * 1000).toISOString();
@@ -215,7 +212,7 @@ class RapidAPIClient {
         awayScore: event.awayScore?.current ?? event.awayScore ?? 0,
         minute: event.time?.currentPeriodStartTimestamp ? Math.floor((Date.now() - event.time.currentPeriodStartTimestamp * 1000) / 60000) : null
       };
-    }).filter(m => m.home && m.away); // Filtrar apenas jogos completos
+    });
 
     // Atualizar cache
     cache.live.data = matches;
