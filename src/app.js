@@ -183,14 +183,16 @@ function checkPremiumStatus() {
 
 // Verificar se usuário é Premium
 function isPremiumUser() {
-  const premiumData = localStorage.getItem('metafy_premium');
-  if (!premiumData) return false;
+  // SITE LIBERADO: sempre retorna true (sem necessidade de pagamento)
+  return true;
   
-  const data = JSON.parse(premiumData);
-  const premiumEnd = new Date(data.premium_end);
-  const now = new Date();
-  
-  return now <= premiumEnd;
+  // Código original comentado:
+  // const premiumData = localStorage.getItem('metafy_premium');
+  // if (!premiumData) return false;
+  // const data = JSON.parse(premiumData);
+  // const premiumEnd = new Date(data.premium_end);
+  // const now = new Date();
+  // return now <= premiumEnd;
 }
 
 // Obter dados do Premium
@@ -1007,19 +1009,19 @@ async function analyzeGame(gameId) {
   const game = GAMES.find(g => g.id === gameId);
   if (!game) return;
 
+  // SITE LIBERADO: sem verificação de limite
   // Premium não tem limite
-  if (!isPremiumUser()) {
-    // Verificar limite para usuários Free
-    if (analysisCount >= MAX_FREE_ANALYSIS) {
-      showPremiumModal();
-      return;
-    }
-    // Incrementar apenas para usuários Free
-    analysisCount++;
-    saveAnalysisCount();
-  }
-  
-  updateAnalysisCounter();
+  // if (!isPremiumUser()) {
+  //   // Verificar limite para usuários Free
+  //   if (analysisCount >= MAX_FREE_ANALYSIS) {
+  //     showPremiumModal();
+  //     return;
+  //   }
+  //   // Incrementar apenas para usuários Free
+  //   analysisCount++;
+  //   saveAnalysisCount();
+  //   updateAnalysisCounter();
+  // }
 
   // Gerar análise
   const analysis = generateAnalysis(game);
