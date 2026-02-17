@@ -45,7 +45,7 @@ const handler = async (req, res) => {
   }
 
   try {
-    console.log('🔄 GET /api/matches/today');
+    console.log('🔄 GET /api/matches/today - Scanner automático');
     
     // Processar jogos com análise de value
     const matchesWithValue = gamesData.matches.map(game => {
@@ -56,12 +56,20 @@ const handler = async (req, res) => {
       };
     });
     
-    // Retornar dados com análise de value
+    // Ordenar por edge (maior para menor)
+    matchesWithValue.sort((a, b) => b.valueAnalysis.edge - a.valueAnalysis.edge);
+    
+    // Manter apenas os top 10
+    const topGames = matchesWithValue.slice(0, 10);
+    
+    console.log(`✅ Scanner processou ${matchesWithValue.length} jogos, retornando top ${topGames.length}`);
+    
+    // Retornar top 10 jogos ordenados por edge
     const response = {
       success: true,
-      count: matchesWithValue.length,
+      count: topGames.length,
       date: gamesData.date,
-      matches: matchesWithValue
+      matches: topGames
     };
     
     return res.status(200).json(response);
