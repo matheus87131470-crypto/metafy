@@ -8,6 +8,14 @@
 
 import rapidApiClient from '../services/rapidapi-client.js';
 
+// Cache em memória para reduzir chamadas à API
+let cache = {
+  data: null,
+  timestamp: 0
+};
+
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
+
 // Ligas domésticas TOP com validação de país
 const DOMESTIC_LEAGUES = new Map([
   ['premier-league', ['England', 'United Kingdom', 'UK']],
@@ -193,6 +201,13 @@ const handler = async (req, res) => {
     console.log('🔄 GET /api/matches/today');
     console.log('   📅 Data para busca:', dateStr);
     
+    // Verificar cache (apenas para data de hoje, sem debug)
+    const now = Date.now();
+    if (!customDate && !debugMode && cache.data && (now - cache.timestamp < CACHE_DURATION)) {
+      console.log('🟢 Retornando dados do cache');
+      return res.json(cache.data);
+    }
+    
     // Buscar dados reais (já tem cache de 60s embutido se não for customDate)
     let matches = await rapidApiClient.getTodayMatches(customDate);
     const totalBeforeFilter = matches.length;
@@ -227,6 +242,13 @@ const handler = async (req, res) => {
         droppedSample: dropped,
         keptSample: kept
       };
+    }
+    
+    // Atualizar cache (apenas para data de hoje, sem debug)
+    if (!customDate && !debugMode) {
+      cache.data = response;
+      cache.timestamp = now;
+      console.log('💾 Cache atualizado');
     }
     
     return res.status(200).json(response);
