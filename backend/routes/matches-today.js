@@ -8,8 +8,8 @@
 
 import rapidApiClient from '../services/rapidapi-client.js';
 
-// TOP 6 ligas mundiais com validação de país
-const ALLOWED_LEAGUES = new Map([
+// Ligas domésticas TOP com validação de país
+const DOMESTIC_LEAGUES = new Map([
   ['premier-league', ['England', 'United Kingdom', 'UK']],
   ['laliga', ['Spain']],
   ['serie-a', ['Italy']],
@@ -18,25 +18,72 @@ const ALLOWED_LEAGUES = new Map([
   ['brasileirao-serie-a', ['Brazil', 'Brasil']]
 ]);
 
+// Competições internacionais (multipaises - sem validação de país)
+const INTERNATIONAL_COMPETITIONS = new Set([
+  'uefa-champions-league',
+  'champions-league',
+  'uefa-europa-league',
+  'europa-league',
+  'uefa-conference-league',
+  'conference-league',
+  'copa-libertadores',
+  'libertadores',
+  'copa-sudamericana',
+  'sudamericana',
+  'fifa-club-world-cup',
+  'world-cup',
+  'copa-america',
+  'euro',
+  'uefa-nations-league',
+  'nations-league'
+]);
+
+// Copas nacionais importantes
+const NATIONAL_CUPS = new Map([
+  ['fa-cup', ['England', 'United Kingdom', 'UK']],
+  ['copa-del-rey', ['Spain']],
+  ['coppa-italia', ['Italy']],
+  ['dfb-pokal', ['Germany']],
+  ['coupe-de-france', ['France']],
+  ['copa-do-brasil', ['Brazil', 'Brasil']]
+]);
+
 /**
- * Verificar se uma partida é de uma liga permitida
- * Valida SLUG + PAÍS para evitar ligas homônimas
+ * Verificar se uma partida é de uma competição permitida
+ * Valida SLUG + PAÍS (para domésticas) ou só SLUG (para internacionais)
  */
 function isAllowed(match) {
   const slug = (match.leagueSlug || '').toLowerCase().trim();
   const name = (match.league || '').toLowerCase();
   const country = (match.country || '').trim();
   
-  if (!slug || !country) return false;
+  if (!slug) return false;
 
   // Bloqueios extras (segurança)
   if (name.includes('women') || name.includes('fem') || name.includes('frauen')) return false;
   if (name.includes('u21') || name.includes('u20') || name.includes('u19') || name.includes('youth')) return false;
-  if (name.includes('2') || slug.includes('2')) return false;
+  if (name.includes('u-21') || name.includes('u-20') || name.includes('u-19')) return false;
+  
+  // Bloquear segunda divisão EXCETO se for copa ou competição internacional
+  const isCompetition = INTERNATIONAL_COMPETITIONS.has(slug) || NATIONAL_CUPS.has(slug);
+  if (!isCompetition && (name.includes('2') || slug.includes('2'))) return false;
 
-  // Verificar se o slug está na lista E se o país corresponde
-  if (ALLOWED_LEAGUES.has(slug)) {
-    const validCountries = ALLOWED_LEAGUES.get(slug);
+  // 1) Competições internacionais (não precisa validar país)
+  if (INTERNATIONAL_COMPETITIONS.has(slug)) return true;
+
+  // 2) Ligas domésticas (precisa validar país)
+  if (DOMESTIC_LEAGUES.has(slug)) {
+    if (!country) return false;
+    const validCountries = DOMESTIC_LEAGUES.get(slug);
+    return validCountries.some(validCountry => 
+      country.toLowerCase().includes(validCountry.toLowerCase())
+    );
+  }
+
+  // 3) Copas nacionais (precisa validar país)
+  if (NATIONAL_CUPS.has(slug)) {
+    if (!country) return false;
+    const validCountries = NATIONAL_CUPS.get(slug);
     return validCountries.some(validCountry => 
       country.toLowerCase().includes(validCountry.toLowerCase())
     );
