@@ -1,0 +1,196 @@
+{
+  "date": "2026-02-18",
+  "games": [
+
+    {
+      "id": 1,
+      "league": "Champions League",
+      "country": "Europe",
+      "home": "Qarabag",
+      "away": "Newcastle United",
+      "kickoff": "2026-02-18T17:00:00Z",
+      "odds": { "home": 4.80, "draw": 3.70, "away": 1.75 },
+      "metrics": {
+        "home_avg_goals": 1.6,
+        "away_avg_goals": 2.0,
+        "combined_xg": 2.95,
+        "over25_rate": 58,
+        "btts_rate": 52,
+        "avg_corners": 9.1,
+        "avg_shots": 24
+      }
+    },
+
+    {
+      "id": 2,
+      "league": "Champions League",
+      "country": "Europe",
+      "home": "Club Brugge",
+      "away": "Atlético Madrid",
+      "kickoff": "2026-02-18T20:00:00Z",
+      "odds": { "home": 3.80, "draw": 3.20, "away": 2.05 },
+      "metrics": {
+        "home_avg_goals": 1.7,
+        "away_avg_goals": 1.5,
+        "combined_xg": 2.45,
+        "over25_rate": 44,
+        "btts_rate": 48,
+        "avg_corners": 8.4,
+        "avg_shots": 22
+      }
+    },
+
+    {
+      "id": 3,
+      "league": "Champions League",
+      "country": "Europe",
+      "home": "Bodo/Glimt",
+      "away": "Inter",
+      "kickoff": "2026-02-18T17:00:00Z",
+      "odds": { "home": 5.20, "draw": 3.90, "away": 1.65 },
+      "metrics": {
+        "home_avg_goals": 2.2,
+        "away_avg_goals": 2.1,
+        "combined_xg": 3.25,
+        "over25_rate": 66,
+        "btts_rate": 60,
+        "avg_corners": 10.3,
+        "avg_shots": 29
+      }
+    },
+
+    {
+      "id": 4,
+      "league": "Champions League",
+      "country": "Europe",
+      "home": "Olympiakos",
+      "away": "Bayer Leverkusen",
+      "kickoff": "2026-02-18T20:00:00Z",
+      "odds": { "home": 3.40, "draw": 3.50, "away": 2.10 },
+      "metrics": {
+        "home_avg_goals": 1.8,
+        "away_avg_goals": 2.3,
+        "combined_xg": 3.05,
+        "over25_rate": 63,
+        "btts_rate": 59,
+        "avg_corners": 9.8,
+        "avg_shots": 27
+      }
+    },
+
+    {
+      "id": 5,
+      "league": "Premier League",
+      "country": "England",
+      "home": "Wolverhampton",
+      "away": "Arsenal",
+      "kickoff": "2026-02-18T19:45:00Z",
+      "odds": { "home": 4.10, "draw": 3.60, "away": 1.85 },
+      "metrics": {
+        "home_avg_goals": 1.4,
+        "away_avg_goals": 2.2,
+        "combined_xg": 2.85,
+        "over25_rate": 57,
+        "btts_rate": 54,
+        "avg_corners": 9.5,
+        "avg_shots": 25
+      }
+    },
+
+    {
+      "id": 6,
+      "league": "Serie A",
+      "country": "Italy",
+      "home": "AC Milan",
+      "away": "Como",
+      "kickoff": "2026-02-18T20:45:00Z",
+      "odds": { "home": 1.55, "draw": 4.20, "away": 6.80 },
+      "metrics": {
+        "home_avg_goals": 2.1,
+        "away_avg_goals": 1.0,
+        "combined_xg": 2.95,
+        "over25_rate": 59,
+        "btts_rate": 42,
+        "avg_corners": 9.2,
+        "avg_shots": 26
+      }
+    },
+
+    {
+      "id": 7,
+      "league": "La Liga",
+      "country": "Spain",
+      "home": "Levante",
+      "away": "Villarreal",
+      "kickoff": "2026-02-18T21:00:00Z",
+      "odds": { "home": 3.10, "draw": 3.20, "away": 2.30 },
+      "metrics": {
+        "home_avg_goals": 1.6,
+        "away_avg_goals": 1.7,
+        "combined_xg": 2.65,
+        "over25_rate": 51,
+        "btts_rate": 56,
+        "avg_corners": 8.9,
+        "avg_shots": 23
+      }
+    },
+
+    {
+      "id": 8,
+      "league": "Copa Libertadores",
+      "country": "South America",
+      "home": "O'Higgins",
+      "away": "Bahia",
+      "kickoff": "2026-02-18T23:00:00Z",
+      "odds": { "home": 2.40, "draw": 3.10, "away": 3.00 },
+      "metrics": {
+        "home_avg_goals": 1.5,
+        "away_avg_goals": 1.4,
+        "combined_xg": 2.45,
+        "over25_rate": 47,
+        "btts_rate": 50,
+        "avg_corners": 8.2,
+        "avg_shots": 21
+      }
+    },
+
+    {
+      "id": 9,
+      "league": "Copa Libertadores",
+      "country": "South America",
+      "home": "Barcelona SC",
+      "away": "Argentinos Juniors",
+      "kickoff": "2026-02-18T23:30:00Z",
+      "odds": { "home": 2.05, "draw": 3.30, "away": 3.70 },
+      "metrics": {
+        "home_avg_goals": 1.9,
+        "away_avg_goals": 1.3,
+        "combined_xg": 2.75,
+        "over25_rate": 55,
+        "btts_rate": 49,
+        "avg_corners": 9.0,
+        "avg_shots": 24
+      }
+    },
+
+    {
+      "id": 10,
+      "league": "Copa Libertadores",
+      "country": "South America",
+      "home": "Nacional Potosí",
+      "away": "Botafogo",
+      "kickoff": "2026-02-18T23:45:00Z",
+      "odds": { "home": 3.60, "draw": 3.20, "away": 2.05 },
+      "metrics": {
+        "home_avg_goals": 1.7,
+        "away_avg_goals": 1.8,
+        "combined_xg": 2.85,
+        "over25_rate": 58,
+        "btts_rate": 57,
+        "avg_corners": 9.6,
+        "avg_shots": 26
+      }
+    }
+
+  ]
+}
