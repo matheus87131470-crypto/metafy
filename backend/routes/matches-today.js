@@ -12,7 +12,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // Carregar dados locais
-const gamesDataPath = join(__dirname, '../data/games-today.json');
+const gamesDataPath = join(__dirname, '../data/enhanced-games.json');
 let gamesData = null;
 
 function loadGamesData() {
@@ -21,7 +21,7 @@ function loadGamesData() {
     gamesData = JSON.parse(rawData);
     console.log('✅ Dados de jogos carregados:', gamesData.matches.length, 'partidas');
   } catch (error) {
-    console.error('❌ Erro ao carregar games-today.json:', error.message);
+    console.error('❌ Erro ao carregar enhanced-games.json:', error.message);
     gamesData = { date: new Date().toISOString().split('T')[0], matches: [] };
   }
 }
