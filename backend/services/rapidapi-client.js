@@ -170,7 +170,7 @@ class RapidAPIClient {
 
   /**
    * Buscar partidas ao vivo
-   * Endpoint: /api/v1/sport/football/live-events
+   * Endpoint: /api/v1/sport/football/events/live
    */
   async getLiveMatches() {
     const now = Date.now();
@@ -183,7 +183,7 @@ class RapidAPIClient {
 
     console.log('🔄 Buscando partidas ao vivo...');
     
-    const data = await this.request('/live-events');
+    const data = await this.request('/events/live');
 
     if (!data?.data || data.data.length === 0) {
       console.log('⚠️ Nenhuma partida ao vivo no momento');
