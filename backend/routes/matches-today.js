@@ -8,13 +8,9 @@
 
 import rapidApiClient from '../services/rapidapi-client.js';
 
-// Cache em memória para reduzir chamadas à API
-let cache = {
-  data: null,
-  timestamp: 0
-};
-
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
+// Cache diário - atualiza apenas quando muda o dia
+let dailyCache = null;
+let lastFetchDate = null;
 
 // Ligas domésticas TOP com validação de país
 const DOMESTIC_LEAGUES = new Map([
@@ -201,11 +197,10 @@ const handler = async (req, res) => {
     console.log('🔄 GET /api/matches/today');
     console.log('   📅 Data para busca:', dateStr);
     
-    // Verificar cache (apenas para data de hoje, sem debug)
-    const now = Date.now();
-    if (!customDate && !debugMode && cache.data && (now - cache.timestamp < CACHE_DURATION)) {
-      console.log('🟢 Retornando dados do cache');
-      return res.json(cache.data);
+    // Verificar cache diário (apenas para data de hoje, sem debug)
+    if (!customDate && !debugMode && dailyCache && lastFetchDate === dateStr) {
+      console.log('🟢 Retornando dados do cache diário');
+      return res.json(dailyCache);
     }
     
     // Buscar dados reais (já tem cache de 60s embutido se não for customDate)
@@ -244,11 +239,11 @@ const handler = async (req, res) => {
       };
     }
     
-    // Atualizar cache (apenas para data de hoje, sem debug)
+    // Atualizar cache diário (apenas para data de hoje, sem debug)
     if (!customDate && !debugMode) {
-      cache.data = response;
-      cache.timestamp = now;
-      console.log('💾 Cache atualizado');
+      dailyCache = response;
+      lastFetchDate = dateStr;
+      console.log('💾 Cache diário atualizado para', dateStr);
     }
     
     return res.status(200).json(response);
