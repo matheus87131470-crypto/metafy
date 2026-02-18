@@ -4,15 +4,31 @@
  */
 
 import { canAnalyze, consumeFreeAnalysis } from '../../lib/userStore.js';
+import { verifyToken } from '../../lib/userStore.js';
 
 /**
  * Middleware que verifica se usuário pode fazer análise
  * Responde 402 Payment Required se bloqueado
+ * Suporta autenticação via token OU userId direto
  */
 export async function checkPaywall(req, res, next) {
   try {
-    // Obter userId do corpo da requisição ou header
-    const userId = req.body.userId || req.headers['x-user-id'] || 'anonymous';
+    let userId = null;
+    
+    // Tentar obter userId via token de autenticação
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    if (token) {
+      const user = await verifyToken(token);
+      if (user) {
+        userId = user.id;
+        req.user = user;
+      }
+    }
+    
+    // Se não tem token, usar userId do corpo ou header (compatibilidade)
+    if (!userId) {
+      userId = req.body.userId || req.headers['x-user-id'] || 'anonymous';
+    }
     
     // Verificar se pode analisar
     const access = await canAnalyze(userId);

@@ -5,6 +5,7 @@ import analyzeRoute from "./routes/analyze.js";
 import gamesRoute from "./routes/games.js";
 import userRoute from "./routes/user.js";
 import paymentsRoute from "./routes/payments.js";
+import authRoute from "./routes/auth.js";
 import matchesTodayHandler from "./routes/matches-today.js";
 // import matchesLiveHandler from "./routes/matches-live.js"; // REMOVIDO: não usa mais RapidAPI
 
@@ -31,7 +32,10 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Rotas
+// Rotas de autenticação
+app.use("/api/auth", authRoute);
+
+// Rotas protegidas/públicas
 app.use("/api/analyze", analyzeRoute);
 app.use("/api/games", gamesRoute);
 app.use("/api/user", userRoute);
@@ -47,6 +51,10 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log("🚀 Metafy Backend rodando na porta", PORT);
   console.log("📍 Rotas disponíveis:");
+  console.log("   POST /api/auth/register");
+  console.log("   POST /api/auth/login");
+  console.log("   POST /api/auth/logout");
+  console.log("   GET  /api/auth/me");
   console.log("   POST /api/analyze (com paywall)");
   console.log("   GET  /api/user/:userId");
   console.log("   GET  /api/me?userId=xxx");

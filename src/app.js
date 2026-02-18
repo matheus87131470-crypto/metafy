@@ -142,12 +142,15 @@ const PREMIUM_PRICE = 4.50;
 const PREMIUM_DURATION_DAYS = 7;
 
 // Inicializar
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   console.log('🚀 Metafy iniciando...');
+  
+  // Verificar autenticação primeiro
+  await checkAuth();
   
   // Inicializar userId e buscar status do backend
   getUserId();
-  fetchUserStatus();
+  await fetchUserStatus();
   
   checkPremiumStatus();
   loadAnalysisCount();
@@ -155,6 +158,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // fetchLiveMatches(); // DESABILITADO: evitar erro 429 (Too Many Requests)
   updateAnalysisCounter();
   updatePremiumUI();
+  updateAuthUI(); // Atualizar botões de login/logout
   
   // Auto-formatar CPF ao digitar
   const cpfInput = document.getElementById('cpfInput');
@@ -229,6 +233,12 @@ let paymentCheckInterval = null;
 
 // Gerar ou recuperar userId único
 function getUserId() {
+  // Se está logado, usar ID do usuário autenticado
+  if (currentUser && currentUser.id) {
+    return currentUser.id;
+  }
+  
+  // Se não está logado, usar ID anônimo persistente
   let userId = localStorage.getItem('metafy_user_id');
   
   if (!userId) {
@@ -252,7 +262,14 @@ let userStatusCache = null;
 async function fetchUserStatus() {
   try {
     const userId = getUserId();
-    const response = await fetch(`${BACKEND_URL}/api/me?userId=${userId}`);
+    
+    // Se está autenticado, usar token
+    const headers = { 'Content-Type': 'application/json' };
+    if (authToken) {
+      headers['Authorization'] = `Bearer ${authToken}`;
+    }
+    
+    const response = await fetch(`${BACKEND_URL}/api/me?userId=${userId}`, { headers });
     
     if (!response.ok) {
       throw new Error('Erro ao buscar status');
@@ -1205,11 +1222,15 @@ async function fetchAIInsights(game, analysis) {
     
     console.log(`🤖 Buscando insights de IA para match ${game.id}...`);
     
+    // Headers com token de autenticação se disponível
+    const headers = { 'Content-Type': 'application/json' };
+    if (authToken) {
+      headers['Authorization'] = `Bearer ${authToken}`;
+    }
+    
     const response = await fetch(`${BACKEND_URL}/api/analyze`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      headers,
       body: JSON.stringify({ 
         matchId: game.id,
         userId,
@@ -2001,6 +2022,287 @@ function startPaymentVerification() {
   }, 600000);
 }
 
+// =========================================
+// SISTEMA DE AUTENTICAÇÃO (LOGIN/REGISTRO)
+// =========================================
+
+let currentUser = null;
+let authToken = null;
+
+// Verificar se já está logado ao carregar página
+async function checkAuth() {
+  const token = localStorage.getItem('metafy_token');
+  
+  if (token) {
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/auth/me`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        currentUser = data.user;
+        authToken = token;
+        updateAuthUI();
+        console.log('✅ Já autenticado:', currentUser.email);
+        return true;
+      } else {
+        // Token inválido - limpar
+        localStorage.removeItem('metafy_token');
+        authToken = null;
+        currentUser = null;
+      }
+    } catch (error) {
+      console.error('Erro ao verificar autenticação:', error);
+    }
+  }
+  
+  return false;
+}
+
+// Atualizar UI com status de autenticação
+function updateAuthUI() {
+  const authButtons = document.querySelector('.auth-buttons');
+  if (!authButtons) return;
+  
+  if (currentUser) {
+    authButtons.innerHTML = `
+      <div class="user-menu">
+        <span class="user-email">👤 ${currentUser.email}</span>
+        <button class="btn-logout" onclick="logout()">Sair</button>
+      </div>
+    `;
+  } else {
+    authButtons.innerHTML = `
+      <button class="btn-login" onclick="showLoginModal()">Entrar</button>
+      <button class="btn-register" onclick="showRegisterModal()">Criar Conta</button>
+    `;
+  }
+}
+
+// Mostrar modal de login
+function showLoginModal() {
+  const modal = document.createElement('div');
+  modal.className = 'analysis-modal-overlay auth-modal-overlay';
+  modal.onclick = (e) => { if (e.target === modal) closeAuthModal(); };
+  modal.innerHTML = `
+    <div class="auth-modal">
+      <button class="btn-close" onclick="closeAuthModal()">✕</button>
+      
+      <div class="auth-header">
+        <h2>🔐 Entrar</h2>
+        <p>Acesse sua conta Metafy</p>
+      </div>
+      
+      <form id="loginForm" onsubmit="handleLogin(event)">
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="loginEmail" required autocomplete="email" />
+        </div>
+        
+        <div class="form-group">
+          <label>Senha</label>
+          <input type="password" id="loginPassword" required autocomplete="current-password" />
+        </div>
+        
+        <div id="loginError" class="auth-error"></div>
+        
+        <button type="submit" class="btn-auth-submit">
+          <span id="loginButtonText">Entrar</span>
+        </button>
+      </form>
+      
+      <div class="auth-footer">
+        <p>Não tem conta? <a href="#" onclick="closeAuthModal(); showRegisterModal(); return false;">Criar conta</a></p>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+}
+
+// Mostrar modal de registro
+function showRegisterModal() {
+  const modal = document.createElement('div');
+  modal.className = 'analysis-modal-overlay auth-modal-overlay';
+  modal.onclick = (e) => { if (e.target === modal) closeAuthModal(); };
+  modal.innerHTML = `
+    <div class="auth-modal">
+      <button class="btn-close" onclick="closeAuthModal()">✕</button>
+      
+      <div class="auth-header">
+        <h2>✨ Criar Conta</h2>
+        <p>Comece com 2 análises grátis!</p>
+      </div>
+      
+      <form id="registerForm" onsubmit="handleRegister(event)">
+        <div class="form-group">
+          <label>Nome (opcional)</label>
+          <input type="text" id="registerName" autocomplete="name" />
+        </div>
+        
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="registerEmail" required autocomplete="email" />
+        </div>
+        
+        <div class="form-group">
+          <label>Senha (mínimo 6 caracteres)</label>
+          <input type="password" id="registerPassword" required autocomplete="new-password" minlength="6" />
+        </div>
+        
+        <div id="registerError" class="auth-error"></div>
+        
+        <button type="submit" class="btn-auth-submit">
+          <span id="registerButtonText">Criar Conta</span>
+        </button>
+      </form>
+      
+      <div class="auth-footer">
+        <p>Já tem conta? <a href="#" onclick="closeAuthModal(); showLoginModal(); return false;">Entrar</a></p>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+}
+
+// Fechar modal de auth
+function closeAuthModal() {
+  const modal = document.querySelector('.auth-modal-overlay');
+  if (modal) modal.remove();
+}
+
+// Handler do formulário de login
+async function handleLogin(event) {
+  event.preventDefault();
+  
+  const email = document.getElementById('loginEmail').value;
+  const password = document.getElementById('loginPassword').value;
+  const errorDiv = document.getElementById('loginError');
+  const buttonText = document.getElementById('loginButtonText');
+  
+  errorDiv.textContent = '';
+  buttonText.textContent = 'Entrando...';
+  
+  try {
+    const response = await fetch(`${BACKEND_URL}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+      errorDiv.textContent = data.error || 'Erro ao fazer login';
+      buttonText.textContent = 'Entrar';
+      return;
+    }
+    
+    // Login bem-sucedido
+    currentUser = data.user;
+    authToken = data.token;
+    localStorage.setItem('metafy_token', data.token);
+    
+    console.log('✅ Login bem-sucedido:', currentUser.email);
+    
+    closeAuthModal();
+    updateAuthUI();
+    
+    // Atualizar status do usuário
+    await fetchUserStatus();
+    
+    // Mostrar mensagem de sucesso
+    alert(`✅ Bem-vindo(a), ${currentUser.name || currentUser.email}!`);
+    
+  } catch (error) {
+    console.error('Erro ao fazer login:', error);
+    errorDiv.textContent = 'Erro ao conectar. Tente novamente.';
+    buttonText.textContent = 'Entrar';
+  }
+}
+
+// Handler do formulário de registro
+async function handleRegister(event) {
+  event.preventDefault();
+  
+  const name = document.getElementById('registerName').value;
+  const email = document.getElementById('registerEmail').value;
+  const password = document.getElementById('registerPassword').value;
+  const errorDiv = document.getElementById('registerError');
+  const buttonText = document.getElementById('registerButtonText');
+  
+  errorDiv.textContent = '';
+  buttonText.textContent = 'Criando conta...';
+  
+  try {
+    const response = await fetch(`${BACKEND_URL}/api/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password, name })
+    });
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+      errorDiv.textContent = data.error || 'Erro ao criar conta';
+      buttonText.textContent = 'Criar Conta';
+      return;
+    }
+    
+    // Registro bem-sucedido (já faz login automático)
+    currentUser = data.user;
+    authToken = data.token;
+    localStorage.setItem('metafy_token', data.token);
+    
+    console.log('✅ Conta criada:', currentUser.email);
+    
+    closeAuthModal();
+    updateAuthUI();
+    
+    // Atualizar status do usuário
+    await fetchUserStatus();
+    
+    // Mostrar mensagem de boas-vindas
+    alert(`✅ Conta criada com sucesso!\n\nVocê ganhou 2 análises grátis para começar.`);
+    
+  } catch (error) {
+    console.error('Erro ao criar conta:', error);
+    errorDiv.textContent = 'Erro ao conectar. Tente novamente.';
+    buttonText.textContent = 'Criar Conta';
+  }
+}
+
+// Fazer logout
+async function logout() {
+  try {
+    if (authToken) {
+      await fetch(`${BACKEND_URL}/api/auth/logout`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${authToken}`
+        }
+      });
+    }
+    
+    currentUser = null;
+    authToken = null;
+    localStorage.removeItem('metafy_token');
+    localStorage.removeItem('metafy_user_id'); // Limpar userId antigo também
+    
+    updateAuthUI();
+    
+    alert('✅ Logout realizado com sucesso!');
+    
+    // Recarregar página para limpar cache
+    window.location.reload();
+    
+  } catch (error) {
+    console.error('Erro ao fazer logout:', error);
+  }
+}
+
 // Expor funções globais
 window.analyzeGame = analyzeGame;
 window.closeAnalysisModal = closeAnalysisModal;
@@ -2019,3 +2321,10 @@ window.closePixModal = closePixModal;
 window.resetPixModal = resetPixModal;
 window.copyPixCode = copyPixCode;
 window.generatePixPayment = generatePixPayment;
+// Autenticação
+window.showLoginModal = showLoginModal;
+window.showRegisterModal = showRegisterModal;
+window.closeAuthModal = closeAuthModal;
+window.handleLogin = handleLogin;
+window.handleRegister = handleRegister;
+window.logout = logout;

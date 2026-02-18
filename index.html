@@ -384,51 +384,10 @@
                     ⚡ 2/2 análises restantes
                 </div>
                 
-                <!-- User Menu -->
-                <div class="user-menu">
-                    <button class="user-menu-btn" id="userMenuBtn" onclick="toggleUserMenu()">
-                        <span class="user-avatar">👤</span>
-                        <span class="user-name" id="userName">Matheus</span>
-                        <span class="user-arrow">▾</span>
-                    </button>
-                    
-                    <div class="user-dropdown" id="userDropdown" style="display: none;">
-                        <!-- Premium Badge (se for premium) -->
-                        <div class="dropdown-premium-badge" id="dropdownPremiumBadge" style="display: none;">
-                            <div class="premium-badge-header">
-                                <span class="badge-icon">💎</span>
-                                <span class="badge-text">PRO</span>
-                            </div>
-                        </div>
-                        
-                        <a href="#" class="dropdown-item" onclick="showAccountSection(); return false;">
-                            <span class="item-icon">👤</span>
-                            <span>Conta</span>
-                        </a>
-                        
-                        <a href="#" class="dropdown-item" onclick="switchTab('premium'); closeUserMenu(); return false;">
-                            <span class="item-icon">💳</span>
-                            <span>Assinatura</span>
-                        </a>
-                        
-                        <a href="#" class="dropdown-item" onclick="showAnalyzerSection(); return false;">
-                            <span class="item-icon">🎯</span>
-                            <span>Analisador</span>
-                        </a>
-                        
-                        <a href="#" class="dropdown-item dropdown-item-disabled">
-                            <span class="item-icon">🎨</span>
-                            <span>Aparência</span>
-                            <span class="item-badge">em breve</span>
-                        </a>
-                        
-                        <div class="dropdown-divider"></div>
-                        
-                        <a href="#" class="dropdown-item dropdown-item-danger" onclick="logout(); return false;">
-                            <span class="item-icon">🚪</span>
-                            <span>Sair</span>
-                        </a>
-                    </div>
+                <!-- Auth Buttons (gerenciado via JS) -->
+                <div class="auth-buttons">
+                    <button class="btn-login" onclick="showLoginModal()">Entrar</button>
+                    <button class="btn-register" onclick="showRegisterModal()">Criar Conta</button>
                 </div>
             </div>
         </div>
