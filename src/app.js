@@ -144,6 +144,11 @@ const PREMIUM_DURATION_DAYS = 7;
 // Inicializar
 document.addEventListener('DOMContentLoaded', () => {
   console.log('🚀 Metafy iniciando...');
+  
+  // Inicializar userId e buscar status do backend
+  getUserId();
+  fetchUserStatus();
+  
   checkPremiumStatus();
   loadAnalysisCount();
   fetchGames();
@@ -181,18 +186,9 @@ function checkPremiumStatus() {
   }
 }
 
-// Verificar se usuário é Premium
+// Verificar se usuário é Premium (do cache local)
 function isPremiumUser() {
-  // SITE LIBERADO: sempre retorna true (sem necessidade de pagamento)
-  return true;
-  
-  // Código original comentado:
-  // const premiumData = localStorage.getItem('metafy_premium');
-  // if (!premiumData) return false;
-  // const data = JSON.parse(premiumData);
-  // const premiumEnd = new Date(data.premium_end);
-  // const now = new Date();
-  // return now <= premiumEnd;
+  return userStatusCache?.isPremium || false;
 }
 
 // Obter dados do Premium
@@ -231,22 +227,70 @@ function formatDate(dateString) {
 const BACKEND_URL = 'https://metafy-8qk7.onrender.com';
 let paymentCheckInterval = null;
 
-// Gerar ou recuperar userId único baseado no email
-function getOrCreateUserId(email) {
-  // Tentar recuperar userId existente
+// Gerar ou recuperar userId único
+function getUserId() {
   let userId = localStorage.getItem('metafy_user_id');
   
-  if (!userId && email) {
-    // Criar userId simples baseado no email
-    userId = 'user_' + btoa(email).replace(/[^a-zA-Z0-9]/g, '').substring(0, 20);
+  if (!userId) {
+    // Gerar ID único baseado em timestamp + random
+    userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
     localStorage.setItem('metafy_user_id', userId);
+    console.log('🆔 Novo userId criado:', userId);
   }
   
-  return userId || 'guest_' + Date.now();
+  return userId;
 }
 
 function getCurrentUserId() {
-  return localStorage.getItem('metafy_user_id') || null;
+  return getUserId();
+}
+
+// Estado do usuário (cache local)
+let userStatusCache = null;
+
+// Buscar status do usuário do backend
+async function fetchUserStatus() {
+  try {
+    const userId = getUserId();
+    const response = await fetch(`${BACKEND_URL}/api/me?userId=${userId}`);
+    
+    if (!response.ok) {
+      throw new Error('Erro ao buscar status');
+    }
+    
+    const data = await response.json();
+    userStatusCache = data;
+    
+    console.log('👤 Status do usuário:', {
+      isPremium: data.isPremium,
+      freeRemaining: data.freeRemaining,
+      daysRemaining: data.daysRemaining
+    });
+    
+    // Atualizar UI com contador
+    updateAnalysisCounter();
+    
+    return data;
+  } catch (error) {
+    console.error('❌ Erro ao buscar status:', error);
+    return null;
+  }
+}
+
+// Atualizar contador de análises na UI
+function updateAnalysisCounter() {
+  if (!userStatusCache) return;
+  
+  const counterElements = document.querySelectorAll('.analysis-counter');
+  counterElements.forEach(el => {
+    if (userStatusCache.isPremium) {
+      el.textContent = `Premium ativo (${userStatusCache.daysRemaining} dias)`;
+      el.classList.add('premium');
+    } else {
+      el.textContent = `Análises restantes: ${userStatusCache.freeRemaining}/2`;
+      el.classList.remove('premium');
+    }
+  });
 }
 
 function activatePremium() {
@@ -1154,23 +1198,38 @@ function calculateFormScore(form) {
   return Math.round((total / 15) * 100);
 }
 
-// Buscar insights de IA da OpenAI
+// Buscar insights de IA da OpenAI (com paywall)
 async function fetchAIInsights(game, analysis) {
   try {
-    const userId = getCurrentUserId();
+    const userId = getUserId();
     
     console.log(`🤖 Buscando insights de IA para match ${game.id}...`);
     
-    const response = await fetch(`${BACKEND_URL}/api/insights-ai`, {
+    const response = await fetch(`${BACKEND_URL}/api/analyze`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({ 
         matchId: game.id,
-        userId 
+        userId,
+        gameData: game
       })
     });
+    
+    // Verificar se foi bloqueado pelo paywall (402 Payment Required)
+    if (response.status === 402) {
+      const data = await response.json();
+      console.log('🔒 Paywall ativado:', data.message);
+      
+      // Fechar modal de análise
+      closeAnalysisModal();
+      
+      // Abrir modal de pagamento
+      showPaywallModal(data.message);
+      
+      return;
+    }
     
     if (!response.ok) {
       throw new Error('Erro ao buscar insights');
@@ -1178,9 +1237,19 @@ async function fetchAIInsights(game, analysis) {
     
     const data = await response.json();
     
-    if (data.success && data.insights) {
-      console.log('✅ Insights de IA recebidos:', data.source);
-      updateModalWithAIInsights(data.insights);
+    // Atualizar cache do status do usuário
+    if (data.userStatus) {
+      userStatusCache = {
+        isPremium: data.userStatus.isPremium,
+        freeRemaining: data.userStatus.freeRemaining,
+        daysRemaining: data.userStatus.daysRemaining
+      };
+      updateAnalysisCounter();
+    }
+    
+    if (data.success && data.analysis) {
+      console.log('✅ Insights de IA recebidos');
+      updateModalWithAIInsights(data.analysis);
     } else {
       console.warn('⚠️ Resposta sem insights válidos');
     }
@@ -1776,9 +1845,168 @@ function formatAnalysisText(text) {
     .replace(/^• /gm, '<span class="bullet">•</span> ');
 }
 
+// =========================================
+// PAYWALL MODAL (NOVO SISTEMA)
+// =========================================
+
+function showPaywallModal(message = 'Limite de análises gratuitas atingido') {
+  const status = userStatusCache || { isPremium: false, freeRemaining: 0 };
+  
+  const modal = document.createElement('div');
+  modal.className = 'analysis-modal-overlay';
+  modal.onclick = (e) => { if (e.target === modal) closeAnalysisModal(); };
+  modal.innerHTML = `
+    <div class="premium-modal">
+      <button class="btn-close" onclick="closePaywallModal()">✕</button>
+      <div class="premium-icon">🔒</div>
+      <h2 class="premium-title">Limite Atingido</h2>
+      <p class="premium-subtitle">${message}</p>
+      
+      <div class="premium-offer">
+        <div class="offer-badge">PAGAMENTO ÚNICO</div>
+        <div class="offer-price">
+          <span class="price-currency">R$</span>
+          <span class="price-value">3,50</span>
+        </div>
+        <p class="offer-duration">7 dias de acesso • Sem renovação automática</p>
+      </div>
+
+      <div class="premium-features">
+        <h4>Desbloqueie agora:</h4>
+        <ul>
+          <li>✨ Análises de IA <strong>ilimitadas</strong></li>
+          <li>📊 Previsões detalhadas</li>
+          <li>📈 Probabilidades avançadas</li>
+          <li>🎯 Over/Under e BTTS</li>
+          <li>💡 Insights exclusivos</li>
+        </ul>
+      </div>
+      
+      <button class="btn-premium-cta" onclick="initiatePayment()">
+        💎 Pagar R$ 3,50 e Liberar Acesso
+      </button>
+      
+      <p class="premium-note">Pagamento único • Acesso imediato • 7 dias</p>
+      
+      <div class="premium-divider"></div>
+      
+      <p class="premium-free-note">Suas análises gratuitas foram usadas. Assine premium para continuar.</p>
+    </div>
+  `;
+  document.body.appendChild(modal);
+}
+
+function closePaywallModal() {
+  const modal = document.querySelector('.analysis-modal-overlay');
+  if (modal) modal.remove();
+}
+
+async function initiatePayment() {
+  try {
+    const userId = getUserId();
+    
+    // Mostrar loading
+    const modal = document.querySelector('.premium-modal');
+    if (modal) {
+      modal.innerHTML = `
+        <div class="payment-loading">
+          <div class="loading-spinner"></div>
+          <p>Gerando pagamento...</p>
+        </div>
+      `;
+    }
+    
+    // Criar pagamento no backend
+    const response = await fetch(`${BACKEND_URL}/api/payments/create`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ userId })
+    });
+    
+    const data = await response.json();
+    
+    if (!data.success) {
+      throw new Error(data.error || 'Erro ao criar pagamento');
+    }
+    
+    // Exibir QR Code ou redirecionar
+    showPaymentDetails(data.payment);
+    
+  } catch (error) {
+    console.error('❌ Erro ao iniciar pagamento:', error);
+    alert('Erro ao criar pagamento. Tente novamente.');
+    closePaywallModal();
+  }
+}
+
+function showPaymentDetails(payment) {
+  const modal = document.querySelector('.premium-modal');
+  if (!modal) return;
+  
+  modal.innerHTML = `
+    <button class="btn-close" onclick="closePaywallModal()">✕</button>
+    <div class="payment-header">
+      <div class="payment-icon">💳</div>
+      <h2>Pagamento via Mercado Pago</h2>
+    </div>
+    
+    <div class="payment-info">
+      <p><strong>Valor:</strong> R$ ${payment.amount.toFixed(2)}</p>
+      <p><strong>Status:</strong> Aguardando pagamento</p>
+    </div>
+    
+    <div class="payment-actions">
+      <a href="${payment.checkoutUrl}" target="_blank" class="btn-premium-cta">
+        🔗 Abrir Mercado Pago
+      </a>
+      
+      <button class="btn-cancel" onclick="closePaywallModal()">
+        Cancelar
+      </button>
+    </div>
+    
+    <p class="payment-note">Após o pagamento, seu acesso será liberado automaticamente.</p>
+  `;
+  
+  // Iniciar verificação de pagamento
+  startPaymentVerification();
+}
+
+function startPaymentVerification() {
+  // Verificar a cada 5 segundos se o pagamento foi aprovado
+  const checkInterval = setInterval(async () => {
+    try {
+      const status = await fetchUserStatus();
+      
+      if (status && status.isPremium) {
+        clearInterval(checkInterval);
+        closePaywallModal();
+        
+        // Mostrar confirmação
+        alert('✅ Pagamento confirmado! Premium ativado por 7 dias.');
+        
+        // Recarregar página para atualizar UI
+        window.location.reload();
+      }
+    } catch (error) {
+      console.error('Erro ao verificar pagamento:', error);
+    }
+  }, 5000);
+  
+  // Parar verificação após 10 minutos
+  setTimeout(() => {
+    clearInterval(checkInterval);
+  }, 600000);
+}
+
 // Expor funções globais
 window.analyzeGame = analyzeGame;
 window.closeAnalysisModal = closeAnalysisModal;
+window.closePaywallModal = closePaywallModal;
+window.showPaywallModal = showPaywallModal;
+window.initiatePayment = initiatePayment;
 window.activatePremium = activatePremium;
 window.confirmPayment = confirmPayment;
 window.isPremiumUser = isPremiumUser;

@@ -3,6 +3,8 @@ import cors from "cors";
 import dotenv from "dotenv";
 import analyzeRoute from "./routes/analyze.js";
 import gamesRoute from "./routes/games.js";
+import userRoute from "./routes/user.js";
+import paymentsRoute from "./routes/payments.js";
 import matchesTodayHandler from "./routes/matches-today.js";
 // import matchesLiveHandler from "./routes/matches-live.js"; // REMOVIDO: não usa mais RapidAPI
 
@@ -13,12 +15,14 @@ const app = express();
 // ✅ CORS configurado para aceitar requisições do frontend
 app.use(cors({
   origin: [
+    "https://metafy.store",
+    "https://www.metafy.store",
     "https://metafy-gamma.vercel.app",
     "http://localhost:5173",
     "http://localhost:3000"
   ],
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-User-Id"],
 }));
 app.use(express.json());
 
@@ -27,8 +31,13 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// Rotas
 app.use("/api/analyze", analyzeRoute);
 app.use("/api/games", gamesRoute);
+app.use("/api/user", userRoute);
+app.use("/api/me", userRoute); // Alias para /api/user
+app.use("/api/payments", paymentsRoute);
+app.post("/api/webhooks/mercadopago", paymentsRoute); // Webhook do MP
 
 // Local data routes
 app.get('/api/matches/today', matchesTodayHandler);
@@ -37,4 +46,11 @@ app.get('/api/matches/today', matchesTodayHandler);
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log("🚀 Metafy Backend rodando na porta", PORT);
+  console.log("📍 Rotas disponíveis:");
+  console.log("   POST /api/analyze (com paywall)");
+  console.log("   GET  /api/user/:userId");
+  console.log("   GET  /api/me?userId=xxx");
+  console.log("   POST /api/payments/create");
+  console.log("   POST /api/webhooks/mercadopago");
+  console.log("   GET  /api/matches/today");
 });
