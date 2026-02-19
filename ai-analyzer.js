@@ -60,15 +60,32 @@ class AIAnalyzer {
      * @private
      */
     async _analyzeWithRealAI(payload) {
+        // NOVO: Validar e registrar uso de análise ANTES de chamar IA
+        if (typeof validateAndUseAnalysis === 'function') {
+            const canUse = await validateAndUseAnalysis();
+            if (!canUse) {
+                throw new Error('Limite de análises atingido');
+            }
+        } else {
+            console.warn('⚠️ validateAndUseAnalysis não encontrada - autenticação desabilitada');
+        }
+        
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), this.timeoutDuration);
 
         try {
+            // Incluir token de autenticação se disponível
+            const headers = {
+                "Content-Type": "application/json"
+            };
+            
+            if (typeof userToken !== 'undefined' && userToken) {
+                headers["Authorization"] = `Bearer ${userToken}`;
+            }
+            
             const response = await fetch(this.apiEndpoint, {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
+                headers: headers,
                 body: JSON.stringify(payload),
                 signal: controller.signal
             });

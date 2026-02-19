@@ -1244,12 +1244,128 @@
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
 
+        // Estado global do usuário
+        let currentUser = null;
+        let userToken = null;
+        let userStatus = null;
+
+        // URL do backend
+        const BACKEND_URL = 'https://metafy-backend.onrender.com';
+
+        // Função helper para fazer requests autenticados
+        async function authenticatedFetch(url, options = {}) {
+            if (!userToken) {
+                throw new Error('Usuário não autenticado');
+            }
+
+            const headers = {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${userToken}`,
+                ...(options.headers || {})
+            };
+
+            const response = await fetch(url, {
+                ...options,
+                headers
+            });
+
+            if (response.status === 401) {
+                // Token expirado - fazer novo login
+                console.log('🔄 Token expirado, atualizando...');
+                await updateUserToken();
+                
+                // Tentar novamente com novo token
+                headers.Authorization = `Bearer ${userToken}`;
+                return fetch(url, { ...options, headers });
+            }
+
+            return response;
+        }
+
+        // Atualizar token do usuário
+        async function updateUserToken() {
+            if (auth.currentUser) {
+                userToken = await auth.currentUser.getIdToken(true);
+                console.log('🔑 Token atualizado');
+            }
+        }
+
+        // Buscar status do usuário do backend
+        async function fetchUserStatus() {
+            try {
+                const response = await authenticatedFetch(`${BACKEND_URL}/api/user/status`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    userStatus = data;
+                    console.log('📊 Status do usuário:', data);
+                    updateStatusUI(data);
+                }
+            } catch (error) {
+                console.error('❌ Erro ao buscar status:', error);
+            }
+        }
+
+        // Atualizar UI com status
+        function updateStatusUI(status) {
+            // Atualizar contador de análises restantes
+            const statusElement = document.querySelector('.user-status');
+            if (statusElement) {
+                const remaining = status.remainingToday;
+                const isPremium = status.isPremium;
+                
+                statusElement.innerHTML = isPremium 
+                    ? '💎 Premium - Análises Ilimitadas'
+                    : `🆓 ${remaining} análises restantes hoje`;
+            }
+        }
+
+        // Validar e registrar uso de análise
+        async function validateAndUseAnalysis() {
+            try {
+                const response = await authenticatedFetch(`${BACKEND_URL}/api/user/analysis/use`, {
+                    method: 'POST'
+                });
+                
+                const data = await response.json();
+                
+                if (!data.success) {
+                    if (data.needPremium) {
+                        alert('⚠️ Você atingiu o limite de 2 análises gratuitas!\n\n💎 Assine Premium para análises ilimitadas.');
+                        // TODO: Mostrar modal de upgrade premium
+                        return false;
+                    }
+                    throw new Error(data.error);
+                }
+                
+                // Atualizar status local
+                userStatus = data;
+                updateStatusUI(data);
+                
+                console.log(`✅ Análise validada: ${data.remainingToday} restantes`);
+                return true;
+                
+            } catch (error) {
+                console.error('❌ Erro ao validar análise:', error);
+                alert('Erro ao validar análise: ' + error.message);
+                return false;
+            }
+        }
+
         // Função de login com Google
         function loginWithGoogle() {
             const provider = new firebase.auth.GoogleAuthProvider();
             auth.signInWithPopup(provider)
-                .then((result) => {
+                .then(async (result) => {
                     console.log('✅ Usuário logado:', result.user.email);
+                    currentUser = result.user;
+                    
+                    // Obter token
+                    userToken = await result.user.getIdToken();
+                    console.log('🔑 Token obtido');
+                    
+                    // Buscar status do backend
+                    await fetchUserStatus();
                 })
                 .catch((error) => {
                     console.error('❌ Erro no login:', error.message);
@@ -1262,6 +1378,9 @@
             auth.signOut()
                 .then(() => {
                     console.log('✅ Usuário deslogado');
+                    currentUser = null;
+                    userToken = null;
+                    userStatus = null;
                 })
                 .catch((error) => {
                     console.error('❌ Erro no logout:', error.message);
@@ -1269,18 +1388,35 @@
         }
 
         // Monitorar estado de autenticação
-        auth.onAuthStateChanged(user => {
+        auth.onAuthStateChanged(async (user) => {
             const authButtons = document.getElementById('authButtons');
             
             if (user) {
+                currentUser = user;
+                
+                // Obter token
+                userToken = await user.getIdToken();
+                
                 console.log('👤 Usuário logado:', user.displayName || user.email);
+                console.log('🆔 UID:', user.uid);
+                
+                // Buscar status do backend
+                await fetchUserStatus();
                 
                 // Mostrar informações do usuário
+                const statusBadge = userStatus?.isPremium 
+                    ? '<span style="color: #fbbf24; font-size: 0.9rem;">💎 Premium</span>'
+                    : `<span style="color: #9ca3af; font-size: 0.8rem;">${userStatus?.remainingToday || 2}/2 hoje</span>`;
+                
                 authButtons.innerHTML = `
                     <div class="user-dropdown">
                         <button class="user-btn" onclick="toggleUserDropdown()">
                             ${user.photoURL ? `<img src="${user.photoURL}" alt="Avatar" class="user-photo">` : '👤'}
-                            ${user.displayName || user.email.split('@')[0]} ▾
+                            <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 2px;">
+                                <span>${user.displayName || user.email.split('@')[0]}</span>
+                                ${statusBadge}
+                            </div>
+                            ▾
                         </button>
                         <div class="dropdown-menu" id="userDropdownMenu">
                             <div class="dropdown-user-info">
@@ -1290,6 +1426,12 @@
                                     <div class="dropdown-email">${user.email}</div>
                                 </div>
                             </div>
+                            <div style="padding: 12px 16px; background: rgba(139, 92, 246, 0.1); border-bottom: 1px solid var(--border-color);">
+                                ${userStatus?.isPremium 
+                                    ? '💎 <strong>Premium Ativo</strong><br><small>Até ' + new Date(userStatus.premiumUntil).toLocaleDateString('pt-BR') + '</small>'
+                                    : `📊 <strong>${userStatus?.remainingToday || 2} análises restantes</strong><br><small>Limite diário: 2 análises grátis</small>`
+                                }
+                            </div>
                             <div class="dropdown-divider"></div>
                             <button class="dropdown-item" onclick="alert('Em breve: Meu Perfil')">
                                 👤 Meu Perfil
@@ -1297,9 +1439,11 @@
                             <button class="dropdown-item" onclick="alert('Em breve: Ganhos/Perdas')">
                                 📊 Ganhos/Perdas
                             </button>
-                            <button class="dropdown-item" onclick="alert('Em breve: Premium')">
-                                💎 Premium
+                            ${!userStatus?.isPremium ? `
+                            <button class="dropdown-item" onclick="alert('Em breve: Upgrade Premium')" style="color: #fbbf24;">
+                                💎 Fazer Upgrade
                             </button>
+                            ` : ''}
                             <div class="dropdown-divider"></div>
                             <button class="dropdown-item logout-item" onclick="logoutUser()">
                                 🚪 Sair
@@ -1309,6 +1453,9 @@
                 `;
             } else {
                 console.log('🚫 Usuário não logado');
+                currentUser = null;
+                userToken = null;
+                userStatus = null;
                 
                 // Mostrar botão de login
                 authButtons.innerHTML = `
