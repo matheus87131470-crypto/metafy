@@ -3087,70 +3087,105 @@ body {
 }
 
 /* ====================================
-   AUTENTICAÇÃO (LOGIN/REGISTRO)
+   AUTENTICAï¿½ï¿½O (LOGIN/REGISTRO)
    ==================================== */
 
 .auth-buttons {
     display: flex;
-    gap: 0.75rem;
+    gap: 10px;
     align-items: center;
 }
 
 .btn-login,
 .btn-register {
-    padding: 0.6rem 1.25rem;
-    border: none;
-    border-radius: 8px;
-    font-size: 0.95rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 38px;
+    padding: 0 16px;
+    border-radius: 10px;
     font-weight: 600;
+    font-size: 14px;
+    text-decoration: none;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
     white-space: nowrap;
+    font-family: inherit;
+    border: none;
+    outline: none;
 }
 
 .btn-login {
     background: transparent;
     color: var(--text-primary);
-    border: 2px solid rgba(99, 102, 241, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.18);
 }
 
 .btn-login:hover {
-    background: rgba(99, 102, 241, 0.1);
-    border-color: var(--primary-color);
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.25);
+    transform: translateY(-1px);
+}
+
+.btn-login:active {
+    transform: translateY(0);
 }
 
 .btn-register {
-    background: var(--gradient-main);
-    color: white;
-    box-shadow: var(--glow-primary);
+    background: linear-gradient(135deg, #6f5bff, #8b5cf6);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    box-shadow: 0 2px 8px rgba(111, 91, 255, 0.3);
 }
 
 .btn-register:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(99, 102, 241, 0.5);
+    filter: brightness(1.1);
+    box-shadow: 0 4px 12px rgba(111, 91, 255, 0.4);
+    transform: translateY(-1px);
+}
+
+.btn-register:active {
+    transform: translateY(0);
 }
 
 .user-menu {
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: 12px;
 }
 
 .user-email {
     color: var(--text-secondary);
-    font-size: 0.95rem;
+    font-size: 14px;
+    font-weight: 500;
 }
 
 .btn-logout {
-    padding: 0.6rem 1.25rem;
-    background: rgba(220, 38, 38, 0.1);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 38px;
+    padding: 0 16px;
+    background: rgba(239, 68, 68, 0.1);
     color: #ef4444;
-    border: 2px solid rgba(220, 38, 38, 0.3);
-    border-radius: 8px;
-    font-size: 0.95rem;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 10px;
+    font-size: 14px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
+    font-family: inherit;
+    outline: none;
+}
+
+.btn-logout:hover {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.5);
+    transform: translateY(-1px);
+}
+
+.btn-logout:active {
+    transform: translateY(0);
 }
 
 .btn-logout:hover {
@@ -3158,7 +3193,7 @@ body {
     border-color: #dc2626;
 }
 
-/* Modal de Autenticação */
+/* Modal de Autenticaï¿½ï¿½o */
 .auth-modal {
     background: var(--dark-card);
     border-radius: 20px;
@@ -3278,21 +3313,51 @@ body {
 /* Responsivo */
 @media (max-width: 768px) {
     .auth-buttons {
-        gap: 0.5rem;
+        gap: 8px;
     }
     
     .btn-login,
     .btn-register {
-        padding: 0.5rem 1rem;
-        font-size: 0.85rem;
+        height: 34px;
+        padding: 0 12px;
+        font-size: 13px;
+    }
+    
+    .btn-logout {
+        height: 34px;
+        padding: 0 12px;
+        font-size: 13px;
+    }
+    
+    .user-email {
+        font-size: 13px;
     }
     
     .auth-modal {
         padding: 2rem;
         max-width: 95%;
     }
+}
+
+/* Mobile extra small - esconder "Entrar", deixar sÃ³ "Criar conta" */
+@media (max-width: 480px) {
+    .btn-login {
+        display: none;
+    }
+    
+    .btn-register {
+        height: 32px;
+        padding: 0 14px;
+        font-size: 13px;
+    }
     
     .user-email {
         display: none;
+    }
+    
+    .btn-logout {
+        height: 32px;
+        padding: 0 12px;
+        font-size: 13px;
     }
 }
