@@ -1838,9 +1838,25 @@ function updateAuthUI() {
   
   if (currentUser) {
     authButtons.innerHTML = `
-      <div class="user-menu">
-        <span class="user-email">👤 ${currentUser.name || currentUser.email}</span>
-        <button class="btn-logout" onclick="logout()">Sair</button>
+      <div class="user-dropdown">
+        <button class="user-btn" onclick="toggleUserDropdown()">
+          👤 ${currentUser.name || currentUser.email.split('@')[0]} ▾
+        </button>
+        <div class="dropdown-menu" id="userDropdownMenu">
+          <button class="dropdown-item" onclick="alert('Em breve: Meu Perfil')">
+            👤 Meu Perfil
+          </button>
+          <button class="dropdown-item" onclick="alert('Em breve: Ganhos/Perdas')">
+            📊 Ganhos/Perdas
+          </button>
+          <button class="dropdown-item" onclick="alert('Em breve: Premium')">
+            💎 Premium
+          </button>
+          <div class="dropdown-divider"></div>
+          <button class="dropdown-item logout-item" onclick="logout()">
+            🚪 Sair
+          </button>
+        </div>
       </div>
     `;
   } else {
@@ -2118,9 +2134,28 @@ function togglePassword(inputId, btn) {
   btn.setAttribute('aria-label', isHidden ? 'Ocultar senha' : 'Mostrar senha');
 }
 
+// Toggle dropdown do usuário
+function toggleUserDropdown() {
+  const dropdown = document.getElementById('userDropdownMenu');
+  if (!dropdown) return;
+  
+  dropdown.classList.toggle('show');
+}
+
+// Fechar dropdown ao clicar fora
+document.addEventListener('click', (e) => {
+  const dropdown = document.getElementById('userDropdownMenu');
+  const userBtn = document.querySelector('.user-btn');
+  
+  if (dropdown && !dropdown.contains(e.target) && e.target !== userBtn) {
+    dropdown.classList.remove('show');
+  }
+});
+
 window.clearSelection = clearSelection;
 window.logout = logout;
 window.togglePassword = togglePassword;
+window.toggleUserDropdown = toggleUserDropdown;
 window.showLoginModal = showLoginModal;
 window.showRegisterModal = showRegisterModal;
 window.closeAuthModal = closeAuthModal;
