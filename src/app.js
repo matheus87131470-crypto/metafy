@@ -143,7 +143,7 @@ const PREMIUM_DURATION_DAYS = 7;
 
 // Inicializar
 document.addEventListener('DOMContentLoaded', async () => {
-  console.log('🚀 Metafy iniciando... BUILD-TEST-001');
+  console.log('🚀 Metafy iniciando...');
   
   // Verificar autenticação primeiro
   await checkAuth();
@@ -1841,14 +1841,12 @@ function updateAuthUI() {
       <div class="user-menu">
         <span class="user-email">👤 ${currentUser.name || currentUser.email}</span>
         <button class="btn-logout" onclick="logout()">Sair</button>
-        <span class="build-marker">BUILD-TEST-001</span>
       </div>
     `;
   } else {
     authButtons.innerHTML = `
       <button class="btn-login" onclick="showLoginModal()">Entrar</button>
       <button class="btn-register" onclick="showRegisterModal()">Criar Conta</button>
-      <span class="build-marker">BUILD-TEST-001</span>
     `;
   }
 }
