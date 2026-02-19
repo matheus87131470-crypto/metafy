@@ -644,18 +644,19 @@
         </div>
     </main>
 
-    <!-- Modal de Pagamento PIX -->
+    <!-- Modal de Pagamento PIX (DEPRECADO - agora usa Mercado Pago Checkout Pro) -->
+    <!-- Este modal não é mais usado, mantido apenas para compatibilidade -->
     <div id="pixPaymentModal" class="modal-overlay" style="display: none;">
         <div class="modal-content pix-modal">
             <button class="modal-close" onclick="closePixModal()">&times;</button>
             
             <div id="pixForm" class="pix-form">
                 <h2 class="modal-title">💎 Assinar Premium</h2>
-                <p class="modal-subtitle">Preencha seus dados para gerar o PIX</p>
+                <p class="modal-subtitle">Redirecionando para Mercado Pago...</p>
                 
                 <div class="pix-amount">
                     <span class="currency">R$</span>
-                    <span class="value">4,50</span>
+                    <span class="value">3,50</span>
                 </div>
                 <p class="pix-description">7 dias de acesso Premium</p>
                 
@@ -813,16 +814,7 @@
             closeUserMenu();
         }
 
-        function logout() {
-            if (confirm('🚪 Deseja realmente sair?')) {
-                // Limpar dados locais
-                localStorage.removeItem('metafy_premium');
-                localStorage.removeItem('metafy_premium_user');
-                
-                alert('✅ Logout realizado com sucesso!');
-                location.reload();
-            }
-        }
+        // Função de logout removida - usando a do app.js
 
         // Fechar dropdown ao clicar fora
         document.addEventListener('click', (e) => {

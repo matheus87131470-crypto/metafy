@@ -35,13 +35,15 @@ app.get('/health', (req, res) => {
 // Rotas de autenticação
 app.use("/api/auth", authRoute);
 
+// Webhook do Mercado Pago (antes das outras rotas)
+app.use("/api/webhooks", paymentsRoute);
+
 // Rotas protegidas/públicas
 app.use("/api/analyze", analyzeRoute);
 app.use("/api/games", gamesRoute);
 app.use("/api/user", userRoute);
 app.use("/api/me", userRoute); // Alias para /api/user
 app.use("/api/payments", paymentsRoute);
-app.post("/api/webhooks/mercadopago", paymentsRoute); // Webhook do MP
 
 // Local data routes
 app.get('/api/matches/today', matchesTodayHandler);
@@ -58,7 +60,8 @@ app.listen(PORT, () => {
   console.log("   POST /api/analyze (com paywall)");
   console.log("   GET  /api/user/:userId");
   console.log("   GET  /api/me?userId=xxx");
-  console.log("   POST /api/payments/create");
+  console.log("   POST /api/payments/checkout");
+  console.log("   POST /api/payments/simulate-approval");
   console.log("   POST /api/webhooks/mercadopago");
   console.log("   GET  /api/matches/today");
 });

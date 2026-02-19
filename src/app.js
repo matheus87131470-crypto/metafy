@@ -138,7 +138,7 @@ let LIVE_GAMES = [];
 let isDemo = true;
 let analysisCount = 0;
 const MAX_FREE_ANALYSIS = 2;
-const PREMIUM_PRICE = 4.50;
+const PREMIUM_PRICE = 3.50;
 const PREMIUM_DURATION_DAYS = 7;
 
 // Inicializar
@@ -147,6 +147,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   
   // Verificar autenticação primeiro
   await checkAuth();
+  
+  // Verificar retorno do Mercado Pago
+  checkPaymentReturn();
   
   // Inicializar userId e buscar status do backend
   getUserId();
@@ -311,44 +314,27 @@ function updateAnalysisCounter() {
 }
 
 function activatePremium() {
-  openPixModal();
+  showPaymentModal();
 }
 
+// Modal PIX antigo removido - agora usa showPaymentModal() que redireciona para Mercado Pago
 function openPixModal() {
-  const modal = document.getElementById('pixPaymentModal');
-  const form = document.getElementById('pixForm');
-  const loading = document.getElementById('pixLoading');
-  const content = document.getElementById('pixContent');
-  const error = document.getElementById('pixError');
-  
-  // Mostrar modal com formulário
-  modal.style.display = 'flex';
-  form.style.display = 'block';
-  loading.style.display = 'none';
-  content.style.display = 'none';
-  error.style.display = 'none';
-  
-  // Limpar inputs
-  document.getElementById('emailInput').value = '';
-  document.getElementById('cpfInput').value = '';
-  document.getElementById('emailError').style.display = 'none';
-  document.getElementById('cpfError').style.display = 'none';
+  // Deprecado - usar showPaymentModal()
+  showPaymentModal();
 }
 
+// Funções de validação (ainda usadas no auto-formatar CPF)
 function validateCPF(cpf) {
-  // Remove tudo que não é número
   const numbers = cpf.replace(/\D/g, '');
   return numbers.length === 11;
 }
 
 function validateEmail(email) {
-  // Validação simples de email
   const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return re.test(email);
 }
 
 function formatCPF(value) {
-  // Remove tudo que não é número
   const numbers = value.replace(/\D/g, '');
   
   // Formata: 000.000.000-00
@@ -361,139 +347,20 @@ function formatCPF(value) {
   return numbers.slice(0, 11);
 }
 
+// Função deprecada - agora usa Mercado Pago Checkout Pro
 async function generatePixPayment() {
-  const emailInput = document.getElementById('emailInput');
-  const cpfInput = document.getElementById('cpfInput');
-  const emailError = document.getElementById('emailError');
-  const cpfError = document.getElementById('cpfError');
-  const emailValue = emailInput.value.trim();
-  const cpfValue = cpfInput.value;
-  
-  let hasError = false;
-  
-  // Validar Email
-  if (!validateEmail(emailValue)) {
-    emailError.style.display = 'block';
-    emailError.textContent = 'Email inválido';
-    emailInput.focus();
-    hasError = true;
-  } else {
-    emailError.style.display = 'none';
-  }
-  
-  // Validar CPF
-  if (!validateCPF(cpfValue)) {
-    cpfError.style.display = 'block';
-    cpfError.textContent = 'CPF deve ter 11 dígitos válidos';
-    if (!hasError) cpfInput.focus();
-    hasError = true;
-  } else {
-    cpfError.style.display = 'none';
-  }
-  
-  if (hasError) return;
-  
-  // Gerar userId baseado no email
-  const userId = getOrCreateUserId(emailValue);
-  
-  // Extrair apenas números do CPF
-  const cpf = cpfValue.replace(/\D/g, '');
-  
-  // Mostrar loading
-  const form = document.getElementById('pixForm');
-  const loading = document.getElementById('pixLoading');
-  const content = document.getElementById('pixContent');
-  const error = document.getElementById('pixError');
-  
-  form.style.display = 'none';
-  loading.style.display = 'block';
-  content.style.display = 'none';
-  error.style.display = 'none';
-  
-  const requestUrl = `${BACKEND_URL}/api/payments/pix`;
-  const requestBody = {
-    userId: userId,
-    email: emailValue,
-    cpf: cpf,
-    amount: PREMIUM_PRICE
-  };
-  
-  console.log('📤 Iniciando requisição PIX:');
-  console.log('URL:', requestUrl);
-  console.log('Body:', JSON.stringify(requestBody, null, 2));
-  
-  try {
-    // Chamar API para criar pagamento PIX
-    const response = await fetch(requestUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(requestBody)
-    });
-    
-    console.log('📥 Resposta recebida:');
-    console.log('Status:', response.status, response.statusText);
-    console.log('URL:', response.url);
-    
-    if (!response.ok) {
-      // Ler texto da resposta para mostrar erro real
-      const errorText = await response.text();
-      console.error('❌ Erro do servidor:', errorText);
-      
-      let errorMessage = `Erro ${response.status}: ${response.statusText}`;
-      
-      // Tentar parsear JSON se possível
-      try {
-        const errorData = JSON.parse(errorText);
-        errorMessage = errorData.error || errorData.message || errorMessage;
-      } catch {
-        // Se não é JSON, usar texto direto (limitado)
-        if (errorText && errorText.length < 200) {
-          errorMessage += ` - ${errorText}`;
-        }
-      }
-      
-      throw new Error(errorMessage);
-    }
-    
-    const data = await response.json();
-    console.log('✅ Resposta parseada:', data);
-    
-    if (data.success && data.qr_code_base64 && data.qr_code) {
-      // Atualizar modal com QR Code
-      document.getElementById('qrCodeImage').src = data.qr_code_base64;
-      document.getElementById('pixCode').value = data.qr_code;
-      
-      // Salvar paymentId para verificação
-      sessionStorage.setItem('currentPaymentId', data.payment_id);
-      console.log('💳 Payment ID salvo:', data.payment_id);
-      
-      // Mostrar conteúdo
-      loading.style.display = 'none';
-      content.style.display = 'block';
-      
-      // Iniciar verificação automática
-      startPaymentCheck();
-    } else {
-      console.error('❌ Resposta inválida:', data);
-      throw new Error(data.error || 'Resposta inválida do servidor');
-    }
-  } catch (err) {
-    console.error('🔴 ERRO AO GERAR PIX:');
-    console.error('Tipo:', err.name);
-    console.error('Mensagem:', err.message);
-    console.error('Stack:', err.stack);
-    
-    loading.style.display = 'none';
-    error.style.display = 'block';
-    document.getElementById('errorMessage').textContent = err.message || 'Erro ao gerar pagamento. Tente novamente.';
-  }
+  console.warn('⚠️ generatePixPayment() deprecado - usando Mercado Pago');
+  closePixModal();
+  showPaymentModal();
 }
 
+// Modal PIX antigo deprecado - agora fecha qualquer modal  
 function closePixModal() {
-  const modal = document.getElementById('pixPaymentModal');
-  modal.style.display = 'none';
+  const oldModal = document.getElementById('pixPaymentModal');
+  if (oldModal) oldModal.style.display = 'none';
+  
+  // Fechar modal novo também
+  closeAnalysisModal();
   
   // Parar verificação
   if (paymentCheckInterval) {
@@ -502,116 +369,99 @@ function closePixModal() {
   }
 }
 
+// Função deprecada - modal antigo não é mais usado
 function resetPixModal() {
-  // Volta para o formulário inicial
-  const form = document.getElementById('pixForm');
-  const loading = document.getElementById('pixLoading');
-  const content = document.getElementById('pixContent');
-  const error = document.getElementById('pixError');
-  
-  form.style.display = 'block';
-  loading.style.display = 'none';
-  content.style.display = 'none';
-  error.style.display = 'none';
-  
-  // Limpar campos
-  document.getElementById('emailInput').value = '';
-  document.getElementById('cpfInput').value = '';
-  document.getElementById('emailError').style.display = 'none';
-  document.getElementById('cpfError').style.display = 'none';
+  console.warn('⚠️ resetPixModal() deprecado');
+  // Não faz nada - modal antigo removido
 }
 
-
+// Função deprecada - modal antigo não é mais usado
 function copyPixCode() {
-  const pixCodeInput = document.getElementById('pixCode');
-  pixCodeInput.select();
-  
-  navigator.clipboard.writeText(pixCodeInput.value).then(() => {
-    const btn = event.target;
-    const originalText = btn.textContent;
-    
-    btn.textContent = '✅ Copiado!';
-    btn.style.background = 'var(--accent-green)';
-    
-    setTimeout(() => {
-      btn.textContent = originalText;
-      btn.style.background = '';
-    }, 2000);
-  }).catch(err => {
-    console.error('Erro ao copiar:', err);
-    alert('❌ Erro ao copiar código');
-  });
+  console.warn('⚠️ copyPixCode() deprecado');
+  return false;
 }
 
+// Função deprecada - agora o webhook do Mercado Pago ativa automaticamente
+// Função deprecada - agora o webhook do Mercado Pago ativa automaticamente
 function startPaymentCheck() {
-  // Pegar userId atual
-  const userId = getCurrentUserId();
-  
-  if (!userId) {
-    console.error('❌ userId não encontrado');
+  console.warn('⚠️ startPaymentCheck() deprecado - webhook do MP ativa premium automaticamente');
+  return null;
+}
+
+// Confirmar pagamento e redirecionar para Mercado Pago
+async function confirmPayment() {
+  if (!currentUser) {
+    alert('⚠️ Você precisa estar logado para assinar Premium');
+    showLoginModal();
     return;
   }
-  
-  // Verificar a cada 5 segundos
-  paymentCheckInterval = setInterval(async () => {
-    try {
-      const response = await fetch(`${BACKEND_URL}/api/user/${userId}`);
-      const data = await response.json();
-      
-      if (data.success && data.isPremium) {
-        // Premium ativado!
-        clearInterval(paymentCheckInterval);
-        paymentCheckInterval = null;
-        
-        // Salvar no localStorage
-        const now = new Date();
-        const premiumEnd = new Date(data.user.premiumEnd || now.getTime() + 7 * 24 * 60 * 60 * 1000);
-        
-        const premiumData = {
-          premium_start: data.user.premiumSince || now.toISOString(),
-          premium_end: premiumEnd.toISOString(),
-          price_paid: PREMIUM_PRICE,
-          payment_date: now.toISOString(),
-          user_id: userId
-        };
-        
-        localStorage.setItem('metafy_premium', JSON.stringify(premiumData));
-        localStorage.setItem('metafy_premium_user', 'true');
-        
-        // Mostrar tela de sucesso
-        document.getElementById('pixContent').style.display = 'none';
-        document.getElementById('pixSuccess').style.display = 'block';
-        
-        // Atualizar UI
-        updatePremiumUI();
-      }
-    } catch (err) {
-      console.error('Erro ao verificar premium:', err);
+
+  try {
+    // Mostrar loading
+    const btn = document.querySelector('.btn-confirm-payment');
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '⏳ Criando checkout...';
     }
-  }, 5000); // 5 segundos
+
+    // Criar checkout no backend
+    const response = await fetch(`${BACKEND_URL}/api/payments/checkout`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken}`
+      },
+      body: JSON.stringify({ userId: currentUser.id })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      throw new Error(data.error?.message || 'Erro ao criar checkout');
+    }
+
+    // Redirecionar para Mercado Pago
+    console.log('✅ Redirecionando para Mercado Pago...');
+    window.location.href = data.init_point;
+
+  } catch (error) {
+    console.error('❌ Erro ao criar checkout:', error);
+    alert(`❌ Erro ao processar pagamento: ${error.message}`);
+    
+    // Restaurar botão
+    const btn = document.querySelector('.btn-confirm-payment');
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '💳 Pagar com Mercado Pago - R$ 3,50';
+    }
+  }
 }
 
-// Confirmar pagamento e ativar Premium
-function confirmPayment() {
-  const now = new Date();
-  const premiumEnd = new Date();
-  premiumEnd.setDate(premiumEnd.getDate() + PREMIUM_DURATION_DAYS);
+// Verificar retorno do pagamento do Mercado Pago
+function checkPaymentReturn() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const paymentStatus = urlParams.get('payment');
   
-  const premiumData = {
-    premium_start: now.toISOString(),
-    premium_end: premiumEnd.toISOString(),
-    price_paid: PREMIUM_PRICE,
-    payment_date: now.toISOString()
-  };
+  if (!paymentStatus) return;
   
-  localStorage.setItem('metafy_premium', JSON.stringify(premiumData));
+  // Limpar URL sem recarregar página
+  const cleanUrl = window.location.pathname;
+  window.history.replaceState({}, document.title, cleanUrl);
   
-  closeAnalysisModal();
-  updateAnalysisCounter();
-  updatePremiumUI();
-  
-  // Mostrar confirmação
-  showPremiumConfirmation(premiumData);
+  if (paymentStatus === 'success') {
+    // Aguardar alguns segundos e recarregar status do usuário
+    setTimeout(async () => {
+      await fetchUserStatus();
+      updateAnalysisCounter();
+      updatePremiumUI();
+      
+      alert('🎉 Pagamento aprovado! Seu Premium foi ativado com sucesso!');
+    }, 2000);
+  } else if (paymentStatus === 'pending') {
+    alert('⏳ Seu pagamento está sendo processado. O Premium será ativado automaticamente quando aprovado.');
+  } else if (paymentStatus === 'failure') {
+    alert('❌ O pagamento não foi concluído. Tente novamente ou entre em contato com o suporte.');
+  }
 }
 
 // Atualizar UI baseado no status Premium
@@ -1542,8 +1392,8 @@ function showPaymentModal() {
       <button class="btn-close" onclick="closeAnalysisModal()">✕</button>
       
       <div class="payment-header">
-        <div class="payment-icon">💳</div>
-        <h2>Confirmar Pagamento</h2>
+        <div class="payment-icon">�</div>
+        <h2>Assinar Premium</h2>
       </div>
       
       <div class="payment-summary">
@@ -1557,18 +1407,19 @@ function showPaymentModal() {
         </div>
         <div class="summary-item total">
           <span>Total</span>
-          <span class="price">R$ 4,50</span>
+          <span class="price">R$ 3,50</span>
         </div>
       </div>
       
       <div class="payment-info">
-        <p>✅ Pagamento único (sem renovação automática)</p>
-        <p>✅ Acesso liberado imediatamente</p>
+        <p>✅ Pagamento via PIX ou Cartão</p>
+        <p>✅ Processado pelo Mercado Pago</p>
+        <p>✅ Acesso liberado automaticamente</p>
         <p>✅ Válido por 7 dias corridos</p>
       </div>
       
       <button class="btn-confirm-payment" onclick="confirmPayment()">
-        ✅ Confirmar Pagamento - R$ 4,50
+        💳 Pagar com Mercado Pago - R$ 3,50
       </button>
       
       <button class="btn-cancel" onclick="closeAnalysisModal()">
@@ -1922,104 +1773,22 @@ function closePaywallModal() {
   if (modal) modal.remove();
 }
 
+// Função deprecada - agora usa confirmPayment() que redireciona para Mercado Pago
 async function initiatePayment() {
-  try {
-    const userId = getUserId();
-    
-    // Mostrar loading
-    const modal = document.querySelector('.premium-modal');
-    if (modal) {
-      modal.innerHTML = `
-        <div class="payment-loading">
-          <div class="loading-spinner"></div>
-          <p>Gerando pagamento...</p>
-        </div>
-      `;
-    }
-    
-    // Criar pagamento no backend
-    const response = await fetch(`${BACKEND_URL}/api/payments/create`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ userId })
-    });
-    
-    const data = await response.json();
-    
-    if (!data.success) {
-      throw new Error(data.error || 'Erro ao criar pagamento');
-    }
-    
-    // Exibir QR Code ou redirecionar
-    showPaymentDetails(data.payment);
-    
-  } catch (error) {
-    console.error('❌ Erro ao iniciar pagamento:', error);
-    alert('Erro ao criar pagamento. Tente novamente.');
-    closePaywallModal();
-  }
+  console.warn('⚠️ initiatePayment() deprecado - usando confirmPayment()');
+  return confirmPayment();
 }
 
+// Função deprecada - Mercado Pago gerencia a interface de pagamento
 function showPaymentDetails(payment) {
-  const modal = document.querySelector('.premium-modal');
-  if (!modal) return;
-  
-  modal.innerHTML = `
-    <button class="btn-close" onclick="closePaywallModal()">✕</button>
-    <div class="payment-header">
-      <div class="payment-icon">💳</div>
-      <h2>Pagamento via Mercado Pago</h2>
-    </div>
-    
-    <div class="payment-info">
-      <p><strong>Valor:</strong> R$ ${payment.amount.toFixed(2)}</p>
-      <p><strong>Status:</strong> Aguardando pagamento</p>
-    </div>
-    
-    <div class="payment-actions">
-      <a href="${payment.checkoutUrl}" target="_blank" class="btn-premium-cta">
-        🔗 Abrir Mercado Pago
-      </a>
-      
-      <button class="btn-cancel" onclick="closePaywallModal()">
-        Cancelar
-      </button>
-    </div>
-    
-    <p class="payment-note">Após o pagamento, seu acesso será liberado automaticamente.</p>
-  `;
-  
-  // Iniciar verificação de pagamento
-  startPaymentVerification();
+  console.warn('⚠️ showPaymentDetails() deprecado');
+  return null;
 }
 
+// Função deprecada - webhook do MP ativa premium automaticamente
 function startPaymentVerification() {
-  // Verificar a cada 5 segundos se o pagamento foi aprovado
-  const checkInterval = setInterval(async () => {
-    try {
-      const status = await fetchUserStatus();
-      
-      if (status && status.isPremium) {
-        clearInterval(checkInterval);
-        closePaywallModal();
-        
-        // Mostrar confirmação
-        alert('✅ Pagamento confirmado! Premium ativado por 7 dias.');
-        
-        // Recarregar página para atualizar UI
-        window.location.reload();
-      }
-    } catch (error) {
-      console.error('Erro ao verificar pagamento:', error);
-    }
-  }, 5000);
-  
-  // Parar verificação após 10 minutos
-  setTimeout(() => {
-    clearInterval(checkInterval);
-  }, 600000);
+  console.warn('⚠️ startPaymentVerification() deprecado');
+  return null;
 }
 
 // =========================================
@@ -2070,7 +1839,7 @@ function updateAuthUI() {
   if (currentUser) {
     authButtons.innerHTML = `
       <div class="user-menu">
-        <span class="user-email">👤 ${currentUser.email}</span>
+        <span class="user-email">👤 ${currentUser.name || currentUser.email}</span>
         <button class="btn-logout" onclick="logout()">Sair</button>
       </div>
     `;
@@ -2276,6 +2045,10 @@ async function handleRegister(event) {
 
 // Fazer logout
 async function logout() {
+  if (!confirm('🚪 Deseja realmente sair?')) {
+    return;
+  }
+  
   try {
     if (authToken) {
       await fetch(`${BACKEND_URL}/api/auth/logout`, {
@@ -2283,23 +2056,31 @@ async function logout() {
         headers: {
           'Authorization': `Bearer ${authToken}`
         }
-      });
+      }).catch(err => console.log('Erro ao notificar backend:', err));
     }
     
+    // Limpar todas as variáveis
     currentUser = null;
     authToken = null;
-    localStorage.removeItem('metafy_token');
-    localStorage.removeItem('metafy_user_id'); // Limpar userId antigo também
     
-    updateAuthUI();
+    // Limpar todo localStorage relacionado ao Metafy
+    localStorage.removeItem('metafy_token');
+    localStorage.removeItem('metafy_user_id');
+    localStorage.removeItem('metafy_premium');
+    localStorage.removeItem('metafy_premium_user');
     
     alert('✅ Logout realizado com sucesso!');
     
-    // Recarregar página para limpar cache
+    // Recarregar página para resetar estado
     window.location.reload();
     
   } catch (error) {
     console.error('Erro ao fazer logout:', error);
+    // Mesmo com erro, limpar dados locais
+    currentUser = null;
+    authToken = null;
+    localStorage.clear();
+    window.location.reload();
   }
 }
 
@@ -2317,6 +2098,10 @@ window.showPaymentModal = showPaymentModal;
 window.toggleGameSelection = toggleGameSelection;
 window.analyzeSelectedGames = analyzeSelectedGames;
 window.clearSelection = clearSelection;
+window.logout = logout;
+window.showLoginModal = showLoginModal;
+window.showRegisterModal = showRegisterModal;
+window.closeAuthModal = closeAuthModal;
 window.closePixModal = closePixModal;
 window.resetPixModal = resetPixModal;
 window.copyPixCode = copyPixCode;
