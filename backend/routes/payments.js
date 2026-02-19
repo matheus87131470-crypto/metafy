@@ -4,7 +4,8 @@
  */
 
 import express from 'express';
-import { MercadoPagoConfig, Preference, Payment } from 'mercadopago';
+import mercadopagoPkg from 'mercadopago';
+const { MercadoPagoConfig, Preference, Payment } = mercadopagoPkg;
 import { setPremium, getUser } from '../../lib/userStore.js';
 
 const router = express.Router();
