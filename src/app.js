@@ -1873,7 +1873,12 @@ function showLoginModal() {
         
         <div class="form-group">
           <label>Senha</label>
-          <input type="password" id="loginPassword" required autocomplete="current-password" />
+          <div class="password-wrap">
+            <input type="password" id="loginPassword" required autocomplete="current-password" placeholder="Sua senha" />
+            <button type="button" class="toggle-pass" aria-label="Mostrar senha" onclick="togglePassword('loginPassword', this)">
+              👁️
+            </button>
+          </div>
         </div>
         
         <div id="loginError" class="auth-error"></div>
@@ -1918,7 +1923,12 @@ function showRegisterModal() {
         
         <div class="form-group">
           <label>Senha (mínimo 6 caracteres)</label>
-          <input type="password" id="registerPassword" required autocomplete="new-password" minlength="6" />
+          <div class="password-wrap">
+            <input type="password" id="registerPassword" required autocomplete="new-password" minlength="6" placeholder="Mínimo 6 caracteres" />
+            <button type="button" class="toggle-pass" aria-label="Mostrar senha" onclick="togglePassword('registerPassword', this)">
+              👁️
+            </button>
+          </div>
         </div>
         
         <div id="registerError" class="auth-error"></div>
@@ -2097,8 +2107,20 @@ window.getPremiumData = getPremiumData;
 window.showPaymentModal = showPaymentModal;
 window.toggleGameSelection = toggleGameSelection;
 window.analyzeSelectedGames = analyzeSelectedGames;
+// Toggle mostrar/ocultar senha
+function togglePassword(inputId, btn) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+
+  const isHidden = input.type === 'password';
+  input.type = isHidden ? 'text' : 'password';
+  btn.textContent = isHidden ? '🙈' : '👁️';
+  btn.setAttribute('aria-label', isHidden ? 'Ocultar senha' : 'Mostrar senha');
+}
+
 window.clearSelection = clearSelection;
 window.logout = logout;
+window.togglePassword = togglePassword;
 window.showLoginModal = showLoginModal;
 window.showRegisterModal = showRegisterModal;
 window.closeAuthModal = closeAuthModal;
