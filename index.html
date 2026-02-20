@@ -1331,7 +1331,8 @@
                 
                 if (!data.success) {
                     if (data.needPremium) {
-                        alert('⚠️ Você atingiu o limite de 2 análises gratuitas!\n\n💎 Assine Premium para análises ilimitadas.');
+                        const message = data.message || 'Você atingiu o limite de 2 análises gratuitas por dia!';
+                        alert(`⚠️ ${message}\n\n💎 Faça upgrade para Premium e tenha análises ilimitadas!\n\n📊 Usadas hoje: ${data.usedToday || 2}/2`);
                         // TODO: Mostrar modal de upgrade premium
                         return false;
                     }
@@ -1342,7 +1343,7 @@
                 userStatus = data;
                 updateStatusUI(data);
                 
-                console.log(`✅ Análise validada: ${data.remainingToday} restantes`);
+                console.log(`✅ Análise autorizada: ${data.usedToday}/${data.isPremium ? '∞' : '2'} usadas (${data.remainingToday} restantes)`);
                 return true;
                 
             } catch (error) {

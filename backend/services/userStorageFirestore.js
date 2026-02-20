@@ -1,34 +1,30 @@
 /**
- * services/userStorage.js
- * Sistema de storage para dados de usuários usando lowdb
+ * services/userStorageFirestore.js
+ * Sistema de storage para dados de usuários usando Firestore
  * Timezone: America/Sao_Paulo
+ * 
+ * TODO: Implementar quando migrar para produção escalável
+ * Interface mantida 100% compatível com userStorage.js
  */
 
-import { Low } from 'lowdb';
-import { JSONFile } from 'lowdb/node';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
+import admin from '../middleware/firebase-auth.js';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const dbPath = join(__dirname, '../data/users.json');
+// Inicializar Firestore
+let db;
+try {
+  db = admin.firestore();
+  console.log('✅ Firestore inicializado');
+} catch (error) {
+  console.warn('⚠️ Firestore não disponível:', error.message);
+}
 
-// Estrutura padrão do banco
-const defaultData = { users: {} };
-
-// Inicializar banco
-const adapter = new JSONFile(dbPath);
-const db = new Low(adapter, defaultData);
-
-// Ler dados iniciais
-await db.read();
-db.data ||= defaultData;
+const USERS_COLLECTION = 'users';
 
 /**
  * Obter data atual no timezone de São Paulo (YYYY-MM-DD)
  */
 function getTodayBrazil() {
   const now = new Date();
-  // Converter para timezone America/Sao_Paulo
   const brazilTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
   const year = brazilTime.getFullYear();
   const month = String(brazilTime.getMonth() + 1).padStart(2, '0');
@@ -39,11 +35,20 @@ function getTodayBrazil() {
 /**
  * Obter dados do usuário por UID
  * @param {string} uid - Firebase UID
- * @returns {object} Dados do usuário
+ * @returns {Promise<object>} Dados do usuário
  */
-export function getUserData(uid) {
-  db.data.users[uid] ||= createDefaultUser(uid);
-  return db.data.users[uid];
+export async function getUserData(uid) {
+  const docRef = db.collection(USERS_COLLECTION).doc(uid);
+  const doc = await docRef.get();
+  
+  if (!doc.exists) {
+    // Criar usuário com valores padrão
+    const userData = createDefaultUser(uid);
+    await docRef.set(userData);
+    return userData;
+  }
+  
+  return doc.data();
 }
 
 /**
@@ -66,13 +71,16 @@ function createDefaultUser(uid) {
 /**
  * Obter status do usuário (análises disponíveis, premium, etc)
  */
-export function getUserStatus(uid) {
-  const user = getUserData(uid);
+export async function getUserStatus(uid) {
+  const user = await getUserData(uid);
   const todayBrazil = getTodayBrazil();
   
   // Resetar contador diário se mudou de dia (timezone Brasil)
   if (user.lastAnalysisDate && user.lastAnalysisDate !== todayBrazil) {
     user.analysesUsedToday = 0;
+    await db.collection(USERS_COLLECTION).doc(uid).update({
+      analysesUsedToday: 0
+    });
     console.log(`🔄 Resetado contador diário para ${uid}: ${user.lastAnalysisDate} → ${todayBrazil}`);
   }
   
@@ -82,6 +90,9 @@ export function getUserStatus(uid) {
     const premiumDate = new Date(user.premiumUntil);
     if (now > premiumDate) {
       user.isPremium = false;
+      await db.collection(USERS_COLLECTION).doc(uid).update({
+        isPremium: false
+      });
       console.log(`⏰ Premium expirado para usuário ${uid}`);
     }
   }
@@ -105,11 +116,10 @@ export function getUserStatus(uid) {
 
 /**
  * Incrementar uso de análise
- * @returns {object} Status atualizado
+ * @returns {Promise<object>} Status atualizado
  */
 export async function incrementAnalysisUsage(uid) {
-  const user = getUserData(uid);
-  const status = getUserStatus(uid);
+  const status = await getUserStatus(uid);
   
   // Verificar se pode analisar
   if (!status.canAnalyze) {
@@ -121,68 +131,77 @@ export async function incrementAnalysisUsage(uid) {
   const todayBrazil = getTodayBrazil();
   const now = new Date();
   
-  // Atualizar contadores
-  user.analysesUsedToday += 1;
-  user.analysesUsedTotal += 1;
-  user.lastAnalysisDate = todayBrazil; // Armazenar data Brasil (YYYY-MM-DD)
-  user.updatedAt = now.toISOString();
+  // Atualizar contadores usando transação para evitar race conditions
+  const docRef = db.collection(USERS_COLLECTION).doc(uid);
   
-  // Salvar no banco
-  await db.write();
+  await db.runTransaction(async (transaction) => {
+    const doc = await transaction.get(docRef);
+    const user = doc.data();
+    
+    transaction.update(docRef, {
+      analysesUsedToday: user.analysesUsedToday + 1,
+      analysesUsedTotal: user.analysesUsedTotal + 1,
+      lastAnalysisDate: todayBrazil,
+      updatedAt: now.toISOString()
+    });
+  });
   
-  const remaining = status.isPremium ? '∞' : `${2 - user.analysesUsedToday}`;
-  console.log(`📊 Análise registrada para ${uid}: ${user.analysesUsedToday}/2 hoje (${remaining} restantes)`);
+  const remaining = status.isPremium ? '∞' : `${2 - (status.usedToday + 1)}`;
+  console.log(`📊 Análise registrada para ${uid}: ${status.usedToday + 1}/2 hoje (${remaining} restantes)`);
   
-  return getUserStatus(uid);
+  return await getUserStatus(uid);
 }
 
 /**
  * Atualizar status premium do usuário
  */
 export async function updatePremiumStatus(uid, isPremium, premiumUntil = null) {
-  const user = getUserData(uid);
+  const now = new Date().toISOString();
   
-  user.isPremium = isPremium;
-  user.premiumUntil = premiumUntil;
-  user.updatedAt = new Date().toISOString();
-  
-  await db.write();
+  await db.collection(USERS_COLLECTION).doc(uid).update({
+    isPremium,
+    premiumUntil,
+    updatedAt: now
+  });
   
   console.log(`💎 Premium atualizado para ${uid}: ${isPremium ? 'ATIVO até ' + premiumUntil : 'INATIVO'}`);
   
-  return getUserStatus(uid);
+  return await getUserStatus(uid);
 }
 
 /**
  * Resetar contadores diários (pode ser usado em cronjob)
  */
 export async function resetDailyCounters() {
-  const users = db.data.users;
+  const usersSnapshot = await db.collection(USERS_COLLECTION)
+    .where('analysesUsedToday', '>', 0)
+    .get();
+  
+  const batch = db.batch();
   let resetCount = 0;
   
-  for (const uid in users) {
-    if (users[uid].analysesUsedToday > 0) {
-      users[uid].analysesUsedToday = 0;
-      resetCount++;
-    }
-  }
+  usersSnapshot.docs.forEach(doc => {
+    batch.update(doc.ref, { analysesUsedToday: 0 });
+    resetCount++;
+  });
   
-  await db.write();
+  await batch.commit();
   console.log(`🔄 Resetados ${resetCount} contadores diários`);
 }
 
 /**
  * Obter todas as estatísticas
  */
-export function getStats() {
-  const users = Object.values(db.data.users);
+export async function getStats() {
+  const usersSnapshot = await db.collection(USERS_COLLECTION).get();
+  const users = usersSnapshot.docs.map(doc => doc.data());
   
   return {
     totalUsers: users.length,
     premiumUsers: users.filter(u => u.isPremium).length,
     freeUsers: users.filter(u => !u.isPremium).length,
-    totalAnalyses: users.reduce((sum, u) => sum + u.analysesUsedTotal, 0),
-    analyseesToday: users.reduce((sum, u) => sum + u.analysesUsedToday, 0)
+    totalAnalyses: users.reduce((sum, u) => sum + (u.analysesUsedTotal || 0), 0),
+    analyseesToday: users.reduce((sum, u) => sum + (u.analysesUsedToday || 0), 0)
   };
 }
 

@@ -5,7 +5,7 @@
 
 import express from 'express';
 import { verifyFirebaseToken } from '../middleware/firebase-auth.js';
-import { getUserStatus, incrementAnalysisUsage, updatePremiumStatus, getStats } from '../services/userStorage.js';
+import { getUserStatus, incrementAnalysisUsage, updatePremiumStatus, getStats } from '../services/userStorageFactory.js';
 
 const router = express.Router();
 
@@ -40,6 +40,7 @@ router.get('/status', verifyFirebaseToken, async (req, res) => {
 /**
  * POST /api/user/analysis/use
  * Registra uso de uma análise e valida se usuário pode usar
+ * Retorna 403 se limite diário (2 análises/dia) for atingido
  */
 router.post('/analysis/use', verifyFirebaseToken, async (req, res) => {
   try {
@@ -51,9 +52,11 @@ router.post('/analysis/use', verifyFirebaseToken, async (req, res) => {
     if (!currentStatus.canAnalyze) {
       return res.status(403).json({
         success: false,
-        error: 'Limite de análises gratuitas atingido',
+        error: 'Limite de 2 análises gratuitas por dia atingido',
+        message: 'Você já usou suas 2 análises gratuitas de hoje. Faça upgrade para Premium e tenha análises ilimitadas!',
         needPremium: true,
         isPremium: currentStatus.isPremium,
+        usedToday: currentStatus.usedToday,
         remainingToday: currentStatus.remainingToday
       });
     }
@@ -63,24 +66,26 @@ router.post('/analysis/use', verifyFirebaseToken, async (req, res) => {
     
     res.json({
       success: true,
-      message: 'Análise registrada',
+      message: 'Análise autorizada',
       ...newStatus
     });
     
   } catch (error) {
     console.error('❌ Erro ao registrar análise:', error);
     
-    if (error.message.includes('Limite')) {
+    if (error.code === 'LIMIT_EXCEEDED') {
       return res.status(403).json({
         success: false,
         error: error.message,
+        message: 'Você atingiu o limite de análises gratuitas. Faça upgrade para Premium!',
         needPremium: true
       });
     }
     
     res.status(500).json({
       success: false,
-      error: 'Erro ao registrar análise'
+      error: 'Erro ao registrar análise',
+      message: error.message
     });
   }
 });
