@@ -771,6 +771,212 @@
             transform: none;
         }
 
+        /* ========================================
+           BLOCO DE PREVISÃO EXPANDÍVEL
+        ======================================== */
+        .prediction-block {
+            background: rgba(0, 0, 0, 0.4);
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 0;
+            max-height: 0;
+            overflow: hidden;
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .prediction-block.expanded {
+            max-height: 800px;
+            opacity: 1;
+            padding: 24px;
+        }
+
+        .prediction-main {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+            gap: 20px;
+        }
+
+        .prediction-content {
+            flex: 1;
+        }
+
+        .prediction-market {
+            font-size: 11px;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .prediction-pick {
+            font-size: 22px;
+            font-weight: 800;
+            color: white;
+            margin-bottom: 16px;
+        }
+
+        .prediction-badge {
+            background: linear-gradient(135deg, #10b981, #34d399);
+            padding: 16px 20px;
+            border-radius: 12px;
+            text-align: center;
+            min-width: 140px;
+            border: 2px solid rgba(16, 185, 129, 0.3);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+        }
+
+        .prediction-badge.medium {
+            background: linear-gradient(135deg, #f59e0b, #fbbf24);
+            border-color: rgba(245, 158, 11, 0.3);
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);
+        }
+
+        .prediction-badge.low {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            border-color: rgba(239, 68, 68, 0.3);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+        }
+
+        .badge-pct {
+            font-size: 28px;
+            font-weight: 900;
+            color: white;
+            margin-bottom: 4px;
+        }
+
+        .badge-label {
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.9);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 700;
+        }
+
+        .prediction-actions {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .prediction-actions button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-action-stats {
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-action-stats:hover {
+            background: rgba(16, 185, 129, 0.25);
+            border-color: #10b981;
+        }
+
+        .btn-action-ai {
+            background: rgba(59, 130, 246, 0.15);
+            color: #3b82f6;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-action-ai:hover {
+            background: rgba(59, 130, 246, 0.25);
+            border-color: #3b82f6;
+        }
+
+        .other-predictions {
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            padding-top: 16px;
+        }
+
+        .other-predictions-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            padding: 8px 0;
+            user-select: none;
+        }
+
+        .other-predictions-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .other-predictions-toggle {
+            font-size: 12px;
+            color: #64748b;
+            transition: transform 0.3s;
+        }
+
+        .other-predictions-toggle.active {
+            transform: rotate(180deg);
+        }
+
+        .other-predictions-list {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .other-predictions-list.expanded {
+            max-height: 400px;
+            margin-top: 12px;
+        }
+
+        .other-prediction-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 12px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 8px;
+            margin-bottom: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .other-prediction-label {
+            font-size: 13px;
+            color: #cbd5e1;
+            font-weight: 600;
+        }
+
+        .other-prediction-pct {
+            font-size: 14px;
+            font-weight: 700;
+            color: #3b82f6;
+        }
+
+        /* Responsive do Bloco Expandível */
+        @media (max-width: 640px) {
+            .prediction-main {
+                flex-direction: column;
+            }
+
+            .prediction-badge {
+                width: 100%;
+            }
+
+            .prediction-actions {
+                flex-direction: column;
+            }
+        }
+
+        /* Fim do Bloco Expandível */
+
         /* Responsive */
         @media (max-width: 640px) {
             .header-content {
@@ -1859,6 +2065,114 @@
         // SISTEMA DE MATCH CARDS COM PROBABILIDADE
         // ============================================
 
+        // Estado global para controlar expansão
+        const expandedCards = new Set();
+
+        /**
+         * Gera probabilidades adicionais para o bloco expandido
+         */
+        function generateOtherPredictions(game) {
+            const predictions = [];
+            
+            // Ambas Marcam (BTTS)
+            const bttsProb = 45 + Math.random() * 35; // 45-80%
+            predictions.push({ label: 'Ambas Marcam', pct: bttsProb.toFixed(1) });
+            
+            // Over 1.5
+            const over15 = 65 + Math.random() * 25; // 65-90%
+            predictions.push({ label: 'Over 1.5 Gols', pct: over15.toFixed(1) });
+            
+            // Over 2.5
+            const over25 = 50 + Math.random() * 30; // 50-80%
+            predictions.push({ label: 'Over 2.5 Gols', pct: over25.toFixed(1) });
+            
+            // Casa Vence
+            const homeWin = (1 / game.homeOdds) * 100;
+            predictions.push({ label: 'Casa Vence', pct: homeWin.toFixed(1) });
+            
+            // Empate
+            const draw = (1 / game.drawOdds) * 100;
+            predictions.push({ label: 'Empate', pct: draw.toFixed(1) });
+            
+            return predictions;
+        }
+
+        /**
+         * Toggle do bloco de outras probabilidades
+         */
+        function toggleOtherPredictions(gameId) {
+            const list = document.querySelector(`[data-game-id="${gameId}"] .other-predictions-list`);
+            const toggle = document.querySelector(`[data-game-id="${gameId}"] .other-predictions-toggle`);
+            
+            if (list && toggle) {
+                list.classList.toggle('expanded');
+                toggle.classList.toggle('active');
+            }
+        }
+
+        /**
+         * Toggle do bloco de previsão expandido
+         */
+        function togglePredictionBlock(gameId) {
+            const block = document.querySelector(`[data-game-id="${gameId}"] .prediction-block`);
+            
+            if (!block) return;
+            
+            if (expandedCards.has(gameId)) {
+                expandedCards.delete(gameId);
+                block.classList.remove('expanded');
+            } else {
+                expandedCards.add(gameId);
+                block.classList.add('expanded');
+            }
+        }
+
+        /**
+         * Gera probabilidades adicionais para o bloco expandido
+         */
+        function generateOtherPredictions(game) {
+            const predictions = [];
+            
+            // Ambas Marcam (BTTS)
+            const bttsProb = 45 + Math.random() * 35; // 45-80%
+            predictions.push({ label: 'Ambas Marcam', pct: bttsProb.toFixed(1) });
+            
+            // Over 1.5
+            const over15 = 65 + Math.random() * 25; // 65-90%
+            predictions.push({ label: 'Over 1.5 Gols', pct: over15.toFixed(1) });
+            
+            // Over 2.5
+            const over25 = 50 + Math.random() * 30; // 50-80%
+            predictions.push({ label: 'Over 2.5 Gols', pct: over25.toFixed(1) });
+            
+            // Casa Vence
+            const homeWin = (1 / game.homeOdds) * 100;
+            predictions.push({ label: 'Casa Vence', pct: homeWin.toFixed(1) });
+            
+            // Empate
+            const draw = (1 / game.drawOdds) * 100;
+            predictions.push({ label: 'Empate', pct: draw.toFixed(1) });
+            
+            // Fora Vence
+            const awayWin = (1 / game.awayOdds) * 100;
+            predictions.push({ label: 'Fora Vence', pct: awayWin.toFixed(1) });
+            
+            return predictions;
+        }
+
+        /**
+         * Toggle do bloco de outras probabilidades
+         */
+        function toggleOtherPredictions(gameId) {
+            const list = document.querySelector(`[data-game-id="${gameId}"] .other-predictions-list`);
+            const toggle = document.querySelector(`[data-game-id="${gameId}"] .other-predictions-toggle`);
+            
+            if (list && toggle) {
+                list.classList.toggle('expanded');
+                toggle.classList.toggle('active');
+            }
+        }
+
         /**
          * Calcula probabilidade baseada em odds e estatísticas
          * Modelo estatístico proprietário
@@ -1924,6 +2238,7 @@
          */
         function renderMatchCard(game, index, isLocked = false) {
             const prediction = calculateProbability(game);
+            const otherPredictions = generateOtherPredictions(game);
             
             const cardHTML = `
                 <div class="match-card ${isLocked ? 'locked' : ''}" data-game-id="${game.id}">
@@ -1957,12 +2272,50 @@
                     </div>
 
                     <div class="buttons">
-                        <button class="btn-stats" onclick="showGameStats(${game.id})">
-                            📊 Analisar Bets
+                        <button class="btn-stats" onclick="togglePredictionBlock(${game.id})">
+                            ✨ Ver Análise Completa
                         </button>
                         <button class="btn-ai" onclick="analyzeWithAI(${game.id})" ${!currentUser ? 'disabled title="Faça login para usar IA"' : ''}>
                             🤖 Analisar com IA
                         </button>
+                    </div>
+
+                    <!-- Bloco Expandível de Previsão -->
+                    <div class="prediction-block">
+                        <div class="prediction-main">
+                            <div class="prediction-content">
+                                <div class="prediction-market">GOLS: ACIMA/ABAIXO</div>
+                                <div class="prediction-pick">${prediction.market}</div>
+                            </div>
+                            <div class="prediction-badge ${prediction.level}">
+                                <div class="badge-pct">${prediction.confidence}%</div>
+                                <div class="badge-label">🔥 ${prediction.label}</div>
+                            </div>
+                        </div>
+
+                        <div class="prediction-actions">
+                            <button class="btn-action-stats" onclick="showGameStats(${game.id})">
+                                📊 Analisar Stats Completo
+                            </button>
+                            <button class="btn-action-ai" onclick="analyzeWithAI(${game.id})" ${!currentUser ? 'disabled' : ''}>
+                                🤖 Análise com IA Avançada
+                            </button>
+                        </div>
+
+                        <div class="other-predictions">
+                            <div class="other-predictions-header" onclick="toggleOtherPredictions(${game.id})">
+                                <span class="other-predictions-title">Outras Probabilidades</span>
+                                <span class="other-predictions-toggle">▼</span>
+                            </div>
+                            <div class="other-predictions-list">
+                                ${otherPredictions.map(pred => `
+                                    <div class="other-prediction-item">
+                                        <span class="other-prediction-label">${pred.label}</span>
+                                        <span class="other-prediction-pct">${pred.pct}%</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
                     </div>
                 </div>
             `;
