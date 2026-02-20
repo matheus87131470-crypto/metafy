@@ -52,12 +52,14 @@ router.post('/analysis/use', verifyFirebaseToken, async (req, res) => {
     if (!currentStatus.canAnalyze) {
       return res.status(403).json({
         success: false,
+        code: 'DAILY_LIMIT',
         error: 'Limite de 2 análises gratuitas por dia atingido',
         message: 'Você já usou suas 2 análises gratuitas de hoje. Faça upgrade para Premium e tenha análises ilimitadas!',
         needPremium: true,
         isPremium: currentStatus.isPremium,
         usedToday: currentStatus.usedToday,
-        remainingToday: currentStatus.remainingToday
+        remainingToday: currentStatus.remainingToday,
+        resetAt: new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' })).setHours(24, 0, 0, 0)
       });
     }
     
@@ -73,12 +75,16 @@ router.post('/analysis/use', verifyFirebaseToken, async (req, res) => {
   } catch (error) {
     console.error('❌ Erro ao registrar análise:', error);
     
-    if (error.code === 'LIMIT_EXCEEDED') {
+    if (error.code === 'DAILY_LIMIT') {
       return res.status(403).json({
         success: false,
+        code: 'DAILY_LIMIT',
         error: error.message,
-        message: 'Você atingiu o limite de análises gratuitas. Faça upgrade para Premium!',
-        needPremium: true
+        message: 'Você atingiu o limite de análises gratuitas. Volta amanhã ou faça upgrade para Premium!',
+        needPremium: true,
+        usedToday: error.usedToday,
+        remainingToday: error.remainingToday,
+        resetAt: error.resetAt
       });
     }
     

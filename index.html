@@ -1330,10 +1330,22 @@
                 const data = await response.json();
                 
                 if (!data.success) {
-                    if (data.needPremium) {
-                        const message = data.message || 'Você atingiu o limite de 2 análises gratuitas por dia!';
-                        alert(`⚠️ ${message}\n\n💎 Faça upgrade para Premium e tenha análises ilimitadas!\n\n📊 Usadas hoje: ${data.usedToday || 2}/2`);
-                        // TODO: Mostrar modal de upgrade premium
+                    if (data.code === 'DAILY_LIMIT') {
+                        // Calcular horário de reset
+                        const resetAt = data.resetAt ? new Date(data.resetAt) : null;
+                        const resetTime = resetAt ? resetAt.toLocaleTimeString('pt-BR', { 
+                            hour: '2-digit', 
+                            minute: '2-digit',
+                            timeZone: 'America/Sao_Paulo'
+                        }) : '00:00';
+                        
+                        const message = `⚠️ LIMITE DIÁRIO ATINGIDO\n\n` +
+                            `Você já usou suas ${data.usedToday || 2} análises gratuitas de hoje.\n\n` +
+                            `🕐 Volta amanhã às ${resetTime} (horário de Brasília)\n\n` +
+                            `💎 OU faça upgrade para Premium e tenha análises ILIMITADAS!`;
+                        
+                        alert(message);
+                        // TODO: Mostrar modal premium com botão de upgrade
                         return false;
                     }
                     throw new Error(data.error);

@@ -33,6 +33,21 @@ function getTodayBrazil() {
 }
 
 /**
+ * Obter horário de reset (próxima meia-noite de São Paulo em ISO)
+ */
+function getTomorrowMidnightBrazil() {
+  const now = new Date();
+  const brazilTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
+  
+  // Próxima meia-noite
+  const tomorrow = new Date(brazilTime);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  tomorrow.setHours(0, 0, 0, 0);
+  
+  return tomorrow.toISOString();
+}
+
+/**
  * Obter dados do usuário por UID
  * @param {string} uid - Firebase UID
  * @returns {Promise<object>} Dados do usuário
@@ -124,7 +139,10 @@ export async function incrementAnalysisUsage(uid) {
   // Verificar se pode analisar
   if (!status.canAnalyze) {
     const error = new Error('Limite de 2 análises gratuitas por dia atingido. Faça upgrade para Premium!');
-    error.code = 'LIMIT_EXCEEDED';
+    error.code = 'DAILY_LIMIT';
+    error.usedToday = status.usedToday;
+    error.remainingToday = status.remainingToday;
+    error.resetAt = getTomorrowMidnightBrazil();
     throw error;
   }
   
