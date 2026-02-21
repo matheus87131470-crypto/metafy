@@ -690,9 +690,11 @@ function createLoader(message) {
 }
 
 // Renderizar jogos
-function renderGames() {
+function renderGames(gamesInput = GAMES) {
   const container = document.getElementById('gamesList');
   if (!container) return;
+
+  const games = Array.isArray(gamesInput) ? gamesInput : GAMES;
 
   let html = '';
 
@@ -718,7 +720,7 @@ function renderGames() {
   }
 
   // Jogos agendados
-  if (GAMES.length === 0 && LIVE_GAMES.length === 0) {
+  if (games.length === 0 && LIVE_GAMES.length === 0) {
     container.innerHTML = `
       <div class="empty-state">
         <div class="empty-icon">⚽</div>
@@ -734,7 +736,7 @@ function renderGames() {
     // Renderizar jogos ao vivo em destaque
     let html = '';
     if (typeof renderLiveGamesSection === 'function') {
-      html += renderLiveGamesSection(GAMES);
+      html += renderLiveGamesSection(games);
     }
     
     // Renderizar filtros se disponível
@@ -746,7 +748,7 @@ function renderGames() {
     }
     
     // Renderizar jogos organizados por liga
-    html += renderGamesByLeague(GAMES, isPremiumUser());
+    html += renderGamesByLeague(games, isPremiumUser());
     container.innerHTML = html;
   } else {
     // Fallback para renderização antiga
@@ -754,13 +756,16 @@ function renderGames() {
     const gamesContainer = document.createElement('div');
     gamesContainer.className = 'games-container';
 
-    GAMES.forEach(game => {
+    games.forEach(game => {
       gamesContainer.innerHTML += createGameCard(game);
     });
 
     container.appendChild(gamesContainer);
   }
 }
+
+// Expor renderizacao principal
+window.renderGames = renderGames;
 
 // Função para filtrar e renderizar jogos
 function filterAndRenderGames(filterState) {
@@ -914,7 +919,7 @@ function createGameCard(game) {
       </div>
 
       <div class="game-card-footer">
-        <button class="btn-analyze" onclick="analyzeGame(${game.id})">
+        <button class="btn-analyze" data-action="analisar" data-match-id="${game.id}">
           <span class="btn-icon">✨</span>
           <span class="btn-text">Análise Rápida</span>
         </button>

@@ -1090,8 +1090,8 @@
             <div class="section-header">
                 <h2 class="section-title">⚽ Jogos de Hoje</h2>
                 <p class="section-subtitle">Selecione um jogo para analisar com IA</p>
-                <button onclick="renderMatchCards()" style="padding: 8px 16px; background: #8b5cf6; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 12px; margin-top: 8px;">
-                    🔄 Recarregar Jogos (Debug)
+                <button onclick="window.renderGames && window.renderGames(window.GAMES || [])" style="padding: 8px 16px; background: #8b5cf6; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 12px; margin-top: 8px;">
+                    🔄 Recarregar Jogos
                 </button>
             </div>
             
@@ -2356,44 +2356,12 @@
          * Renderiza todos os match cards com estratégia de paywall
          */
         function renderMatchCards() {
-            console.log('🎯 renderMatchCards() chamada');
-            
-            const gamesList = document.getElementById('gamesList');
-            console.log('📍 gamesList element:', gamesList);
-            
-            if (!gamesList) {
-                console.error('❌ gamesList element não encontrado!');
+            if (typeof window.renderGames === 'function') {
+                window.renderGames(window.GAMES || []);
                 return;
             }
-            
-            const games = GAMES_DATA || [];
-            console.log('🎮 Games data:', games.length, 'jogos');
-            
-            const isPremium = firebaseUserStatus?.isPremium || false;
-            console.log('💎 User premium?', isPremium);
-            
-            // Estratégia: 2 cards completos grátis, restante locked (se não for premium)
-            const FREE_PREVIEW = 2;
-            
-            let html = '';
-            games.forEach((game, index) => {
-                const isLocked = !isPremium && index >= FREE_PREVIEW;
-                html += renderMatchCard(game, index, isLocked);
-            });
-            
-            gamesList.innerHTML = html;
-            
-            if (games.length === 0) {
-                gamesList.innerHTML = `
-                    <div style="text-align: center; padding: 40px; color: #94a3b8;">
-                        <div style="font-size: 48px; margin-bottom: 16px;">⚽</div>
-                        <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">Nenhum jogo disponível</h3>
-                        <p style="font-size: 14px;">Aguardando novos jogos...</p>
-                    </div>
-                `;
-            }
-            
-            console.log(`🎮 ${games.length} jogos renderizados | Premium: ${isPremium} | Free: ${FREE_PREVIEW}`);
+
+            console.warn('renderGames nao esta disponivel');
         }
 
         // Garantir acesso global para onclick inline
@@ -2453,24 +2421,7 @@
     <script src="games.js"></script>
     
     <script>
-        // Renderizar match cards quando a página carregar
-        console.log('🎮 Verificando GAMES_DATA:', typeof GAMES_DATA !== 'undefined' ? GAMES_DATA.length + ' jogos' : 'não definido');
-        
-        // Renderizar imediatamente se GAMES_DATA já estiver carregado
-        if (typeof GAMES_DATA !== 'undefined' && GAMES_DATA.length > 0) {
-            console.log('✅ Renderizando jogos...');
-            renderMatchCards();
-        } else {
-            console.error('❌ GAMES_DATA não está definido ou está vazio');
-        }
-        
-        // Também renderizar quando tudo estiver pronto
-        window.addEventListener('load', () => {
-            console.log('🔄 Evento load disparado, re-renderizando...');
-            if (typeof GAMES_DATA !== 'undefined') {
-                renderMatchCards();
-            }
-        });
+        // renderGames eh disparado pelo app.js ao carregar dados
     </script>
 </body>
 </html>
