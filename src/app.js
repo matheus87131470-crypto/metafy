@@ -188,7 +188,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       return;
     }
 
-    if (!status.isPremium && status.freeRemaining === 0) {
+    if (!status.isPremium && status.freeRemaining === 0 && !status.isFallback) {
       alert('⚠️ Limite diário atingido. Faça upgrade para Premium.');
     }
   });
@@ -296,7 +296,8 @@ function getFallbackStatus() {
     loggedIn: false,
     isPremium: false,
     freeRemaining: 0,
-    daysRemaining: 0
+    daysRemaining: 0,
+    isFallback: true
   };
 }
 
