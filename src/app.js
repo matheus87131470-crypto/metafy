@@ -668,8 +668,10 @@ function showGamesLoading() {
 }
 
 async function refetchGames() {
-  showGamesLoading();
-  const games = await fetchGames();
+  // Usar jogos mockados offline (sem backend)
+  const games = (window.MOCK_GAMES && window.MOCK_GAMES.length > 0)
+    ? window.MOCK_GAMES
+    : await fetchGames();
   renderGames(games);
   return games;
 }

@@ -1,7 +1,213 @@
-// Jogos fictícios para demonstração
-// Quando a API real entrar, esses dados não serão mais usados
+// =====================================================
+// src/data/mockGames.js
+// Jogos mockados com análise — sem dependência de backend
+// =====================================================
 
-export const MOCK_GAMES = [
+window.MOCK_GAMES = [
+  {
+    id: "g1",
+    homeTeam: "Man City",
+    awayTeam: "Newcastle",
+    competition: "Premier League",
+    country: "England",
+    time: "16:00",
+    status: "scheduled",
+    homeScore: null,
+    awayScore: null,
+    homeOdds: 0,
+    drawOdds: 0,
+    awayOdds: 0,
+    market: "Resultado",
+    pick: "Man City vence",
+    confidencePct: 82.4,
+    level: "high",
+    confidenceLabel: "ALTA CONFIANÇA",
+    explanation: "Superioridade técnica e melhor desempenho recente em casa."
+  },
+  {
+    id: "g2",
+    homeTeam: "Chelsea",
+    awayTeam: "Burnley",
+    competition: "Premier League",
+    country: "England",
+    time: "16:00",
+    status: "scheduled",
+    homeScore: null,
+    awayScore: null,
+    homeOdds: 0,
+    drawOdds: 0,
+    awayOdds: 0,
+    market: "Gols",
+    pick: "Over 1.5",
+    confidencePct: 76.2,
+    level: "high",
+    confidenceLabel: "ALTA CONFIANÇA",
+    explanation: "Linha baixa com boa probabilidade estatística."
+  },
+  {
+    id: "g3",
+    homeTeam: "Real Madrid",
+    awayTeam: "Osasuna",
+    competition: "La Liga",
+    country: "Spain",
+    time: "17:00",
+    status: "scheduled",
+    homeScore: null,
+    awayScore: null,
+    homeOdds: 0,
+    drawOdds: 0,
+    awayOdds: 0,
+    market: "Gols",
+    pick: "Real Madrid marca 1+",
+    confidencePct: 85.1,
+    level: "high",
+    confidenceLabel: "ALTA CONFIANÇA",
+    explanation: "Alta média ofensiva contra defesa instável."
+  },
+  {
+    id: "g4",
+    homeTeam: "Atlético Madrid",
+    awayTeam: "Espanyol",
+    competition: "La Liga",
+    country: "Spain",
+    time: "17:00",
+    status: "scheduled",
+    homeScore: null,
+    awayScore: null,
+    homeOdds: 0,
+    drawOdds: 0,
+    awayOdds: 0,
+    market: "Gols",
+    pick: "Under 3.5",
+    confidencePct: 79.3,
+    level: "high",
+    confidenceLabel: "ALTA CONFIANÇA",
+    explanation: "Perfil defensivo com baixa variância de gols."
+  },
+  {
+    id: "g5",
+    homeTeam: "Juventus",
+    awayTeam: "Como",
+    competition: "Serie A",
+    country: "Italy",
+    time: "18:00",
+    status: "scheduled",
+    homeScore: null,
+    awayScore: null,
+    homeOdds: 0,
+    drawOdds: 0,
+    awayOdds: 0,
+    market: "Resultado",
+    pick: "Juventus DNB",
+    confidencePct: 81.6,
+    level: "high",
+    confidenceLabel: "ALTA CONFIANÇA",
+    explanation: "Proteção contra empate em confronto favorável."
+  },
+  {
+    id: "g6",
+    homeTeam: "Inter",
+    awayTeam: "Lecce",
+    competition: "Serie A",
+    country: "Italy",
+    time: "18:00",
+    status: "scheduled",
+    homeScore: null,
+    awayScore: null,
+    homeOdds: 0,
+    drawOdds: 0,
+    awayOdds: 0,
+    market: "Resultado",
+    pick: "Inter DNB",
+    confidencePct: 78.9,
+    level: "high",
+    confidenceLabel: "ALTA CONFIANÇA",
+    explanation: "Favorito fora com proteção de risco."
+  },
+  {
+    id: "g7",
+    homeTeam: "Betis",
+    awayTeam: "Rayo Vallecano",
+    competition: "La Liga",
+    country: "Spain",
+    time: "19:00",
+    status: "scheduled",
+    homeScore: null,
+    awayScore: null,
+    homeOdds: 0,
+    drawOdds: 0,
+    awayOdds: 0,
+    market: "Gols",
+    pick: "Under 3.5",
+    confidencePct: 72.5,
+    level: "medium",
+    confidenceLabel: "MÉDIA CONFIANÇA",
+    explanation: "Histórico recente com baixa média de gols."
+  },
+  {
+    id: "g8",
+    homeTeam: "Aston Villa",
+    awayTeam: "Leeds",
+    competition: "Premier League",
+    country: "England",
+    time: "19:00",
+    status: "scheduled",
+    homeScore: null,
+    awayScore: null,
+    homeOdds: 0,
+    drawOdds: 0,
+    awayOdds: 0,
+    market: "Ambas Marcam",
+    pick: "Sim",
+    confidencePct: 68.4,
+    level: "medium",
+    confidenceLabel: "MÉDIA CONFIANÇA",
+    explanation: "Ambos têm média alta de finalizações."
+  },
+  {
+    id: "g9",
+    homeTeam: "West Ham",
+    awayTeam: "Bournemouth",
+    competition: "Premier League",
+    country: "England",
+    time: "20:00",
+    status: "scheduled",
+    homeScore: null,
+    awayScore: null,
+    homeOdds: 0,
+    drawOdds: 0,
+    awayOdds: 0,
+    market: "Gols",
+    pick: "Over 1.5",
+    confidencePct: 74.7,
+    level: "high",
+    confidenceLabel: "ALTA CONFIANÇA",
+    explanation: "Linha conservadora com boa taxa histórica."
+  },
+  {
+    id: "g10",
+    homeTeam: "Brentford",
+    awayTeam: "Brighton",
+    competition: "Premier League",
+    country: "England",
+    time: "20:00",
+    status: "scheduled",
+    homeScore: null,
+    awayScore: null,
+    homeOdds: 0,
+    drawOdds: 0,
+    awayOdds: 0,
+    market: "Gols",
+    pick: "Over 1.5",
+    confidencePct: 71.2,
+    level: "medium",
+    confidenceLabel: "MÉDIA CONFIANÇA",
+    explanation: "Times ofensivos com baixa tendência a 0x0."
+  }
+];
+
+// ---- legado abaixo (não renderizado) ----
+var _UNUSED_MOCK = [
   {
     id: 1,
     homeTeam: 'Flamengo',
@@ -174,21 +380,3 @@ export const MOCK_GAMES = [
     h2h: { homeWins: 6, draws: 5, awayWins: 6 }
   }
 ];
-
-// Limites do plano Free
-export const FREE_LIMITS = {
-  analysisPerDay: 3,
-  hasHistory: false,
-  hasOverUnder: false,
-  hasBTTS: false,
-  hasAdvancedStats: false
-};
-
-// Recursos Premium
-export const PREMIUM_FEATURES = {
-  analysisPerDay: Infinity,
-  hasHistory: true,
-  hasOverUnder: true,
-  hasBTTS: true,
-  hasAdvancedStats: true
-};

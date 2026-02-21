@@ -502,6 +502,17 @@
   letter-spacing: 0.4px;
 }
 
+.prediction-explanation {
+  font-size: 12px;
+  color: var(--text-secondary, #aaa);
+  margin: 0 0 10px 0;
+  line-height: 1.5;
+  padding: 8px 10px;
+  background: rgba(255,255,255,0.04);
+  border-radius: 8px;
+  border-left: 3px solid var(--accent-color, #7c3aed);
+}
+
 .prediction-actions {
   display: flex;
   gap: 8px;

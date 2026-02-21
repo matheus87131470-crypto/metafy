@@ -246,7 +246,17 @@ function getPredictionData(game) {
  * Renderiza o bloco de previsao expandivel
  */
 function renderPredictionBlock(game) {
-  const data = getPredictionData(game);
+  // Se o jogo já tem dados de previsão embutidos, usá-los diretamente
+  const hasDirect = game.confidencePct !== undefined && game.pick !== undefined;
+  const data = hasDirect ? {
+    confidencePct: Number(game.confidencePct).toFixed(1),
+    confidenceLabel: game.confidenceLabel || (game.level === 'high' ? 'ALTA CONFIANÇA' : game.level === 'medium' ? 'MÉDIA CONFIANÇA' : 'BAIXA CONFIANÇA'),
+    marketLabel: game.market || 'ANÁLISE',
+    pickLabel: game.pick,
+    level: game.level || 'medium',
+    explanation: game.explanation || '',
+    other: []
+  } : getPredictionData(game);
   const otherHtml = data.other && data.other.length > 0
     ? `
       <div class="other-probabilities">
@@ -279,9 +289,11 @@ function renderPredictionBlock(game) {
         </div>
       </div>
 
+      ${data.explanation ? `<p class="prediction-explanation">${data.explanation}</p>` : ''}
+
       <div class="prediction-actions">
-        <button class="btn-prediction-stats" onclick="analyzeGame(${game.id || game.fixture?.id})">Analisar Stats</button>
-        <button class="btn-prediction-ai" onclick="analyzeGame(${game.id || game.fixture?.id})">Analisar com IA</button>
+        <button class="btn-prediction-stats" onclick="analyzeGame('${game.id || game.fixture?.id}')">Analisar Stats</button>
+        <button class="btn-prediction-ai" onclick="analyzeGame('${game.id || game.fixture?.id}')">Analisar com IA</button>
       </div>
 
       ${otherHtml}
@@ -312,7 +324,9 @@ function togglePredictionBlock(gameId) {
     return;
   }
 
-  const allGames = (typeof GAMES !== 'undefined' ? GAMES : []).concat(typeof LIVE_GAMES !== 'undefined' ? LIVE_GAMES : []);
+  const allGames = (typeof GAMES !== 'undefined' ? GAMES : [])
+    .concat(typeof LIVE_GAMES !== 'undefined' ? LIVE_GAMES : [])
+    .concat(Array.isArray(window.MOCK_GAMES) ? window.MOCK_GAMES : []);
   const game = allGames.find(g => String(g.id || g.fixture?.id) === String(gameId));
   if (!game) return;
 
