@@ -115,21 +115,6 @@ function createFilterComponent() {
         </select>
       </div>
 
-      <!-- Filtros rápidos -->
-      <div class="quick-filters">
-        <button class="quick-filter-btn" onclick="filterByStatus('live')">
-          <span class="qf-icon">🔴</span>
-          <span class="qf-text">Ao Vivo</span>
-        </button>
-        <button class="quick-filter-btn" onclick="filterByStatus('scheduled')">
-          <span class="qf-icon">⏰</span>
-          <span class="qf-text">Próximos</span>
-        </button>
-        <button class="quick-filter-btn" onclick="filterByStatus('finished')">
-          <span class="qf-icon">✓</span>
-          <span class="qf-text">Finalizados</span>
-        </button>
-      </div>
     </div>
   `;
 }
