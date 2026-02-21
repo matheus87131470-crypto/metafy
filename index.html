@@ -1932,20 +1932,41 @@
         // Função de login com Google
         function loginWithGoogle() {
             const provider = new firebase.auth.GoogleAuthProvider();
+
             auth.signInWithPopup(provider)
                 .then(async (result) => {
                     console.log('✅ Usuário logado:', result.user.email);
                     currentUser = result.user;
-                    
+
                     // Obter token
                     userToken = await result.user.getIdToken();
                     console.log('🔑 Token obtido');
-                    
+
                     // Buscar status do backend
                     await fetchUserStatus();
                 })
-                .catch((error) => {
-                    console.error('❌ Erro no login:', error.message);
+                .catch(async (error) => {
+                    console.error('❌ Erro no login:', error.code, error.message);
+
+                    // Popup bloqueado ou ambiente sem popup -> tentar redirect
+                    if (
+                        error.code === 'auth/popup-blocked' ||
+                        error.code === 'auth/cancelled-popup-request' ||
+                        error.code === 'auth/operation-not-supported-in-this-environment'
+                    ) {
+                        try {
+                            await auth.signInWithRedirect(provider);
+                            return;
+                        } catch (redirectError) {
+                            console.error('❌ Erro no redirect:', redirectError.code, redirectError.message);
+                        }
+                    }
+
+                    if (error.code === 'auth/unauthorized-domain') {
+                        alert('Domínio não autorizado no Firebase. Adicione metafy.store e www.metafy.store em Auth > Settings > Authorized domains.');
+                        return;
+                    }
+
                     alert('Erro ao fazer login: ' + error.message);
                 });
         }
