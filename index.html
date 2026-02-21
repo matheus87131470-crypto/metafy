@@ -22,6 +22,7 @@
     <link rel="stylesheet" href="src/styles/filters.css">
     <link rel="stylesheet" href="src/styles/premium-analysis.css">
     <link rel="stylesheet" href="src/styles/pix-payment.css">
+    <link rel="stylesheet" href="src/styles/top-picks.css">
     
     <style>
         /* Header */
@@ -1087,16 +1088,14 @@
     <main class="main-content">
         <!-- Tab: Jogos -->
         <div class="tab-content active" id="tab-games">
-            <div class="section-header">
-                <h2 class="section-title">⚽ Jogos de Hoje</h2>
-                <p class="section-subtitle">Selecione um jogo para analisar com IA</p>
-            </div>
-            
-            <!-- Filtros -->
-            <div id="filtersContainer"></div>
-            
-            <!-- Lista de Jogos -->
-            <div id="gamesList"></div>
+            <!-- Top Picks Section -->
+            <div id="topPicksSection"></div>
+
+            <!-- Filtros (mantido para busca) -->
+            <div id="filtersContainer" style="display:none"></div>
+
+            <!-- Lista de Jogos (mantida p/ fallback) -->
+            <div id="gamesList" style="display:none"></div>
         </div>
 
         <!-- Tab: Ganhos/Perdas -->
@@ -1435,6 +1434,10 @@
 
     <!-- Mock Games Data -->
     <script src="src/data/mockGames.js"></script>
+
+    <!-- Top Picks Data + Component -->
+    <script src="src/data/topPicksToday.js"></script>
+    <script src="src/ui/TopPicks.js"></script>
 
     <!-- App Script -->
     <script src="src/app.js"></script>

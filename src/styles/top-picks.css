@@ -1,0 +1,381 @@
+/* =====================================================
+   src/styles/top-picks.css
+   Seção Top Picks — grid responsivo de cards de análise
+   ===================================================== */
+
+:root {
+  --tp-high:   #00e5a0;
+  --tp-medium: #f59e0b;
+  --tp-low:    #ef4444;
+  --tp-bg-card: #12121f;
+  --tp-border:  rgba(255,255,255,0.08);
+  --tp-border-high:   rgba(0, 229, 160, 0.35);
+  --tp-border-medium: rgba(245, 158, 11, 0.35);
+  --tp-border-low:    rgba(239, 68, 68, 0.35);
+}
+
+/* ————— Seção ————— */
+.tp-section {
+  padding: 8px 0 32px;
+}
+
+.tp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding: 0 4px;
+}
+
+.tp-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tp-title-icon {
+  font-size: 1.4rem;
+}
+
+.tp-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary, #fff);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tp-today-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: rgba(0, 229, 160, 0.15);
+  color: var(--tp-high);
+  border: 1px solid rgba(0, 229, 160, 0.3);
+  padding: 2px 10px;
+  border-radius: 20px;
+  letter-spacing: 0.5px;
+}
+
+.tp-counter {
+  font-size: 0.8rem;
+  color: var(--text-secondary, #888);
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--tp-border);
+  padding: 4px 12px;
+  border-radius: 20px;
+}
+
+/* ————— Grid ————— */
+.tp-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 1199px) {
+  .tp-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 767px) {
+  .tp-grid { grid-template-columns: 1fr; }
+}
+
+/* ————— Card ————— */
+.tp-card {
+  background: var(--tp-bg-card);
+  border-radius: 16px;
+  padding: 20px;
+  border: 1px solid var(--tp-border);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.tp-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+}
+
+/* Borda lateral de cor por nível */
+.tp-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  border-radius: 16px 0 0 16px;
+}
+
+.tp-card--high {
+  border-color: var(--tp-border-high);
+}
+.tp-card--high::before { background: var(--tp-high); }
+
+.tp-card--medium {
+  border-color: var(--tp-border-medium);
+}
+.tp-card--medium::before { background: var(--tp-medium); }
+
+.tp-card--low {
+  border-color: var(--tp-border-low);
+}
+.tp-card--low::before { background: var(--tp-low); }
+
+/* ————— Header do card ————— */
+.tp-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.tp-league {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-secondary, #888);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+.tp-time {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-primary, #fff);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ————— Times ————— */
+.tp-teams {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.tp-team {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary, #fff);
+}
+
+.tp-vs {
+  font-size: 0.75rem;
+  color: var(--text-secondary, #666);
+  font-weight: 500;
+}
+
+/* ————— Confiança ————— */
+.tp-confidence {
+  text-align: center;
+}
+
+.tp-pct {
+  font-size: 2.8rem;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -1px;
+}
+
+.tp-level {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text-secondary, #888);
+  margin-top: 4px;
+}
+
+/* ————— Chip do pick ————— */
+.tp-pick-chip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--tp-border);
+  border-radius: 10px;
+  padding: 10px 14px;
+}
+
+.tp-market {
+  font-size: 0.75rem;
+  color: var(--text-secondary, #888);
+  font-weight: 600;
+}
+
+.tp-pick-label {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-primary, #fff);
+}
+
+/* ————— Botões ————— */
+.tp-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tp-btn {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.tp-btn--free {
+  background: linear-gradient(135deg, #059669, #10b981);
+  color: #fff;
+  box-shadow: 0 2px 12px rgba(16, 185, 129, 0.3);
+}
+.tp-btn--free:hover {
+  background: linear-gradient(135deg, #047857, #059669);
+  box-shadow: 0 4px 20px rgba(16, 185, 129, 0.5);
+}
+
+.tp-btn--ai {
+  background: linear-gradient(135deg, #2563eb, #3b82f6);
+  color: #fff;
+  box-shadow: 0 2px 12px rgba(59, 130, 246, 0.3);
+}
+.tp-btn--ai:hover {
+  background: linear-gradient(135deg, #1d4ed8, #2563eb);
+  box-shadow: 0 4px 20px rgba(59, 130, 246, 0.5);
+}
+
+.tp-btn--unlock {
+  background: linear-gradient(135deg, #7c3aed, #a855f7);
+  color: #fff;
+  box-shadow: 0 2px 12px rgba(124, 58, 237, 0.4);
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  letter-spacing: 0.4px;
+}
+.tp-btn--unlock:hover {
+  background: linear-gradient(135deg, #6d28d9, #7c3aed);
+  box-shadow: 0 4px 20px rgba(124, 58, 237, 0.6);
+}
+
+/* ————— Accordion ————— */
+.tp-accordion {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.35s ease;
+}
+
+.tp-accordion--open {
+  max-height: 400px;
+}
+
+.tp-accordion-inner {
+  padding-top: 4px;
+  border-top: 1px solid var(--tp-border);
+}
+
+.tp-explanation {
+  font-size: 0.85rem;
+  color: var(--text-secondary, #aaa);
+  line-height: 1.6;
+  margin: 12px 0 10px;
+}
+
+.tp-stats {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tp-stats li {
+  font-size: 0.8rem;
+  color: var(--text-secondary, #aaa);
+  padding: 6px 10px;
+  background: rgba(255,255,255,0.04);
+  border-radius: 6px;
+  position: relative;
+  padding-left: 22px;
+}
+
+.tp-stats li::before {
+  content: '▸';
+  position: absolute;
+  left: 8px;
+  color: var(--tp-high);
+  font-size: 0.7rem;
+}
+
+/* ————— Card Bloqueado ————— */
+.tp-card--locked {
+  min-height: 280px;
+  background: rgba(12, 12, 24, 0.7);
+  border-color: rgba(124, 58, 237, 0.2);
+}
+
+.tp-locked-overlay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  text-align: center;
+  height: 100%;
+  min-height: 220px;
+  padding: 20px;
+}
+
+.tp-lock-icon {
+  font-size: 2.5rem;
+  opacity: 0.7;
+}
+
+.tp-lock-msg {
+  font-size: 0.85rem;
+  color: var(--text-secondary, #aaa);
+  line-height: 1.5;
+  max-width: 180px;
+  margin: 0;
+}
+
+/* Blocker inline de IA */
+.tp-ai-blocker {
+  position: absolute;
+  inset: 0;
+  background: rgba(12, 12, 24, 0.92);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  backdrop-filter: blur(4px);
+}
+
+/* ————— Empty state ————— */
+.tp-empty {
+  text-align: center;
+  color: var(--text-secondary, #888);
+  padding: 40px;
+  font-size: 0.9rem;
+}

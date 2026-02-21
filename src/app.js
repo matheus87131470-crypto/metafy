@@ -162,8 +162,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   
   checkPremiumStatus();
   loadAnalysisCount();
-  refetchGames();
-  // fetchLiveMatches(); // DESABILITADO: evitar erro 429 (Too Many Requests)
+
+  // ——— Top Picks (principal, sem backend) ———
+  if (typeof renderTopPicks === 'function' && window.TOP_PICKS_TODAY) {
+    renderTopPicks(window.TOP_PICKS_TODAY, 'topPicksSection');
+  }
+
+  // refetchGames para fallback/gamesList (oculto por padrão no HTML)
+  // refetchGames(); (Too Many Requests)
   updateAnalysisCounter();
   updatePremiumUI();
   updateAuthUI(); // Atualizar botões de login/logout
