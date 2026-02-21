@@ -153,11 +153,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   
   // Inicializar userId e buscar status do backend
   getUserId();
-  await fetchUserStatus();
+  fetchUserStatus()
+    .then(updateHeaderStatus)
+    .catch((error) => {
+      console.warn('⚠️ Status indisponível, seguindo sem status', error);
+      updateHeaderStatus(getFallbackStatus());
+    });
   
   checkPremiumStatus();
   loadAnalysisCount();
-  fetchGames();
+  refetchGames();
   // fetchLiveMatches(); // DESABILITADO: evitar erro 429 (Too Many Requests)
   updateAnalysisCounter();
   updatePremiumUI();
@@ -174,6 +179,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (typeof window.togglePredictionBlock === 'function') {
       window.togglePredictionBlock(matchId);
+    }
+
+    const status = userStatusCache || getFallbackStatus();
+    if (!status.loggedIn) {
+      alert('⚠️ Faça login para liberar análises completas.');
+      return;
+    }
+
+    if (!status.isPremium && status.freeRemaining === 0) {
+      alert('⚠️ Limite diário atingido. Faça upgrade para Premium.');
     }
   });
   
@@ -273,7 +288,22 @@ function getCurrentUserId() {
 }
 
 // Estado do usuário (cache local)
-let userStatusCache = null;
+let userStatusCache = getFallbackStatus();
+
+function getFallbackStatus() {
+  return {
+    loggedIn: false,
+    isPremium: false,
+    freeRemaining: 0,
+    daysRemaining: 0
+  };
+}
+
+function updateHeaderStatus(status) {
+  userStatusCache = status || getFallbackStatus();
+  updateAnalysisCounter();
+  updatePremiumUI();
+}
 
 // Buscar status do usuário do backend
 async function fetchUserStatus() {
@@ -286,14 +316,35 @@ async function fetchUserStatus() {
       headers['Authorization'] = `Bearer ${authToken}`;
     }
     
-    const response = await fetch(`${BACKEND_URL}/api/me?userId=${userId}`, { headers });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 4000);
+
+    const response = await fetch(`${BACKEND_URL}/api/me?userId=${userId}`, {
+      headers,
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
     
     if (!response.ok) {
-      throw new Error('Erro ao buscar status');
+      console.warn('⚠️ Status indisponível:', response.status);
+      return getFallbackStatus();
     }
     
     const data = await response.json();
-    userStatusCache = data;
+    const normalized = {
+      ...getFallbackStatus(),
+      ...data,
+      loggedIn: Boolean(
+        data?.loggedIn ||
+        data?.isAuthenticated ||
+        data?.userId ||
+        data?.id ||
+        data?.uid ||
+        data?.email
+      )
+    };
+
+    userStatusCache = normalized;
     
     console.log('👤 Status do usuário:', {
       isPremium: data.isPremium,
@@ -304,10 +355,10 @@ async function fetchUserStatus() {
     // Atualizar UI com contador
     updateAnalysisCounter();
     
-    return data;
+    return userStatusCache;
   } catch (error) {
-    console.error('❌ Erro ao buscar status:', error);
-    return null;
+    console.warn('⚠️ Erro ao buscar status:', error);
+    return getFallbackStatus();
   }
 }
 
@@ -321,7 +372,10 @@ function updateAnalysisCounter() {
       el.textContent = `Premium ativo (${userStatusCache.daysRemaining} dias)`;
       el.classList.add('premium');
     } else {
-      el.textContent = `Análises restantes: ${userStatusCache.freeRemaining}/2`;
+      const remaining = Number.isFinite(userStatusCache.freeRemaining)
+        ? userStatusCache.freeRemaining
+        : 0;
+      el.textContent = `Análises restantes: ${remaining}/2`;
       el.classList.remove('premium');
     }
   });
@@ -540,12 +594,6 @@ function updateAnalysisCounter() {
 
 // Buscar jogos
 async function fetchGames() {
-  const container = document.getElementById('gamesList');
-  if (!container) return;
-
-  // Mostrar loading
-  container.innerHTML = createLoader('Carregando jogos reais...');
-
   try {
     // Usar API real do backend (SportAPI7)
     console.log('🔄 Buscando partidas de hoje via SportAPI7...');
@@ -600,25 +648,28 @@ async function fetchGames() {
       }));
       
       console.log(`✅ ${GAMES.length} partidas REAIS carregadas da SportAPI7`);
+      return GAMES;
     } else {
       // API respondeu 200 mas sem partidas (count = 0)
       throw new Error('Nenhuma partida encontrada para hoje nas ligas principais');
     }
   } catch (error) {
     console.error('❌ Erro ao buscar partidas:', error);
-    container.innerHTML = `
-      <div class="error-container">
-        <div class="error-icon">⚠️</div>
-        <p class="error-text">Erro ao carregar partidas</p>
-        <p class="error-details">${error.message}</p>
-        <button onclick="fetchGames()" class="btn-retry">Tentar Novamente</button>
-      </div>
-    `;
-    return;
+    return [];
   }
+}
 
-  // Renderizar jogos
-  renderGames();
+function showGamesLoading() {
+  const container = document.getElementById('gamesList');
+  if (!container) return;
+  container.innerHTML = createLoader('Carregando jogos reais...');
+}
+
+async function refetchGames() {
+  showGamesLoading();
+  const games = await fetchGames();
+  renderGames(games);
+  return games;
 }
 
 // Buscar partidas ao vivo
@@ -766,6 +817,7 @@ function renderGames(gamesInput = GAMES) {
 
 // Expor renderizacao principal
 window.renderGames = renderGames;
+window.refetchGames = refetchGames;
 
 // Função para filtrar e renderizar jogos
 function filterAndRenderGames(filterState) {
