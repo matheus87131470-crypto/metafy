@@ -423,6 +423,168 @@
   border-color: var(--success-color, #10b981);
 }
 
+/* ==================== BLOCO DE PREVISAO (EXPANDIVEL) ==================== */
+.game-card-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.prediction-container {
+  display: block;
+}
+
+.prediction-block-compact {
+  background: var(--card-bg, rgba(255, 255, 255, 0.02));
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.prediction-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.prediction-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.prediction-market {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-secondary, #888);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.prediction-pick {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary, #fff);
+}
+
+.prediction-badge {
+  min-width: 120px;
+  text-align: center;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--success-color, #10b981);
+  background: rgba(16, 185, 129, 0.12);
+}
+
+.prediction-badge.medium {
+  border-color: var(--primary-color, #6366f1);
+  background: rgba(99, 102, 241, 0.12);
+}
+
+.prediction-badge.low {
+  border-color: var(--accent-red, #ef4444);
+  background: rgba(239, 68, 68, 0.12);
+}
+
+.prediction-pct {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text-primary, #fff);
+}
+
+.prediction-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-secondary, #aaa);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.prediction-actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.btn-prediction-stats,
+.btn-prediction-ai {
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-prediction-stats {
+  background: var(--bg-secondary, rgba(0, 0, 0, 0.3));
+  color: var(--text-secondary, #aaa);
+}
+
+.btn-prediction-stats:hover {
+  border-color: var(--success-color, #10b981);
+  color: var(--success-color, #10b981);
+}
+
+.btn-prediction-ai {
+  background: var(--gradient-purple, linear-gradient(135deg, #6366f1, #8b5cf6));
+  color: #fff;
+}
+
+.btn-prediction-ai:hover {
+  transform: translateY(-1px);
+}
+
+.other-probabilities {
+  border-top: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+  padding-top: 10px;
+}
+
+.other-probabilities-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  color: var(--text-secondary, #aaa);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.other-probabilities-list {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.25s ease;
+}
+
+.other-probabilities-list.expanded {
+  max-height: 300px;
+  margin-top: 8px;
+}
+
+.other-probability-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  background: var(--input-bg, rgba(0, 0, 0, 0.2));
+  border-radius: 8px;
+  margin-bottom: 6px;
+  font-size: 12px;
+  color: var(--text-secondary, #aaa);
+}
+
+.other-toggle {
+  transition: transform 0.2s ease;
+}
+
+.other-toggle.expanded {
+  transform: rotate(180deg);
+}
+
 /* ==================== JOGOS AO VIVO ==================== */
 .live-games-section {
   margin-bottom: 24px;
@@ -624,5 +786,14 @@
   .country-pill {
     padding: 6px 10px;
     font-size: 12px;
+  }
+
+  .prediction-main {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .prediction-actions {
+    flex-direction: column;
   }
 }

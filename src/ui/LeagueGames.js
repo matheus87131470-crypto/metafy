@@ -137,51 +137,192 @@ function createGameCardCompact(game, isPremium = false) {
   const time = game.time || formatGameTime(game.date || game.fixture?.date);
   
   return `
-    <div class="game-card-compact ${isSelected ? 'selected' : ''}" data-game-id="${gameId}">
-      <div class="game-time-status">
-        <span class="game-status ${statusClass}">${statusText}</span>
-      </div>
-      
-      <div class="game-teams">
-        <div class="team-row">
-          <div class="team-logo">
-            ${game.teams?.home?.logo ? `<img src="${game.teams.home.logo}" alt="" />` : '🏠'}
-          </div>
-          <span class="team-name">${homeTeam}</span>
-          <span class="team-score">${homeScore !== null && homeScore !== undefined ? homeScore : '-'}</span>
+    <div class="game-card-wrapper" data-game-wrapper-id="${gameId}">
+      <div class="game-card-compact ${isSelected ? 'selected' : ''}" data-game-id="${gameId}">
+        <div class="game-time-status">
+          <span class="game-status ${statusClass}">${statusText}</span>
         </div>
         
-        <div class="team-row">
-          <div class="team-logo">
-            ${game.teams?.away?.logo ? `<img src="${game.teams.away.logo}" alt="" />` : '✈️'}
+        <div class="game-teams">
+          <div class="team-row">
+            <div class="team-logo">
+              ${game.teams?.home?.logo ? `<img src="${game.teams.home.logo}" alt="" />` : '🏠'}
+            </div>
+            <span class="team-name">${homeTeam}</span>
+            <span class="team-score">${homeScore !== null && homeScore !== undefined ? homeScore : '-'}</span>
           </div>
-          <span class="team-name">${awayTeam}</span>
-          <span class="team-score">${awayScore !== null && awayScore !== undefined ? awayScore : '-'}</span>
+          
+          <div class="team-row">
+            <div class="team-logo">
+              ${game.teams?.away?.logo ? `<img src="${game.teams.away.logo}" alt="" />` : '✈️'}
+            </div>
+            <span class="team-name">${awayTeam}</span>
+            <span class="team-score">${awayScore !== null && awayScore !== undefined ? awayScore : '-'}</span>
+          </div>
+        </div>
+        
+        ${homeOdds > 0 ? `
+        <div class="game-odds">
+          <span class="odd ${homeOdds < awayOdds ? 'favorite' : ''}">${homeOdds.toFixed(2)}</span>
+          <span class="odd">${drawOdds.toFixed(2)}</span>
+          <span class="odd ${awayOdds < homeOdds ? 'favorite' : ''}">${awayOdds.toFixed(2)}</span>
+        </div>
+        ` : ''}
+        
+        <div class="game-actions">
+          <button class="btn-analyze-compact" onclick="togglePredictionBlock(${gameId})" title="Ver previsao">
+            ✨
+          </button>
+          ${isPremium ? `
+          <button class="btn-select-compact ${isSelected ? 'selected' : ''}" 
+                  onclick="toggleGameSelection(${gameId})" 
+                  title="${isSelected ? 'Remover seleção' : 'Selecionar para análise combinada'}">
+            ${isSelected ? '✓' : '+'}
+          </button>
+          ` : ''}
         </div>
       </div>
-      
-      ${homeOdds > 0 ? `
-      <div class="game-odds">
-        <span class="odd ${homeOdds < awayOdds ? 'favorite' : ''}">${homeOdds.toFixed(2)}</span>
-        <span class="odd">${drawOdds.toFixed(2)}</span>
-        <span class="odd ${awayOdds < homeOdds ? 'favorite' : ''}">${awayOdds.toFixed(2)}</span>
-      </div>
-      ` : ''}
-      
-      <div class="game-actions">
-        <button class="btn-analyze-compact" onclick="analyzeGame(${gameId})" title="Análise rápida">
-          ✨
-        </button>
-        ${isPremium ? `
-        <button class="btn-select-compact ${isSelected ? 'selected' : ''}" 
-                onclick="toggleGameSelection(${gameId})" 
-                title="${isSelected ? 'Remover seleção' : 'Selecionar para análise combinada'}">
-          ${isSelected ? '✓' : '+'}
-        </button>
-        ` : ''}
-      </div>
+
+      <div class="prediction-container" data-prediction-for="${gameId}"></div>
     </div>
   `;
+}
+
+/**
+ * Dados de previsao (mock) baseados em odds
+ */
+function getPredictionData(game) {
+  const homeOdds = Number(game.homeOdds) || 2.6;
+  const drawOdds = Number(game.drawOdds) || 3.2;
+  const awayOdds = Number(game.awayOdds) || 2.9;
+
+  const homeProb = 1 / homeOdds;
+  const drawProb = 1 / drawOdds;
+  const awayProb = 1 / awayOdds;
+  const total = homeProb + drawProb + awayProb;
+
+  const homePct = (homeProb / total) * 100;
+  const drawPct = (drawProb / total) * 100;
+  const awayPct = (awayProb / total) * 100;
+
+  const avgOdds = (homeOdds + drawOdds + awayOdds) / 3;
+
+  let pickLabel = 'Under 3.5';
+  if (avgOdds < 2.5) pickLabel = 'Under 2.5';
+  if (avgOdds > 3.2) pickLabel = 'Over 2.5';
+
+  let confidencePct = Math.max(homePct, drawPct, awayPct) + 10;
+  confidencePct = Math.min(98, Math.max(65, confidencePct));
+
+  let confidenceLabel = 'MEDIA CONFIANCA';
+  let level = 'medium';
+  if (confidencePct >= 85) {
+    confidenceLabel = 'ALTA CONFIANCA';
+    level = 'high';
+  } else if (confidencePct < 75) {
+    confidenceLabel = 'BAIXA CONFIANCA';
+    level = 'low';
+  }
+
+  const bttsPct = Math.min(82, Math.max(45, 100 - avgOdds * 12));
+  const over15Pct = Math.min(88, Math.max(60, 120 - avgOdds * 15));
+  const over25Pct = Math.min(80, Math.max(50, 110 - avgOdds * 17));
+
+  return {
+    confidencePct: confidencePct.toFixed(1),
+    confidenceLabel,
+    marketLabel: 'GOLS: ACIMA/ABAIXO',
+    pickLabel,
+    level,
+    other: [
+      { label: 'Ambas Marcam', pct: bttsPct.toFixed(1) },
+      { label: 'Over 1.5 Gols', pct: over15Pct.toFixed(1) },
+      { label: 'Over 2.5 Gols', pct: over25Pct.toFixed(1) }
+    ]
+  };
+}
+
+/**
+ * Renderiza o bloco de previsao expandivel
+ */
+function renderPredictionBlock(game) {
+  const data = getPredictionData(game);
+  const otherHtml = data.other && data.other.length > 0
+    ? `
+      <div class="other-probabilities">
+        <div class="other-probabilities-header" onclick="toggleOtherPredictions(${game.id || game.fixture?.id})">
+          <span>Outras Probabilidades</span>
+          <span class="other-toggle">▾</span>
+        </div>
+        <div class="other-probabilities-list">
+          ${data.other.map(item => `
+            <div class="other-probability-item">
+              <span>${item.label}</span>
+              <span>${item.pct}%</span>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `
+    : '';
+
+  return `
+    <div class="prediction-block-compact ${data.level}">
+      <div class="prediction-main">
+        <div class="prediction-info">
+          <div class="prediction-market">${data.marketLabel}</div>
+          <div class="prediction-pick">${data.pickLabel}</div>
+        </div>
+        <div class="prediction-badge ${data.level}">
+          <div class="prediction-pct">${data.confidencePct}%</div>
+          <div class="prediction-label">${data.confidenceLabel}</div>
+        </div>
+      </div>
+
+      <div class="prediction-actions">
+        <button class="btn-prediction-stats" onclick="analyzeGame(${game.id || game.fixture?.id})">Analisar Stats</button>
+        <button class="btn-prediction-ai" onclick="analyzeGame(${game.id || game.fixture?.id})">Analisar com IA</button>
+      </div>
+
+      ${otherHtml}
+    </div>
+  `;
+}
+
+/**
+ * Toggle do bloco de previsao
+ */
+function togglePredictionBlock(gameId) {
+  const container = document.querySelector(`[data-prediction-for="${gameId}"]`);
+  if (!container) return;
+
+  if (container.dataset.expanded === 'true') {
+    container.innerHTML = '';
+    container.dataset.expanded = 'false';
+    return;
+  }
+
+  const allGames = (typeof GAMES !== 'undefined' ? GAMES : []).concat(typeof LIVE_GAMES !== 'undefined' ? LIVE_GAMES : []);
+  const game = allGames.find(g => (g.id || g.fixture?.id) === gameId);
+  if (!game) return;
+
+  container.innerHTML = renderPredictionBlock(game);
+  container.dataset.expanded = 'true';
+}
+
+/**
+ * Toggle da lista de outras probabilidades
+ */
+function toggleOtherPredictions(gameId) {
+  const wrapper = document.querySelector(`[data-prediction-for="${gameId}"]`);
+  if (!wrapper) return;
+
+  const list = wrapper.querySelector('.other-probabilities-list');
+  const toggle = wrapper.querySelector('.other-toggle');
+  if (!list || !toggle) return;
+
+  list.classList.toggle('expanded');
+  toggle.classList.toggle('expanded');
 }
 
 /**
@@ -297,3 +438,5 @@ function createLiveGameCard(game) {
 window.renderGamesByLeague = renderGamesByLeague;
 window.renderLiveGamesSection = renderLiveGamesSection;
 window.groupGamesByLeague = groupGamesByLeague;
+window.togglePredictionBlock = togglePredictionBlock;
+window.toggleOtherPredictions = toggleOtherPredictions;
