@@ -162,6 +162,20 @@ document.addEventListener('DOMContentLoaded', async () => {
   updateAnalysisCounter();
   updatePremiumUI();
   updateAuthUI(); // Atualizar botões de login/logout
+
+  // Delegacao de clique para analisar
+  document.addEventListener('click', (event) => {
+    const target = event.target.closest('[data-action="analisar"]');
+    if (!target) return;
+
+    event.preventDefault();
+    const matchId = target.getAttribute('data-match-id');
+    if (!matchId) return;
+
+    if (typeof window.togglePredictionBlock === 'function') {
+      window.togglePredictionBlock(matchId);
+    }
+  });
   
   // Auto-formatar CPF ao digitar
   const cpfInput = document.getElementById('cpfInput');

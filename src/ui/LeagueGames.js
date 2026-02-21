@@ -170,7 +170,7 @@ function createGameCardCompact(game, isPremium = false) {
         ` : ''}
         
         <div class="game-actions">
-          <button class="btn-analyze-compact" onclick="togglePredictionBlock(${gameId})" title="Ver previsao">
+          <button class="btn-analyze-compact" data-action="analisar" data-match-id="${gameId}" title="Ver previsao">
             ✨
           </button>
           ${isPremium ? `
@@ -303,7 +303,7 @@ function togglePredictionBlock(gameId) {
   }
 
   const allGames = (typeof GAMES !== 'undefined' ? GAMES : []).concat(typeof LIVE_GAMES !== 'undefined' ? LIVE_GAMES : []);
-  const game = allGames.find(g => (g.id || g.fixture?.id) === gameId);
+  const game = allGames.find(g => String(g.id || g.fixture?.id) === String(gameId));
   if (!game) return;
 
   container.innerHTML = renderPredictionBlock(game);
@@ -427,7 +427,7 @@ function createLiveGameCard(game) {
         </div>
       </div>
       
-      <button class="btn-analyze-live" onclick="analyzeGame(${gameId})">
+      <button class="btn-analyze-live" data-match-id="${gameId}" onclick="analyzeGame(${gameId})">
         Análise ao Vivo ✨
       </button>
     </div>
