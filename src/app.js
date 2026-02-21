@@ -1833,6 +1833,7 @@ async function checkAuth() {
 
 // Atualizar UI com status de autenticação
 function updateAuthUI() {
+  if (window.USE_FIREBASE_AUTH) return;
   const authButtons = document.querySelector('.auth-buttons');
   if (!authButtons) return;
   

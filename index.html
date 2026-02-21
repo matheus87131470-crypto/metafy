@@ -1431,6 +1431,11 @@
     <script src="src/ui/LeagueGames.js"></script>
     <script src="src/ui/PremiumAnalysis.js"></script>
     
+    <script>
+        // Evitar que o app.js sobrescreva o login do Firebase
+        window.USE_FIREBASE_AUTH = true;
+    </script>
+
     <!-- App Script -->
     <script src="src/app.js"></script>
     
