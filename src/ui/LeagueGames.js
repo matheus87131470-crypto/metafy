@@ -293,8 +293,18 @@ function renderPredictionBlock(game) {
  * Toggle do bloco de previsao
  */
 function togglePredictionBlock(gameId) {
-  const container = document.querySelector(`[data-prediction-for="${gameId}"]`);
-  if (!container) return;
+  let container = document.querySelector(`[data-prediction-for="${gameId}"]`);
+  if (!container) {
+    const card = document.querySelector(`[data-game-id="${gameId}"]`);
+    if (!card) return;
+
+    container = document.createElement('div');
+    container.className = 'prediction-container';
+    container.setAttribute('data-prediction-for', String(gameId));
+
+    // Inserir logo abaixo do card
+    card.insertAdjacentElement('afterend', container);
+  }
 
   if (container.dataset.expanded === 'true') {
     container.innerHTML = '';
