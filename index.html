@@ -1813,23 +1813,23 @@
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
 
-        // Estado global do usuário
-        let currentUser = null;
-        let userToken = null;
-        let userStatus = null;
+        // Estado global do usuário (Firebase)
+        let firebaseCurrentUser = null;
+        let firebaseUserToken = null;
+        let firebaseUserStatus = null;
 
         // URL do backend
         const BACKEND_URL = 'https://metafy-backend.onrender.com';
 
         // Função helper para fazer requests autenticados
         async function authenticatedFetch(url, options = {}) {
-            if (!userToken) {
+            if (!firebaseUserToken) {
                 throw new Error('Usuário não autenticado');
             }
 
             const headers = {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${userToken}`,
+                'Authorization': `Bearer ${firebaseUserToken}`,
                 ...(options.headers || {})
             };
 
@@ -1844,7 +1844,7 @@
                 await updateUserToken();
                 
                 // Tentar novamente com novo token
-                headers.Authorization = `Bearer ${userToken}`;
+                headers.Authorization = `Bearer ${firebaseUserToken}`;
                 return fetch(url, { ...options, headers });
             }
 
@@ -1854,7 +1854,7 @@
         // Atualizar token do usuário
         async function updateUserToken() {
             if (auth.currentUser) {
-                userToken = await auth.currentUser.getIdToken(true);
+                firebaseUserToken = await auth.currentUser.getIdToken(true);
                 console.log('🔑 Token atualizado');
             }
         }
@@ -1866,7 +1866,7 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    userStatus = data;
+                    firebaseUserStatus = data;
                     console.log('📊 Status do usuário:', data);
                     updateStatusUI(data);
                 }
@@ -1921,7 +1921,7 @@
                 }
                 
                 // Atualizar status local
-                userStatus = data;
+                firebaseUserStatus = data;
                 updateStatusUI(data);
                 
                 console.log(`✅ Análise autorizada: ${data.usedToday}/${data.isPremium ? '∞' : '2'} usadas (${data.remainingToday} restantes)`);
@@ -1941,10 +1941,10 @@
             auth.signInWithPopup(provider)
                 .then(async (result) => {
                     console.log('✅ Usuário logado:', result.user.email);
-                    currentUser = result.user;
+                    firebaseCurrentUser = result.user;
 
                     // Obter token
-                    userToken = await result.user.getIdToken();
+                    firebaseUserToken = await result.user.getIdToken();
                     console.log('🔑 Token obtido');
 
                     // Buscar status do backend
@@ -1981,9 +1981,9 @@
             auth.signOut()
                 .then(() => {
                     console.log('✅ Usuário deslogado');
-                    currentUser = null;
-                    userToken = null;
-                    userStatus = null;
+                    firebaseCurrentUser = null;
+                    firebaseUserToken = null;
+                    firebaseUserStatus = null;
                 })
                 .catch((error) => {
                     console.error('❌ Erro no logout:', error.message);
@@ -1995,10 +1995,10 @@
             const authButtons = document.getElementById('authButtons');
             
             if (user) {
-                currentUser = user;
+                firebaseCurrentUser = user;
                 
                 // Obter token
-                userToken = await user.getIdToken();
+                firebaseUserToken = await user.getIdToken();
                 
                 console.log('👤 Usuário logado:', user.displayName || user.email);
                 console.log('🆔 UID:', user.uid);
@@ -2007,9 +2007,9 @@
                 await fetchUserStatus();
                 
                 // Mostrar informações do usuário
-                const statusBadge = userStatus?.isPremium 
+                const statusBadge = firebaseUserStatus?.isPremium 
                     ? '<span style="color: #fbbf24; font-size: 0.9rem;">💎 Premium</span>'
-                    : `<span style="color: #9ca3af; font-size: 0.8rem;">${userStatus?.remainingToday || 2}/2 hoje</span>`;
+                    : `<span style="color: #9ca3af; font-size: 0.8rem;">${firebaseUserStatus?.remainingToday || 2}/2 hoje</span>`;
                 
                 authButtons.innerHTML = `
                     <div class="user-dropdown">
@@ -2030,9 +2030,9 @@
                                 </div>
                             </div>
                             <div style="padding: 12px 16px; background: rgba(139, 92, 246, 0.1); border-bottom: 1px solid var(--border-color);">
-                                ${userStatus?.isPremium 
-                                    ? '💎 <strong>Premium Ativo</strong><br><small>Até ' + new Date(userStatus.premiumUntil).toLocaleDateString('pt-BR') + '</small>'
-                                    : `📊 <strong>${userStatus?.remainingToday || 2} análises restantes</strong><br><small>Limite diário: 2 análises grátis</small>`
+                                ${firebaseUserStatus?.isPremium 
+                                    ? '💎 <strong>Premium Ativo</strong><br><small>Até ' + new Date(firebaseUserStatus.premiumUntil).toLocaleDateString('pt-BR') + '</small>'
+                                    : `📊 <strong>${firebaseUserStatus?.remainingToday || 2} análises restantes</strong><br><small>Limite diário: 2 análises grátis</small>`
                                 }
                             </div>
                             <div class="dropdown-divider"></div>
@@ -2042,7 +2042,7 @@
                             <button class="dropdown-item" onclick="alert('Em breve: Ganhos/Perdas')">
                                 📊 Ganhos/Perdas
                             </button>
-                            ${!userStatus?.isPremium ? `
+                            ${!firebaseUserStatus?.isPremium ? `
                             <button class="dropdown-item" onclick="alert('Em breve: Upgrade Premium')" style="color: #fbbf24;">
                                 💎 Fazer Upgrade
                             </button>
@@ -2056,9 +2056,9 @@
                 `;
             } else {
                 console.log('🚫 Usuário não logado');
-                currentUser = null;
-                userToken = null;
-                userStatus = null;
+                firebaseCurrentUser = null;
+                firebaseUserToken = null;
+                firebaseUserStatus = null;
                 
                 // Mostrar botão de login
                 authButtons.innerHTML = `
@@ -2301,7 +2301,7 @@
                         <button class="btn-stats" onclick="togglePredictionBlock(${game.id})">
                             ✨ Ver Análise Completa
                         </button>
-                        <button class="btn-ai" onclick="analyzeWithAI(${game.id})" ${!currentUser ? 'disabled title="Faça login para usar IA"' : ''}>
+                        <button class="btn-ai" onclick="analyzeWithAI(${game.id})" ${!firebaseCurrentUser ? 'disabled title="Faça login para usar IA"' : ''}>
                             🤖 Analisar com IA
                         </button>
                     </div>
@@ -2323,7 +2323,7 @@
                             <button class="btn-action-stats" onclick="showGameStats(${game.id})">
                                 📊 Analisar Stats Completo
                             </button>
-                            <button class="btn-action-ai" onclick="analyzeWithAI(${game.id})" ${!currentUser ? 'disabled' : ''}>
+                            <button class="btn-action-ai" onclick="analyzeWithAI(${game.id})" ${!firebaseCurrentUser ? 'disabled' : ''}>
                                 🤖 Análise com IA Avançada
                             </button>
                         </div>
@@ -2366,7 +2366,7 @@
             const games = GAMES_DATA || [];
             console.log('🎮 Games data:', games.length, 'jogos');
             
-            const isPremium = userStatus?.isPremium || false;
+            const isPremium = firebaseUserStatus?.isPremium || false;
             console.log('💎 User premium?', isPremium);
             
             // Estratégia: 2 cards completos grátis, restante locked (se não for premium)
@@ -2417,7 +2417,7 @@
          * Analisa jogo com IA
          */
         async function analyzeWithAI(gameId) {
-            if (!currentUser) {
+            if (!firebaseCurrentUser) {
                 alert('⚠️ Faça login para usar a análise com IA');
                 return;
             }
