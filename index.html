@@ -1818,8 +1818,8 @@
         let firebaseUserToken = null;
         let firebaseUserStatus = null;
 
-        // URL do backend
-        const BACKEND_URL = 'https://metafy-backend.onrender.com';
+        // URL do backend (evitar redeclaração global)
+        const backendUrl = window.BACKEND_URL || 'https://metafy-backend.onrender.com';
 
         // Função helper para fazer requests autenticados
         async function authenticatedFetch(url, options = {}) {
@@ -1862,7 +1862,7 @@
         // Buscar status do usuário do backend
         async function fetchUserStatus() {
             try {
-                const response = await authenticatedFetch(`${BACKEND_URL}/api/user/status`);
+                const response = await authenticatedFetch(`${backendUrl}/api/user/status`);
                 const data = await response.json();
                 
                 if (data.success) {
@@ -1892,7 +1892,7 @@
         // Validar e registrar uso de análise
         async function validateAndUseAnalysis() {
             try {
-                const response = await authenticatedFetch(`${BACKEND_URL}/api/user/analysis/use`, {
+                const response = await authenticatedFetch(`${backendUrl}/api/user/analysis/use`, {
                     method: 'POST'
                 });
                 
@@ -1975,6 +1975,9 @@
                     alert('Erro ao fazer login: ' + error.message);
                 });
         }
+
+                // Garantir acesso global para onclick inline
+                window.loginWithGoogle = loginWithGoogle;
 
         // Função de logout
         function logoutUser() {
@@ -2392,6 +2395,9 @@
             
             console.log(`🎮 ${games.length} jogos renderizados | Premium: ${isPremium} | Free: ${FREE_PREVIEW}`);
         }
+
+        // Garantir acesso global para onclick inline
+        window.renderMatchCards = renderMatchCards;
 
         /**
          * Mostra estatísticas do jogo
