@@ -1090,9 +1090,6 @@
             <div class="section-header">
                 <h2 class="section-title">⚽ Jogos de Hoje</h2>
                 <p class="section-subtitle">Selecione um jogo para analisar com IA</p>
-                <button onclick="window.refetchGames && window.refetchGames()" style="padding: 8px 16px; background: #8b5cf6; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 12px; margin-top: 8px;">
-                    🔄 Recarregar Jogos
-                </button>
             </div>
             
             <!-- Filtros -->
@@ -1987,6 +1984,7 @@
                     firebaseCurrentUser = null;
                     firebaseUserToken = null;
                     firebaseUserStatus = null;
+                    window.firebaseAuthUser = null;
                 })
                 .catch((error) => {
                     console.error('❌ Erro no logout:', error.message);
@@ -1999,6 +1997,7 @@
             
             if (user) {
                 firebaseCurrentUser = user;
+                window.firebaseAuthUser = user;
                 
                 // Obter token
                 firebaseUserToken = await user.getIdToken();
@@ -2062,6 +2061,7 @@
                 firebaseCurrentUser = null;
                 firebaseUserToken = null;
                 firebaseUserStatus = null;
+                window.firebaseAuthUser = null;
                 
                 // Mostrar botão de login
                 authButtons.innerHTML = `

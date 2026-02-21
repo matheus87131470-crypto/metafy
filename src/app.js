@@ -182,7 +182,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     const status = userStatusCache || getFallbackStatus();
-    if (!status.loggedIn) {
+    const hasFirebaseUser = Boolean(window.firebaseAuthUser);
+    if (!status.loggedIn && !hasFirebaseUser) {
       alert('⚠️ Faça login para liberar análises completas.');
       return;
     }
