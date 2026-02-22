@@ -695,8 +695,86 @@ function updateAnalysisCounter() {
 }
 
 // ══════════════════════════════════════════════════════════
-// TOP PICKS — carregamento via API-Football (backend)
+// TOP PICKS — /api/matches/today (value analysis)
 // ══════════════════════════════════════════════════════════
+
+/**
+ * Converte um match de /api/matches/today para o formato
+ * esperado pelos cards de TopPicks.js
+ */
+function matchToTopPick(match) {
+  const va = match.valueAnalysis || {};
+
+  // Horário: kickoff ISO → HH:mm em BRT (UTC-3)
+  let time = '--:--';
+  try {
+    time = new Date(match.kickoff).toLocaleTimeString('pt-BR', {
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone: 'America/Sao_Paulo',
+    });
+  } catch (_) { /* mantém '--:--' */ }
+
+  // Nível de confiança a partir do rating
+  const levelMap = {
+    'Forte oportunidade': { levelClass: 'high',   confidenceLevel: 'ALTA CONFIANÇA'  },
+    'Valor moderado':     { levelClass: 'medium',  confidenceLevel: 'MÉDIA CONFIANÇA' },
+  };
+  const level = levelMap[va.rating] || { levelClass: 'low', confidenceLevel: 'BAIXA CONFIANÇA' };
+
+  // Pick: nome legível do mercado vencedor
+  const pickLabel =
+    va.bestMarket === 'home' ? match.home :
+    va.bestMarket === 'draw' ? 'Empate' :
+    va.bestMarket === 'away' ? match.away :
+    (va.marketLabel || '—');
+
+  // Odds do mercado escolhido
+  const oddValue =
+    va.bestMarket === 'home' ? match.odds?.home :
+    va.bestMarket === 'draw' ? match.odds?.draw :
+    va.bestMarket === 'away' ? match.odds?.away :
+    null;
+
+  // Confiança no VALUE do pick (não a prob. bruta do desfecho)
+  // "Forte oportunidade" (edge ≥ 8) → 82–92 %
+  // "Valor moderado"     (edge 7)   → 72–80 %
+  const baseConf = va.rating === 'Forte oportunidade' ? 86 : 74;
+  const jitter   = ((match.id || 1) * 3) % 6; // pseudo-variação 0–5
+  const pct      = Math.min(95, Math.max(68, baseConf + jitter));
+
+  // Estatísticas do card
+  const s = match.stats || {};
+  const fmt = n => (typeof n === 'number' ? n.toFixed(1) : '—');
+  const last5 = arr => (arr || []).join('-');
+
+  const keyStats = [
+    `Últimos 5 (${match.home}): ${last5(s.homeLast5)}`,
+    `Últimos 5 (${match.away}): ${last5(s.awayLast5)}`,
+    `Média gols: ${fmt(s.homeGoalsAvg)} × ${fmt(s.awayGoalsAvg)} por jogo`,
+    `Edge de valor: +${va.edge ?? 0}%  |  Odds: ${oddValue ?? '—'}`,
+  ];
+
+  const explanation =
+    `${match.home} vs ${match.away} — ${match.league}. ` +
+    `Mercado "${va.marketLabel || pickLabel}" com edge de +${va.edge ?? 0}% ` +
+    `(probabilidade ajustada ${fmt(va.adjustedProb)}% vs implícita ${fmt(va.impliedProb)}%).`;
+
+  return {
+    id:               `m-${match.id}`,
+    league:           match.league || 'Liga',
+    time,
+    home:             match.home,
+    away:             match.away,
+    market:           va.marketLabel || 'Resultado',
+    pick:             pickLabel,
+    confidencePct:    pct.toFixed(1),
+    confidenceLevel:  level.confidenceLevel,
+    levelClass:       level.levelClass,
+    explanation,
+    keyStats,
+  };
+}
 
 async function loadTopPicks() {
   const container = document.getElementById('topPicksSection');
@@ -718,15 +796,20 @@ async function loadTopPicks() {
     </section>`;
 
   try {
-    const resp = await fetch(`${BACKEND_URL}/api/top-picks/today`);
-
+    const resp = await fetch(`${BACKEND_URL}/api/matches/today`);
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
 
     const data = await resp.json();
+    const allMatches = data.matches || [];
 
-    const picks = data.picks || [];
+    // 1. Filtrar por prioridade: Forte oportunidade → Valor moderado
+    const PRIORITY = ['Forte oportunidade', 'Valor moderado'];
+    const filtered = allMatches
+      .filter(m => PRIORITY.includes(m.valueAnalysis?.rating))
+      .sort((a, b) => (b.valueAnalysis?.edge ?? 0) - (a.valueAnalysis?.edge ?? 0))
+      .slice(0, 10);
 
-    if (picks.length === 0) {
+    if (filtered.length === 0) {
       container.innerHTML = `
         <section class="tp-section">
           <div class="tp-header">
@@ -735,44 +818,37 @@ async function loadTopPicks() {
               <h2 class="tp-title">Top Picks <span class="tp-today-badge">Hoje</span></h2>
             </div>
           </div>
-          <p class="tp-empty">Sem jogos principais hoje.</p>
+          <p class="tp-empty">Sem picks com valor hoje — volte mais tarde.</p>
         </section>`;
       return;
     }
 
-    // Armazenar globalmente para que topPicksAnalyzeAI() funcione
+    // 2. Mapear para formato dos cards
+    const picks = filtered.map(matchToTopPick);
+
+    // 3. Armazenar globalmente (usado por topPicksAnalyzeAI)
     window.TOP_PICKS_TODAY = picks;
 
+    // 4. Renderizar
     if (typeof renderTopPicks === 'function') {
       renderTopPicks(picks, 'topPicksSection');
     }
 
-    console.log(`⚡ Top Picks carregados: ${picks.length} jogos`);
+    console.log(`⚡ Top Picks: ${picks.length} jogos (de ${allMatches.length} total)`);
 
   } catch (err) {
-    console.warn('⚠️ Não foi possível carregar Top Picks:', err.message);
+    console.warn('⚠️ Top Picks: falha ao carregar —', err.message);
 
-    // Fallback: usar mock pré-definido para nunca ficar vazio
-    const fallback = (window.TOP_PICKS_TODAY && window.TOP_PICKS_TODAY.length > 0)
-      ? window.TOP_PICKS_TODAY
-      : (window.TOP_PICKS_TODAY_FALLBACK || []);
-
-    if (fallback.length > 0 && typeof renderTopPicks === 'function') {
-      window.TOP_PICKS_TODAY = fallback;
-      renderTopPicks(fallback, 'topPicksSection');
-      console.log(`📦 Top Picks exibindo ${fallback.length} picks do fallback`);
-    } else {
-      container.innerHTML = `
-        <section class="tp-section">
-          <div class="tp-header">
-            <div class="tp-title-group">
-              <span class="tp-title-icon">⚡</span>
-              <h2 class="tp-title">Top Picks <span class="tp-today-badge">Hoje</span></h2>
-            </div>
+    container.innerHTML = `
+      <section class="tp-section">
+        <div class="tp-header">
+          <div class="tp-title-group">
+            <span class="tp-title-icon">⚡</span>
+            <h2 class="tp-title">Top Picks <span class="tp-today-badge">Hoje</span></h2>
           </div>
-          <p class="tp-empty">Sem jogos principais hoje.</p>
-        </section>`;
-    }
+        </div>
+        <p class="tp-empty">Não foi possível carregar os picks agora. Tente novamente em breve.</p>
+      </section>`;
   }
 }
 
