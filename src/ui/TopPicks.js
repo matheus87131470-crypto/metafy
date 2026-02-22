@@ -46,18 +46,34 @@
     container.innerHTML = html;
   }
 
+  // ————— Badge por rating —————
+  function ratingBadge(pick) {
+    if (pick.rating === 'Forte oportunidade') {
+      return '<span class="tp-rating-badge tp-rating-badge--strong">🔥 Forte oportunidade</span>';
+    }
+    if (pick.rating === 'Valor moderado') {
+      return '<span class="tp-rating-badge tp-rating-badge--moderate">📊 Valor moderado</span>';
+    }
+    if (pick.rating === 'fallback') {
+      return '<span class="tp-rating-badge tp-rating-badge--watch">👁 Em observação</span>';
+    }
+    return '';
+  }
+
   // ————— Card desbloqueado —————
   function renderPickCard(pick) {
     const isExpanded = expandedIds.has(pick.id);
     const levelColor = pick.levelClass === 'high' ? 'var(--tp-high)' :
                        pick.levelClass === 'medium' ? 'var(--tp-medium)' : 'var(--tp-low)';
+    const strongClass = pick.rating === 'Forte oportunidade' ? ' tp-card--strong' : '';
 
     return `
-      <div class="tp-card tp-card--${pick.levelClass}" data-pick-id="${pick.id}">
+      <div class="tp-card tp-card--${pick.levelClass}${strongClass}" data-pick-id="${pick.id}">
         <div class="tp-card-header">
           <span class="tp-league">${pick.league}</span>
           <span class="tp-time">${pick.time}</span>
         </div>
+        <div class="tp-card-badge">${ratingBadge(pick)}</div>
 
         <div class="tp-teams">
           <span class="tp-team">${pick.home}</span>
@@ -100,6 +116,7 @@
   function renderLockedCard(pick) {
     const levelColor = pick.levelClass === 'high' ? 'var(--tp-high)' :
                        pick.levelClass === 'medium' ? 'var(--tp-medium)' : 'var(--tp-low)';
+    const strongClass = pick.rating === 'Forte oportunidade' ? ' tp-card--strong' : '';
 
     // Preview: 1 frase da explanation (até 80 chars) + 1 bullet sem número
     const previewText = (pick.explanation || '').split('.')[0] + '.';
@@ -111,11 +128,12 @@
     const blurredBullets = (pick.keyStats || []).slice(1).map(s => `<li>${s}</li>`).join('');
 
     return `
-      <div class="tp-card tp-card--${pick.levelClass} tp-card--preview" data-pick-id="${pick.id}">
+      <div class="tp-card tp-card--${pick.levelClass}${strongClass} tp-card--preview" data-pick-id="${pick.id}">
         <div class="tp-card-header">
           <span class="tp-league">${pick.league}</span>
           <span class="tp-time">${pick.time}</span>
         </div>
+        <div class="tp-card-badge">${ratingBadge(pick)}</div>
 
         <div class="tp-teams">
           <span class="tp-team">${pick.home}</span>

@@ -703,7 +703,8 @@ function updateAnalysisCounter() {
  * esperado pelos cards de TopPicks.js
  */
 function matchToTopPick(match) {
-  const va = match.valueAnalysis || {};
+  const va  = match.valueAnalysis || {};
+  const isFallback = !!match.isFallback;
 
   // Horário: kickoff ISO → HH:mm em BRT (UTC-3)
   let time = '--:--';
@@ -720,7 +721,9 @@ function matchToTopPick(match) {
     'Forte oportunidade': { levelClass: 'high',   confidenceLevel: 'ALTA CONFIANÇA'  },
     'Valor moderado':     { levelClass: 'medium',  confidenceLevel: 'MÉDIA CONFIANÇA' },
   };
-  const level = levelMap[va.rating] || { levelClass: 'low', confidenceLevel: 'BAIXA CONFIANÇA' };
+  const level = isFallback
+    ? { levelClass: 'low', confidenceLevel: 'EM OBSERVAÇÃO' }
+    : (levelMap[va.rating] || { levelClass: 'low', confidenceLevel: 'BAIXA CONFIANÇA' });
 
   // Pick: nome legível do mercado vencedor
   const pickLabel =
@@ -736,12 +739,14 @@ function matchToTopPick(match) {
     va.bestMarket === 'away' ? match.odds?.away :
     null;
 
-  // Confiança no VALUE do pick (não a prob. bruta do desfecho)
+  // Confiança no VALUE do pick
   // "Forte oportunidade" (edge ≥ 8) → 82–92 %
   // "Valor moderado"     (edge 7)   → 72–80 %
-  const baseConf = va.rating === 'Forte oportunidade' ? 86 : 74;
-  const jitter   = ((match.id || 1) * 3) % 6; // pseudo-variação 0–5
-  const pct      = Math.min(95, Math.max(68, baseConf + jitter));
+  // fallback preenchimento          → 62–70 %
+  const baseConf = isFallback ? 65 :
+    va.rating === 'Forte oportunidade' ? 86 : 74;
+  const jitter   = ((match.id || 1) * 3) % 6;
+  const pct      = Math.min(95, Math.max(60, baseConf + jitter));
 
   // Estatísticas do card
   const s = match.stats || {};
@@ -752,13 +757,14 @@ function matchToTopPick(match) {
     `Últimos 5 (${match.home}): ${last5(s.homeLast5)}`,
     `Últimos 5 (${match.away}): ${last5(s.awayLast5)}`,
     `Média gols: ${fmt(s.homeGoalsAvg)} × ${fmt(s.awayGoalsAvg)} por jogo`,
-    `Edge de valor: +${va.edge ?? 0}%  |  Odds: ${oddValue ?? '—'}`,
+    va.edge ? `Edge de valor: +${va.edge}%  |  Odds: ${oddValue ?? '—'}` : `Em observação — acompanhe o jogo`,
   ];
 
-  const explanation =
-    `${match.home} vs ${match.away} — ${match.league}. ` +
-    `Mercado "${va.marketLabel || pickLabel}" com edge de +${va.edge ?? 0}% ` +
-    `(probabilidade ajustada ${fmt(va.adjustedProb)}% vs implícita ${fmt(va.impliedProb)}%).`;
+  const explanation = isFallback
+    ? `${match.home} vs ${match.away} — ${match.league}. Jogo em observação, acompanhe as odds antes da partida.`
+    : `${match.home} vs ${match.away} — ${match.league}. ` +
+      `Mercado "${va.marketLabel || pickLabel}" com edge de +${va.edge ?? 0}% ` +
+      `(probabilidade ajustada ${fmt(va.adjustedProb)}% vs implícita ${fmt(va.impliedProb)}%).`;
 
   return {
     id:               `m-${match.id}`,
@@ -766,11 +772,12 @@ function matchToTopPick(match) {
     time,
     home:             match.home,
     away:             match.away,
-    market:           va.marketLabel || 'Resultado',
-    pick:             pickLabel,
+    market:           isFallback ? 'Observação' : (va.marketLabel || 'Resultado'),
+    pick:             isFallback ? '—' : pickLabel,
     confidencePct:    pct.toFixed(1),
     confidenceLevel:  level.confidenceLevel,
     levelClass:       level.levelClass,
+    rating:           isFallback ? 'fallback' : (va.rating || ''),
     explanation,
     keyStats,
   };
@@ -802,14 +809,36 @@ async function loadTopPicks() {
     const data = await resp.json();
     const allMatches = data.matches || [];
 
-    // 1. Filtrar por prioridade: Forte oportunidade → Valor moderado
-    const PRIORITY = ['Forte oportunidade', 'Valor moderado'];
-    const filtered = allMatches
-      .filter(m => PRIORITY.includes(m.valueAnalysis?.rating))
-      .sort((a, b) => (b.valueAnalysis?.edge ?? 0) - (a.valueAnalysis?.edge ?? 0))
-      .slice(0, 10);
+    // ── 1. Separar por rating ──────────────────────────────
+    const byEdgeDesc = (a, b) => (b.valueAnalysis?.edge ?? 0) - (a.valueAnalysis?.edge ?? 0);
+    const byKickoff  = (a, b) => new Date(a.kickoff) - new Date(b.kickoff);
 
-    if (filtered.length === 0) {
+    const strong   = allMatches
+      .filter(m => m.valueAnalysis?.rating === 'Forte oportunidade')
+      .sort(byEdgeDesc);
+
+    const moderate = allMatches
+      .filter(m => m.valueAnalysis?.rating === 'Valor moderado')
+      .sort(byEdgeDesc);
+
+    // ── 2. Montar lista: até 3 strong + até 7 moderate ────
+    let finalMatches = [
+      ...strong.slice(0, 3),
+      ...moderate.slice(0, 7),
+    ].slice(0, 10);
+
+    // ── 3. Completar até 10 com restantes (se necessário) ─
+    if (finalMatches.length < 10) {
+      const usedIds = new Set(finalMatches.map(m => m.id));
+      const extras  = allMatches
+        .filter(m => !usedIds.has(m.id))
+        .sort(byKickoff)
+        .slice(0, 10 - finalMatches.length)
+        .map(m => ({ ...m, isFallback: true }));
+      finalMatches = [...finalMatches, ...extras];
+    }
+
+    if (finalMatches.length === 0) {
       container.innerHTML = `
         <section class="tp-section">
           <div class="tp-header">
@@ -818,23 +847,27 @@ async function loadTopPicks() {
               <h2 class="tp-title">Top Picks <span class="tp-today-badge">Hoje</span></h2>
             </div>
           </div>
-          <p class="tp-empty">Sem picks com valor hoje — volte mais tarde.</p>
+          <p class="tp-empty">Sem jogos encontrados hoje — volte mais tarde.</p>
         </section>`;
       return;
     }
 
-    // 2. Mapear para formato dos cards
-    const picks = filtered.map(matchToTopPick);
+    // ── 4. Mapear para formato dos cards ──────────────────
+    const picks = finalMatches.map(matchToTopPick);
 
-    // 3. Armazenar globalmente (usado por topPicksAnalyzeAI)
+    // ── 5. Armazenar globalmente (usado por topPicksAnalyzeAI)
     window.TOP_PICKS_TODAY = picks;
 
-    // 4. Renderizar
+    // ── 6. Renderizar ─────────────────────────────────────
     if (typeof renderTopPicks === 'function') {
       renderTopPicks(picks, 'topPicksSection');
     }
 
-    console.log(`⚡ Top Picks: ${picks.length} jogos (de ${allMatches.length} total)`);
+    console.log(
+      `⚡ Top Picks: ${picks.length} jogos` +
+      ` (${strong.slice(0,3).length} forte + ${moderate.slice(0,7).length} moderado` +
+      ` + ${Math.max(0, finalMatches.length - strong.slice(0,3).length - moderate.slice(0,7).length)} observação)`
+    );
 
   } catch (err) {
     console.warn('⚠️ Top Picks: falha ao carregar —', err.message);

@@ -127,6 +127,51 @@
 }
 .tp-card--low::before { background: var(--tp-low); }
 
+/* ————— Destaque: Forte oportunidade ————— */
+.tp-card--strong {
+  border-color: rgba(0, 229, 160, 0.55);
+  box-shadow: 0 0 18px rgba(0, 229, 160, 0.13), 0 4px 24px rgba(0, 0, 0, 0.45);
+}
+.tp-card--strong:hover {
+  box-shadow: 0 0 28px rgba(0, 229, 160, 0.20), 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+/* ————— Badge de rating ————— */
+.tp-card-badge {
+  min-height: 22px;
+}
+
+.tp-rating-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.67rem;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 10px;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.tp-rating-badge--strong {
+  background: rgba(0, 229, 160, 0.13);
+  color: #00e5a0;
+  border: 1px solid rgba(0, 229, 160, 0.4);
+}
+
+.tp-rating-badge--moderate {
+  background: rgba(59, 130, 246, 0.13);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.35);
+}
+
+.tp-rating-badge--watch {
+  background: rgba(148, 163, 184, 0.10);
+  color: #94a3b8;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+}
+
 /* ————— Header do card ————— */
 .tp-card-header {
   display: flex;
@@ -335,7 +380,7 @@
 
 /* Linhas visíveis (1 frase + 1 bullet mascarado) */
 .tp-preview-visible {
-  /* totalmente visível */
+  display: block;
 }
 
 .tp-stats--preview {
