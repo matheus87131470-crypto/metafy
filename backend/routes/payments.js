@@ -1,247 +1,212 @@
-/**
+﻿/**
  * routes/payments.js
- * Rotas de pagamento via Mercado Pago (Checkout Pro)
+ * Pagamento PIX via Asaas
  */
 
 import express from 'express';
-import mercadopagoPkg from 'mercadopago';
-const { MercadoPagoConfig, Preference, Payment } = mercadopagoPkg;
 import { setPremium, getUser } from '../../lib/userStore.js';
 
 const router = express.Router();
 
-const PREMIUM_PRICE = 3.50; // R$ 3,50
+const PREMIUM_PRICE = 4.50; // R$ 4,50
 const PREMIUM_DAYS = 7;
 
-// Configurar Mercado Pago
-let mercadopago = null;
-if (process.env.MERCADOPAGO_ACCESS_TOKEN) {
-  try {
-    const client = new MercadoPagoConfig({
-      accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN,
-      options: { timeout: 5000 }
-    });
-    mercadopago = { 
-      preference: new Preference(client),
-      payment: new Payment(client)
-    };
-    console.log('✅ Mercado Pago configurado');
-  } catch (error) {
-    console.error('❌ Erro ao configurar Mercado Pago:', error);
-  }
+const ASAAS_BASE_URL =
+  process.env.ASAAS_ENV === 'production'
+    ? 'https://api.asaas.com'
+    : 'https://sandbox.asaas.com';
+
+const ASAAS_KEY = process.env.ASAAS_API_KEY || '';
+
+if (ASAAS_KEY) {
+  console.log(`✅ Asaas configurado (${process.env.ASAAS_ENV === 'production' ? 'produção' : 'sandbox'})`);
 } else {
-  console.warn('⚠️ MERCADOPAGO_ACCESS_TOKEN não configurado - pagamentos desabilitados');
+  console.warn('⚠️ ASAAS_API_KEY não configurado – pagamentos PIX desabilitados');
 }
 
 /**
- * POST /api/payments/checkout
- * Cria preferência de pagamento e retorna init_point para redirect
+ * Wrapper para chamadas na API Asaas
  */
-router.post('/checkout', async (req, res) => {
+async function asaas(method, path, body = null) {
+  const url = `${ASAAS_BASE_URL}/api/v3${path}`;
+
+  const opts = {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+      'access_token': ASAAS_KEY,
+      'User-Agent': 'metafy-backend/1.0'
+    }
+  };
+
+  if (body) opts.body = JSON.stringify(body);
+
+  const res = await fetch(url, opts);
+  const data = await res.json();
+
+  if (!res.ok) {
+    const msg = data?.errors?.[0]?.description || JSON.stringify(data);
+    throw new Error(`Asaas [${res.status}]: ${msg}`);
+  }
+
+  return data;
+}
+
+/* ─────────────────────────────────────────────────────────
+   POST /api/payments/pix
+   Cria cobrança PIX → retorna { qrCodeImage, pixCopiaECola, txid, expiresAt }
+───────────────────────────────────────────────────────── */
+router.post('/pix', async (req, res) => {
   try {
-    const { userId } = req.body;
-    
-    if (!userId) {
-      return res.status(400).json({
-        success: false,
-        error: { message: 'userId é obrigatório' }
-      });
+    const { userId, cpf, name } = req.body;
+
+    if (!userId || !cpf) {
+      return res.status(400).json({ success: false, error: 'userId e CPF são obrigatórios' });
     }
 
-    // Verificar se Mercado Pago está configurado
-    if (!mercadopago) {
-      console.warn('⚠️ Tentativa de pagamento sem MP configurado');
-      return res.status(503).json({
-        success: false,
-        error: { message: 'Pagamento temporariamente indisponível' }
-      });
+    if (!ASAAS_KEY) {
+      return res.status(503).json({ success: false, error: 'Pagamento temporariamente indisponível' });
     }
 
-    // Verificar se usuário existe
+    const cpfNumerico = cpf.replace(/\D/g, '');
+    if (cpfNumerico.length !== 11) {
+      return res.status(400).json({ success: false, error: 'CPF inválido – deve ter 11 dígitos' });
+    }
+
+    // Verificar se usuário existe no sistema
     const user = await getUser(userId);
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        error: { message: 'Usuário não encontrado' }
+      return res.status(404).json({ success: false, error: 'Usuário não encontrado' });
+    }
+
+    // ── 1. Buscar ou criar cliente no Asaas ──────────────────────
+    let customerId;
+    try {
+      const searchRes = await asaas('GET', `/customers?cpfCnpj=${cpfNumerico}&limit=1`);
+      if (searchRes.data?.length > 0) {
+        customerId = searchRes.data[0].id;
+        console.log(`↩️  Cliente Asaas reutilizado: ${customerId}`);
+      }
+    } catch (e) {
+      console.warn('⚠️ Falha ao buscar cliente:', e.message);
+    }
+
+    if (!customerId) {
+      const customer = await asaas('POST', '/customers', {
+        name: name || `usuario_${userId.slice(-6)}`,
+        cpfCnpj: cpfNumerico,
+        externalReference: userId
       });
+      customerId = customer.id;
+      console.log(` Cliente criado no Asaas: ${customerId}`);
     }
 
-    // URL base do site
-    const baseUrl = process.env.SITE_URL || 'https://metafy.store';
-    
-    // External reference: premium7|userId|timestamp
-    const externalReference = `premium7|${userId}|${Date.now()}`;
+    //  2. Criar cobrança PIX 
+    const dueDate = new Date();
+    dueDate.setDate(dueDate.getDate() + 1);
+    const dueDateStr = dueDate.toISOString().split('T')[0]; // YYYY-MM-DD
 
-    // Criar preferência de pagamento
-    const preferenceData = {
-      items: [
-        {
-          title: 'Metafy Premium - 7 dias',
-          description: 'Acesso premium com análises ilimitadas por 7 dias',
-          quantity: 1,
-          unit_price: PREMIUM_PRICE,
-          currency_id: 'BRL'
-        }
-      ],
-      external_reference: externalReference,
-      notification_url: `${baseUrl}/api/webhooks/mercadopago`,
-      back_urls: {
-        success: `${baseUrl}?payment=success`,
-        failure: `${baseUrl}?payment=failure`,
-        pending: `${baseUrl}?payment=pending`
-      },
-      auto_return: 'approved',
-      payment_methods: {
-        excluded_payment_types: [],
-        installments: 1 // Apenas à vista
-      },
-      statement_descriptor: 'METAFY PREMIUM',
-      metadata: {
-        user_id: userId,
-        premium_days: PREMIUM_DAYS
-      }
-    };
+    const charge = await asaas('POST', '/payments', {
+      customer: customerId,
+      billingType: 'PIX',
+      value: PREMIUM_PRICE,
+      dueDate: dueDateStr,
+      description: 'Metafy Premium  7 dias',
+      externalReference: userId
+    });
 
-    const preference = await mercadopago.preference.create({ body: preferenceData });
+    console.log(` Cobrança PIX criada: ${charge.id} (userId: ${userId})`);
 
-    console.log(`✅ Preferência criada para ${userId}: ${preference.id}`);
+    //  3. Buscar QR Code 
+    const qrData = await asaas('GET', `/payments/${charge.id}/pixQrCode`);
 
-    res.json({
+    return res.json({
       success: true,
-      init_point: preference.init_point,
-      sandbox_init_point: preference.sandbox_init_point,
-      preference_id: preference.id,
-      external_reference: externalReference
+      txid: charge.id,
+      qrCodeImage: `data:image/png;base64,${qrData.encodedImage}`,
+      pixCopiaECola: qrData.payload,
+      expiresAt: charge.dueDate
     });
 
   } catch (error) {
-    console.error('❌ Erro ao criar checkout:', error);
-    res.status(500).json({
-      success: false,
-      error: { 
-        message: 'Erro ao criar checkout',
-        details: error.message 
-      }
-    });
+    console.error(' Erro ao criar PIX:', error.message);
+    return res.status(500).json({ success: false, error: 'Erro ao gerar cobrança PIX: ' + error.message });
   }
 });
 
-/**
- * POST /api/webhooks/mercadopago
- * Webhook do Mercado Pago - processa notificações de pagamento
+/* 
+   GET /api/payments/pix/status/:chargeId?userId=xxx
+   Polling de status para o frontend
  */
-router.post('/webhook', async (req, res) => {
+router.get('/pix/status/:chargeId', async (req, res) => {
   try {
-    console.log('📥 Webhook Mercado Pago:', JSON.stringify(req.body, null, 2));
-    
-    const { type, action, data } = req.body;
-    
-    // Responder 200 imediatamente
-    res.status(200).json({ received: true });
+    const { chargeId } = req.params;
+    const { userId } = req.query;
 
-    // Processar apenas notificações de pagamento
-    if (type !== 'payment' || action !== 'payment.created' && action !== 'payment.updated') {
-      console.log('ℹ️ Notificação ignorada:', type, action);
-      return;
+    if (!chargeId || !userId) {
+      return res.status(400).json({ success: false, error: 'chargeId e userId são obrigatórios' });
     }
 
-    if (!data?.id) {
-      console.warn('⚠️ Webhook sem payment ID');
-      return;
+    if (!ASAAS_KEY) {
+      return res.status(503).json({ success: false, error: 'Serviço indisponível' });
     }
 
-    // Buscar detalhes do pagamento
-    if (!mercadopago) {
-      console.error('❌ Mercado Pago não configurado para webhook');
-      return;
+    const charge = await asaas('GET', `/payments/${chargeId}`);
+    const isPaid = charge.status === 'RECEIVED' || charge.status === 'CONFIRMED';
+
+    // Se pago e referência bate, ativar premium
+    if (isPaid && charge.externalReference === userId) {
+      const user = await getUser(userId);
+      const now = new Date();
+      const alreadyPremium = user.premiumUntil && new Date(user.premiumUntil) > now;
+
+      if (!alreadyPremium) {
+        await setPremium(userId, {
+          paymentId: chargeId,
+          amount: charge.value,
+          approvedAt: now.toISOString(),
+          paymentMethod: 'PIX',
+          provider: 'asaas'
+        });
+        console.log(` Premium ativado via polling: ${userId}`);
+      }
     }
 
-    const payment = await mercadopago.payment.get({ id: data.id });
-    console.log(`📄 Payment ${data.id} status: ${payment.status}`);
-
-    // Processar apenas pagamentos aprovados
-    if (payment.status !== 'approved') {
-      console.log(`ℹ️ Pagamento ${data.id} não aprovado (${payment.status})`);
-      return;
-    }
-
-    // Extrair userId do external_reference
-    const externalRef = payment.external_reference;
-    if (!externalRef || !externalRef.startsWith('premium7|')) {
-      console.warn('⚠️ External reference inválido:', externalRef);
-      return;
-    }
-
-    // Format: premium7|userId|timestamp
-    const parts = externalRef.split('|');
-    if (parts.length < 2) {
-      console.warn('⚠️ External reference mal formatado:', externalRef);
-      return;
-    }
-
-    const userId = parts[1];
-    
-    // Ativar premium por 7 dias
-    const success = await setPremium(userId, {
-      paymentId: payment.id,
-      amount: payment.transaction_amount,
-      approvedAt: new Date().toISOString(),
-      paymentMethod: payment.payment_type_id,
-      externalReference: externalRef
-    });
-
-    if (success) {
-      console.log(`✅ Premium ativado via webhook: ${userId} (payment: ${payment.id})`);
-    } else {
-      console.error(`❌ Falha ao ativar premium: ${userId}`);
-    }
+    return res.json({ success: true, status: charge.status, isPaid });
 
   } catch (error) {
-    console.error('❌ Erro ao processar webhook:', error);
+    console.error(' Erro ao verificar status PIX:', error.message);
+    return res.status(500).json({ success: false, error: error.message });
   }
 });
 
-/**
- * POST /api/payments/simulate-approval
- * [APENAS TESTE] Simula aprovação de pagamento
+/* 
+   POST /api/payments/simulate-approval   [SOMENTE TESTES]
  */
 router.post('/simulate-approval', async (req, res) => {
   try {
     const { userId } = req.body;
-    
     if (!userId) {
-      return res.status(400).json({
-        success: false,
-        error: 'userId é obrigatório'
-      });
+      return res.status(400).json({ success: false, error: 'userId é obrigatório' });
     }
-    
-    // Ativar premium
-    const success = await setPremium(userId, {
-      paymentId: `test_${Date.now()}`,
+
+    const ok = await setPremium(userId, {
+      paymentId: `sim_${Date.now()}`,
       amount: PREMIUM_PRICE,
       approvedAt: new Date().toISOString(),
       isSimulation: true
     });
-    
-    if (success) {
-      res.json({
-        success: true,
-        message: `✅ Premium ativado para ${userId} por ${PREMIUM_DAYS} dias (simulação)`
-      });
-    } else {
-      res.status(500).json({
-        success: false,
-        error: 'Erro ao ativar premium'
-      });
-    }
-    
-  } catch (error) {
-    console.error('❌ Erro ao simular aprovação:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Erro ao simular aprovação'
+
+    return res.json({
+      success: ok,
+      message: ok
+        ? ` Premium simulado para ${userId} por ${PREMIUM_DAYS} dias`
+        : ' Erro ao simular premium'
     });
+
+  } catch (error) {
+    console.error(' Erro ao simular aprovação:', error.message);
+    return res.status(500).json({ success: false, error: error.message });
   }
 });
 

@@ -1313,99 +1313,112 @@
         </div>
     </main>
 
-    <!-- Modal de Pagamento PIX (DEPRECADO - agora usa Mercado Pago Checkout Pro) -->
-    <!-- Este modal não é mais usado, mantido apenas para compatibilidade -->
+    <!-- Modal de Pagamento PIX (Asaas) -->
     <div id="pixPaymentModal" class="modal-overlay" style="display: none;">
         <div class="modal-content pix-modal">
-            <button class="modal-close" onclick="closePixModal()">&times;</button>
-            
+            <button class="modal-close" onclick="closePixModal()" aria-label="Fechar">&times;</button>
+
+            <!-- 1. Formulário: CPF -->
             <div id="pixForm" class="pix-form">
-                <h2 class="modal-title">💎 Assinar Premium</h2>
-                <p class="modal-subtitle">Redirecionando para Mercado Pago...</p>
-                
+                <div class="pix-modal-icon">💚</div>
+                <h2 class="modal-title">Pagar com PIX</h2>
+                <p class="modal-subtitle">Gere o QR Code em segundos</p>
+
                 <div class="pix-amount">
                     <span class="currency">R$</span>
-                    <span class="value">3,50</span>
+                    <span class="value">4,50</span>
                 </div>
-                <p class="pix-description">7 dias de acesso Premium</p>
-                
-                <div class="form-group">
-                    <label for="emailInput">Email</label>
-                    <input 
-                        type="email" 
-                        id="emailInput" 
-                        class="form-input" 
-                        placeholder="seu@email.com"
-                        autocomplete="email"
-                    >
-                    <span id="emailError" class="input-error" style="display: none;">Email inválido</span>
+                <p class="pix-description">7 dias de acesso Premium • Liberação automática</p>
+
+                <div class="pix-benefits">
+                    <span>✅ Análises ilimitadas</span>
+                    <span>✅ IA avançada</span>
+                    <span>✅ Sem renovação automática</span>
                 </div>
-                
-                <div class="form-group">
-                    <label for="cpfInput">CPF (somente números)</label>
-                    <input 
-                        type="text" 
-                        id="cpfInput" 
-                        class="form-input" 
-                        placeholder="Digite seu CPF (11 dígitos)"
+
+                <div class="form-group" style="margin-top: 20px;">
+                    <label for="cpfInput">CPF (obrigatório para PIX)</label>
+                    <input
+                        type="text"
+                        id="cpfInput"
+                        class="form-input"
+                        placeholder="000.000.000-00"
                         maxlength="14"
                         autocomplete="off"
+                        inputmode="numeric"
+                        oninput="formatCPFInput(this)"
                     >
-                    <span id="cpfError" class="input-error" style="display: none;">CPF deve ter 11 dígitos</span>
+                    <span id="cpfError" class="input-error" style="display: none;">CPF inválido — verifique e tente novamente</span>
                 </div>
-                
-                <button class="btn-premium-cta" onclick="generatePixPayment()">
-                    Gerar Pagamento PIX
+
+                <button class="btn-pix-generate" id="btnGeneratePix" onclick="generatePixPayment()">
+                    <span class="btn-pix-icon">⚡</span> Gerar QR Code PIX
                 </button>
+                <p class="pix-secure-label">🔒 Pagamento seguro via Asaas</p>
             </div>
-            
+
+            <!-- 2. Loading -->
             <div id="pixLoading" class="pix-loading" style="display: none;">
-                <div class="spinner"></div>
-                <p>Gerando pagamento PIX...</p>
+                <div class="pix-spinner"></div>
+                <p>Gerando cobrança PIX...</p>
+                <p class="pix-loading-sub">Aguarde alguns segundos</p>
             </div>
-            
+
+            <!-- 3. QR Code + Copia e Cola -->
             <div id="pixContent" style="display: none;">
-                <h2 class="modal-title">💳 Pagamento PIX</h2>
-                <p class="modal-subtitle">Escaneie o QR Code ou copie o código</p>
-                
+                <h2 class="modal-title">QR Code PIX</h2>
+                <p class="modal-subtitle">Pague pelo app do seu banco</p>
+
                 <div class="pix-amount">
                     <span class="currency">R$</span>
-                    <span class="value" class="pix-price-value">4,50</span>
+                    <span class="value">4,50</span>
                 </div>
-                <p class="pix-description">7 dias de acesso Premium</p>
-                
+
                 <div class="qr-container">
                     <img id="qrCodeImage" src="" alt="QR Code PIX" class="qr-code">
+                    <div class="qr-overlay-pulse"></div>
                 </div>
-                
+
+                <div class="pix-divider"><span>ou use o código copia e cola</span></div>
+
                 <div class="pix-code-section">
-                    <label>Código PIX Copia e Cola:</label>
-                    <textarea id="pixCode" readonly class="pix-code-input"></textarea>
-                    <button class="btn-copy" onclick="copyPixCode()">📋 Copiar Código</button>
+                    <textarea id="pixCode" readonly class="pix-code-input" onclick="this.select()"></textarea>
+                    <button class="btn-copy" id="btnCopyPix" onclick="copyPixCode()">
+                        📋 Copiar código PIX
+                    </button>
                 </div>
-                
-                <div class="pix-status">
+
+                <div class="pix-status" id="pixStatusArea">
                     <div class="status-checking">
                         <div class="pulse-dot"></div>
-                        <span>Aguardando pagamento...</span>
+                        <span id="pixStatusText">Aguardando pagamento...</span>
                     </div>
                 </div>
-                
-                <p class="pix-info">O pagamento será confirmado automaticamente em alguns segundos.</p>
+
+                <p class="pix-info">O Premium será liberado automaticamente após o pagamento.</p>
+                <p class="pix-expires" id="pixExpiresLabel"></p>
             </div>
-            
+
+            <!-- 4. Sucesso -->
             <div id="pixSuccess" style="display: none;">
-                <div class="success-icon">✅</div>
+                <div class="pix-success-icon">🎉</div>
                 <h2 class="modal-title">Premium Ativado!</h2>
                 <p class="modal-subtitle">Seu acesso foi liberado com sucesso</p>
-                <button class="btn-premium-cta" onclick="closePixModal(); updatePremiumStatusUI();">Começar a Usar</button>
+                <div class="pix-success-details">
+                    <p>✅ Análises ilimitadas desbloqueadas</p>
+                    <p>✅ Válido por 7 dias corridos</p>
+                </div>
+                <button class="btn-pix-generate" onclick="closePixModal();">
+                    Começar a Usar 🚀
+                </button>
             </div>
-            
+
+            <!-- 5. Erro -->
             <div id="pixError" style="display: none;">
-                <div class="error-icon">❌</div>
-                <h2 class="modal-title">Erro ao Gerar Pagamento</h2>
+                <div class="pix-error-icon">❌</div>
+                <h2 class="modal-title">Erro ao Gerar PIX</h2>
                 <p class="modal-subtitle" id="errorMessage">Tente novamente em alguns instantes</p>
-                <button class="btn-secondary" onclick="resetPixModal()">Tentar Novamente</button>
+                <button class="btn-pix-generate" onclick="resetPixModal()">Tentar Novamente</button>
             </div>
         </div>
     </div>

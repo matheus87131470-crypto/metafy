@@ -1,198 +1,115 @@
-// =====================================================
+﻿// =====================================================
 // src/data/topPicksToday.js
-// Top Picks do dia — renderização offline, sem backend
+// Fallback estático — exibido quando o backend estiver indisponível.
+// loadTopPicks() em app.js substitui por dados reais em runtime.
+
+window.TOP_PICKS_TODAY_FALLBACK = [
+  {
+    id: 'fb-mock-1',
+    league: 'Champions League',
+    leagueId: 2,
+    time: '17:00',
+    home: 'Manchester City',
+    away: 'Real Madrid',
+    market: 'Gols',
+    pick: 'Over 2.5',
+    confidencePct: '88.4',
+    confidenceLevel: 'ALTA CONFIANÇA',
+    levelClass: 'high',
+    explanation: 'Confronto de alto nível com histórtico ofensivo elevado. As duas últimas edições deste duelo tiveram média de 3,2 gols. City joga no Etihad com pressão total.',
+    keyStats: [
+      'Últimos 5 jogos do City: 4,0 gols/jogo em casa',
+      'Real Madrid marcou em 9 dos últimos 10 jogos europeus',
+      'Média de 3,2 gols neste confronto na UCL (últimas 3 edições)',
+      'Árbitro escolhido tende a 4+ cartões, duelos físicos',
+    ],
+  },
+  {
+    id: 'fb-mock-2',
+    league: 'Premier League',
+    leagueId: 39,
+    time: '13:30',
+    home: 'Arsenal',
+    away: 'Chelsea',
+    market: 'Resultado',
+    pick: 'Casa vence',
+    confidencePct: '82.1',
+    confidenceLevel: 'ALTA CONFIANÇA',
+    levelClass: 'high',
+    explanation: 'Arsenal em excelente fase em casa, com seis vitórias seguidas no Emirates. Chelsea atravessa crise defensiva e vem de derrota fora de casa.',
+    keyStats: [
+      'Arsenal: 6 vitórias consecutivas em casa (PL)',
+      'Chelsea: 0 clean sheets nos últimos 5 jogos como visitante',
+      'Arsenal tem melhor xG em casa da liga: 2,3/jogo',
+      'Historico recente: Arsenal venceu 3 dos últimos 4 derbys',
+    ],
+  },
+  {
+    id: 'fb-mock-3',
+    league: 'La Liga',
+    leagueId: 140,
+    time: '16:00',
+    home: 'Barcelona',
+    away: 'Atlético Madrid',
+    market: 'Ambas Marcam',
+    pick: 'Sim',
+    confidencePct: '76.8',
+    confidenceLevel: 'MÉDIA CONFIANÇA',
+    levelClass: 'medium',
+    explanation: 'Clássico espanhol com alto potencial de gols dos dois lados. Atlético sempre marca contra o Barça e o Camp Nou tende a abrir o jogo.',
+    keyStats: [
+      'Ambas marcam em 7 dos últimos 10 derbys entre os dois',
+      'Atlético teve pelo menos 1 gol em todos os últimos 8 jogos',
+      'Barcelona: David Lewandowski em boa fase (4 gols nas últimas 3 partidas)',
+      'Último encontro: Barcelona 2 × 2 Atlético',
+    ],
+  },
+  {
+    id: 'fb-mock-4',
+    league: 'Brasileirão Série A',
+    leagueId: 71,
+    time: '20:00',
+    home: 'Flamengo',
+    away: 'Palmeiras',
+    market: 'Gols',
+    pick: 'Over 1.5',
+    confidencePct: '84.5',
+    confidenceLevel: 'ALTA CONFIANÇA',
+    levelClass: 'high',
+    explanation: 'Superfinal do futebol brasileiro. Os dois grandes com ataque em alta. Probabilidade baixíssima de 0 a 0 neste confronto histórico no Maracanã.',
+    keyStats: [
+      'Flamengo marcou em 9 dos últimos 10 jogos em casa',
+      'Palmeiras: 6 gols nos últimos 3 jogos fora',
+      'Histório: 0 a 0 em apenas 1 dos últimos 15 confrontos',
+      'Média de gols deste confronto: 2,7 por partida',
+    ],
+  },
+  {
+    id: 'fb-mock-5',
+    league: 'Bundesliga',
+    leagueId: 78,
+    time: '15:30',
+    home: 'Bayern München',
+    away: 'Borussia Dortmund',
+    market: 'Gols',
+    pick: 'Over 3.5',
+    confidencePct: '73.2',
+    confidenceLevel: 'MÉDIA CONFIANÇA',
+    levelClass: 'medium',
+    explanation: 'Der Klassiker — o clássico alemão é historicamente um dos jogos com mais gols da Europa. Bayern no Allianz Arena com ataque letal.',
+    keyStats: [
+      'Média de 4,1 gols nos últimos 10 Klassikers',
+      'Bayern: maior média de gols em casa da Bundesliga (3,2/jogo)',
+      'Dortmund também marca muito fora: 1,8 gol/jogo como visitante',
+      '7 dos últimos 10 Der Klassiker tiveram 4+ gols',
+    ],
+  },
+];
+// Fallback local  usado apenas se a API-Football
+// estiver indisponível (window.TOP_PICKS_TODAY é
+// preenchido em runtime por loadTopPicks()).
 // =====================================================
 
-window.TOP_PICKS_TODAY = [
-  {
-    id: "tp1",
-    league: "CAMPEONATO BRASILEIRO",
-    time: "20:00",
-    home: "Flamengo",
-    away: "Palmeiras",
-    market: "Gols",
-    pick: "Under 3.5",
-    confidencePct: 89.3,
-    confidenceLevel: "ALTA CONFIANÇA",
-    levelClass: "high",
-    explanation: "Confronto direto com alto nível defensivo. As duas equipes têm média combinada de 2.1 gols nos últimos 5 H2H.",
-    keyStats: [
-      "Média de gols H2H (últ. 5): 2.1",
-      "Flamengo: 3 dos últimos 5 jogos under 3.5",
-      "Palmeiras: 4 dos últimos 5 jogos under 3.5",
-      "Defesas entre as top 3 do campeonato",
-      "Jogo de alto nível competitivo com cautela tática"
-    ]
-  },
-  {
-    id: "tp2",
-    league: "LA LIGA",
-    time: "21:00",
-    home: "Real Madrid",
-    away: "Barcelona",
-    market: "Gols",
-    pick: "Under 3.5",
-    confidencePct: 94.8,
-    confidenceLevel: "ALTA CONFIANÇA",
-    levelClass: "high",
-    explanation: "El Clásico historicamente contido. Alta pressão tática reduz espaços e limita gols totais.",
-    keyStats: [
-      "Últimos 6 Clásicos: média de 2.3 gols",
-      "Ambas defesas entre as 2 melhores da liga",
-      "Over 3.5 só aconteceu 1x nos últimos 8 H2H",
-      "Pressão de campeonato aumenta conservadorismo"
-    ]
-  },
-  {
-    id: "tp3",
-    league: "PREMIER LEAGUE",
-    time: "16:00",
-    home: "Man City",
-    away: "Newcastle",
-    market: "Resultado",
-    pick: "Man City vence",
-    confidencePct: 82.4,
-    confidenceLevel: "ALTA CONFIANÇA",
-    levelClass: "high",
-    explanation: "City em ótima fase em casa com posse dominante. Newcastle sem três titulares por lesão.",
-    keyStats: [
-      "Man City: 8 vitórias em casa nas últimas 10",
-      "Newcastle: 1 vitória fora nos últimos 6",
-      "Média de gols City em casa: 2.4",
-      "Ausência de Isak e Trippier no Newcastle"
-    ]
-  },
-  {
-    id: "tp4",
-    league: "PREMIER LEAGUE",
-    time: "16:00",
-    home: "Chelsea",
-    away: "Burnley",
-    market: "Gols",
-    pick: "Over 1.5",
-    confidencePct: 76.2,
-    confidenceLevel: "ALTA CONFIANÇA",
-    levelClass: "high",
-    explanation: "Linha de aposta extremamente segura. Os dois times marcaram em 9 dos últimos 10 jogos.",
-    keyStats: [
-      "Chelsea: Over 1.5 em 8 dos últimos 10",
-      "Burnley: Over 1.5 em 7 dos últimos 10",
-      "H2H: todos os últimos 5 jogos over 1.5",
-      "Mínimo de risco estatístico"
-    ]
-  },
-  {
-    id: "tp5",
-    league: "SERIE A",
-    time: "18:00",
-    home: "Juventus",
-    away: "Como",
-    market: "Resultado",
-    pick: "Juventus DNB",
-    confidencePct: 81.6,
-    confidenceLevel: "ALTA CONFIANÇA",
-    levelClass: "high",
-    explanation: "DNB elimina risco de empate. Juventus superior em qualidade mas defensivamente organiza e raramente perde em casa.",
-    keyStats: [
-      "Juventus em casa: 7V, 2E, 1D (últ. 10)",
-      "Como: 1 vitória fora nos últimos 8",
-      "Handicap de qualidade favorece amplamente Juve",
-      "DNB protege contra único cenário de risco (empate)"
-    ]
-  },
-  {
-    id: "tp6",
-    league: "SERIE A",
-    time: "18:00",
-    home: "Inter",
-    away: "Lecce",
-    market: "Resultado",
-    pick: "Inter DNB",
-    confidencePct: 78.9,
-    confidenceLevel: "ALTA CONFIANÇA",
-    levelClass: "high",
-    explanation: "Inter entre as melhores da Europa em casa. Lecce com pior ataque visitante da liga.",
-    keyStats: [
-      "Inter em casa: invicto nos últimos 11",
-      "Lecce visitante: 1V, 2E, 9D na temporada",
-      "DNB com odd razoável garante retorno justo",
-      "Diferença de elenco muito grande"
-    ]
-  },
-  {
-    id: "tp7",
-    league: "LA LIGA",
-    time: "19:00",
-    home: "Betis",
-    away: "Rayo Vallecano",
-    market: "Gols",
-    pick: "Under 3.5",
-    confidencePct: 72.5,
-    confidenceLevel: "MÉDIA CONFIANÇA",
-    levelClass: "medium",
-    explanation: "Confronto regional equilibrado. Rayo foca em bloco defensivo fora de casa.",
-    keyStats: [
-      "H2H: 4 dos últimos 5 finalizaram under 3.5",
-      "Rayo visitante: média 1.6 gols por jogo",
-      "Betis com tendência de jogos travados em casa",
-      "Confronto equilibrado reduz espaços ofensivos"
-    ]
-  },
-  {
-    id: "tp8",
-    league: "PREMIER LEAGUE",
-    time: "19:00",
-    home: "Aston Villa",
-    away: "Leeds",
-    market: "Ambas Marcam",
-    pick: "Sim",
-    confidencePct: 68.4,
-    confidenceLevel: "MÉDIA CONFIANÇA",
-    levelClass: "medium",
-    explanation: "Ambos os times com ataque produtivo e defesa com brechas. Boas chances dos dois lados.",
-    keyStats: [
-      "Aston Villa: BTTS em 6 dos últimos 10",
-      "Leeds: marcou em 8 dos últimos 10 jogos",
-      "Ambas defesas com média de 1.5+ gols sofridos",
-      "Confronto com potencial ofensivo claro"
-    ]
-  },
-  {
-    id: "tp9",
-    league: "PREMIER LEAGUE",
-    time: "20:00",
-    home: "West Ham",
-    away: "Bournemouth",
-    market: "Gols",
-    pick: "Over 1.5",
-    confidencePct: 74.7,
-    confidenceLevel: "ALTA CONFIANÇA",
-    levelClass: "high",
-    explanation: "Dois times de ataque agressivo. Linha extremamente conservadora com alta taxa histórica.",
-    keyStats: [
-      "West Ham: Over 1.5 em 9 dos últimos 10",
-      "Bournemouth: Over 1.5 em 8 dos últimos 10",
-      "H2H: Over 1.5 em todos os últimos 6 jogos",
-      "Linha de aposta ultra-segura"
-    ]
-  },
-  {
-    id: "tp10",
-    league: "PREMIER LEAGUE",
-    time: "20:00",
-    home: "Brentford",
-    away: "Brighton",
-    market: "Gols",
-    pick: "Over 1.5",
-    confidencePct: 71.2,
-    confidenceLevel: "MÉDIA CONFIANÇA",
-    levelClass: "medium",
-    explanation: "Dois times ofensivos que raramente terminam 0x0. Histórico consistente de gols.",
-    keyStats: [
-      "Brentford: 0x0 em apenas 1 dos últimos 15",
-      "Brighton: ataque entre top 5 da PL",
-      "Over 1.5 em 7 dos últimos 8 H2H",
-      "Ambos precisam de pontos — jogo aberto"
-    ]
-  }
-];
+// Começa vazio: loadTopPicks() em app.js preenche com
+// dados reais. Se a API falhar, mostra "Sem jogos hoje".
+window.TOP_PICKS_TODAY = [];

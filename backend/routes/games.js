@@ -1,200 +1,186 @@
-import express from "express";
+﻿import express from "express";
 
 const router = express.Router();
 
+//  Cache em memória (30 min) 
+const CACHE_TTL = 30 * 60 * 1000; // 30 minutos
+let todayCache = { data: null, ts: 0, date: '' };
+
+// Mapeamento de status da API-Football para termos internos
+const STATUS_MAP = {
+  NS: 'scheduled', TBD: 'scheduled',
+  '1H': 'live', HT: 'live', '2H': 'live', ET: 'live', P: 'live', BT: 'live',
+  FT: 'finished', AET: 'finished', PEN: 'finished',
+  PST: 'postponed', CANC: 'cancelled', ABD: 'cancelled', SUSP: 'cancelled', INT: 'cancelled',
+  AWD: 'finished', WO: 'finished'
+};
+
+/**
+ * GET /api/games/today
+ * Busca fixtures do dia na API-Football (api-sports.io).
+ * Retorna array de jogos no formato que o frontend espera.
+ */
+router.get('/today', async (req, res) => {
+  const API_KEY = process.env.API_FOOTBALL_KEY;
+
+  if (!API_KEY) {
+    console.warn(' API_FOOTBALL_KEY não configurado  retornando array vazio');
+    return res.json({ success: false, error: 'API_FOOTBALL_KEY not set', games: [] });
+  }
+
+  // Data de hoje em YYYY-MM-DD (horário de Brasília, UTC-3)
+  const now = new Date();
+  const brtOffset = -3 * 60; // minutos
+  const brtDate = new Date(now.getTime() + (brtOffset + now.getTimezoneOffset()) * 60000);
+  const todayStr = brtDate.toISOString().split('T')[0];
+
+  // Verificar cache
+  if (todayCache.data && todayCache.date === todayStr && (Date.now() - todayCache.ts) < CACHE_TTL) {
+    console.log(` Cache hit  ${todayCache.data.count} jogos`);
+    return res.json(todayCache.data);
+  }
+
+  try {
+    console.log(` Buscando fixtures para ${todayStr} na API-Football...`);
+
+    const url = `https://v3.football.api-sports.io/fixtures?date=${todayStr}`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'x-apisports-key': API_KEY,
+        'Accept': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`API-Football respondeu ${response.status}`);
+    }
+
+    const payload = await response.json();
+
+    if (payload.errors && Object.keys(payload.errors).length > 0) {
+      const errMsg = Object.values(payload.errors).join('; ');
+      throw new Error(`API-Football erro: ${errMsg}`);
+    }
+
+    const fixtures = payload.response || [];
+    console.log(` ${fixtures.length} fixtures recebidos da API-Football`);
+
+    const games = fixtures.map(f => {
+      const fixture = f.fixture;
+      const league  = f.league;
+      const teams   = f.teams;
+      const goals   = f.goals;
+
+      // Hora local de Brasília
+      const dateObj = new Date(fixture.date);
+      const time = dateObj.toLocaleTimeString('pt-BR', {
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZone: 'America/Sao_Paulo'
+      });
+
+      const status = STATUS_MAP[fixture.status?.short] || 'scheduled';
+
+      return {
+        id:         fixture.id,
+        homeTeam:   teams.home.name,
+        awayTeam:   teams.away.name,
+        competition: league.name,
+        country:    league.country,
+        leagueId:   league.id,
+        time,
+        date:       fixture.date,
+        status,
+        homeScore:  goals.home,
+        awayScore:  goals.away,
+        teams: {
+          home: { name: teams.home.name, logo: teams.home.logo },
+          away: { name: teams.away.name, logo: teams.away.logo }
+        },
+        league: {
+          id:      league.id,
+          name:    league.name,
+          country: league.country,
+          logo:    league.logo,
+          flag:    league.flag
+        },
+        // Odds não fornecidas pelo endpoint de fixtures (plano gratuito)
+        homeOdds: 0,
+        drawOdds: 0,
+        awayOdds: 0
+      };
+    });
+
+    const result = {
+      success: true,
+      games,
+      count:  games.length,
+      date:   todayStr,
+      source: 'api-football'
+    };
+
+    // Salvar cache
+    todayCache = { data: result, ts: Date.now(), date: todayStr };
+
+    return res.json(result);
+
+  } catch (error) {
+    console.error(' Erro ao buscar fixtures da API-Football:', error.message);
+    return res.status(502).json({
+      success: false,
+      error: error.message,
+      games: []
+    });
+  }
+});
+
 /**
  * GET /api/games
- * Retorna jogos reais de futebol com dados verificados
- * Fonte: Dados reais agendados de ligas profissionais
+ * Mantido como fallback (dados estáticos verificados)
  */
 router.get("/", async (req, res) => {
   try {
-    // Dados REAIS de jogos agendados nas principais ligas
-    // Atualizado com jogos que estão realmente agendados
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const todayStr = today.toISOString().split('T')[0];
 
-    const realGames = [
-      // Premier League - Real
+    const fallbackGames = [
       {
         id: 1,
-        homeTeam: 'Liverpool',
-        homeFlag: '🇬🇧',
-        awayTeam: 'Manchester City',
-        awayFlag: '🇬🇧',
-        competition: 'Premier League',
-        country: '🇬🇧 Inglaterra',
-        time: '20:00',
-        homeOdds: 2.75,
-        drawOdds: 3.40,
-        awayOdds: 2.55,
-        status: 'scheduled',
-        date: todayStr,
-        attendance: 61974,
-        stadium: 'Anfield',
-        formHome: 'VVDVD',
-        formAway: 'VVVDV'
+        homeTeam: 'Liverpool',        homeFlag: '',
+        awayTeam: 'Manchester City',  awayFlag: '',
+        competition: 'Premier League', country: ' England',
+        time: '20:00', homeOdds: 2.75, drawOdds: 3.40, awayOdds: 2.55,
+        status: 'scheduled', date: todayStr
       },
-      // La Liga - Real
       {
         id: 2,
-        homeTeam: 'Real Madrid',
-        homeFlag: '🇪🇸',
-        awayTeam: 'Barcelona',
-        awayFlag: '🇪🇸',
-        competition: 'La Liga',
-        country: '🇪🇸 Espanha',
-        time: '21:00',
-        homeOdds: 1.95,
-        drawOdds: 3.60,
-        awayOdds: 3.90,
-        status: 'scheduled',
-        date: todayStr,
-        attendance: 81044,
-        stadium: 'Santiago Bernabéu',
-        formHome: 'VVVVV',
-        formAway: 'VVDVD'
+        homeTeam: 'Real Madrid',      homeFlag: '',
+        awayTeam: 'Barcelona',        awayFlag: '',
+        competition: 'La Liga',        country: ' Spain',
+        time: '21:00', homeOdds: 1.95, drawOdds: 3.60, awayOdds: 3.90,
+        status: 'scheduled', date: todayStr
       },
-      // Campeonato Brasileiro - Real
       {
         id: 3,
-        homeTeam: 'Palmeiras',
-        homeFlag: '🇧🇷',
-        awayTeam: 'Flamengo',
-        awayFlag: '🇧🇷',
-        competition: 'Campeonato Brasileiro',
-        country: '🇧🇷 Brasil',
-        time: '19:00',
-        homeOdds: 2.50,
-        drawOdds: 3.30,
-        awayOdds: 2.80,
-        status: 'scheduled',
-        date: todayStr,
-        attendance: 43713,
-        stadium: 'Allianz Parque',
-        formHome: 'VVDVV',
-        formAway: 'VVVDV'
-      },
-      // Bundesliga - Real
-      {
-        id: 4,
-        homeTeam: 'Bayern Munich',
-        homeFlag: '🇩🇪',
-        awayTeam: 'Borussia Dortmund',
-        awayFlag: '🇩🇪',
-        competition: 'Bundesliga',
-        country: '🇩🇪 Alemanha',
-        time: '18:30',
-        homeOdds: 1.72,
-        drawOdds: 3.90,
-        awayOdds: 4.80,
-        status: 'scheduled',
-        date: todayStr,
-        attendance: 75024,
-        stadium: 'Allianz Arena',
-        formHome: 'VVVVV',
-        formAway: 'DVVVD'
-      },
-      // Ligue 1 - Real
-      {
-        id: 5,
-        homeTeam: 'Paris Saint-Germain',
-        homeFlag: '🇫🇷',
-        awayTeam: 'Olympique Marsella',
-        awayFlag: '🇫🇷',
-        competition: 'Ligue 1',
-        country: '🇫🇷 França',
-        time: '20:45',
-        homeOdds: 1.50,
-        drawOdds: 4.20,
-        awayOdds: 6.50,
-        status: 'scheduled',
-        date: todayStr,
-        attendance: 47929,
-        stadium: 'Parc des Princes',
-        formHome: 'VVVVD',
-        formAway: 'DVDVD'
-      },
-      // Serie A - Real
-      {
-        id: 6,
-        homeTeam: 'Juventus',
-        homeFlag: '🇮🇹',
-        awayTeam: 'AC Milan',
-        awayFlag: '🇮🇹',
-        competition: 'Serie A',
-        country: '🇮🇹 Itália',
-        time: '20:45',
-        homeOdds: 2.05,
-        drawOdds: 3.50,
-        awayOdds: 3.75,
-        status: 'scheduled',
-        date: todayStr,
-        attendance: 41507,
-        stadium: 'Allianz Stadium',
-        formHome: 'VVDVV',
-        formAway: 'VDVVV'
-      },
-      // Champions League
-      {
-        id: 7,
-        homeTeam: 'Inter Miami',
-        homeFlag: '🇺🇸',
-        awayTeam: 'Atlanta United',
-        awayFlag: '🇺🇸',
-        competition: 'MLS',
-        country: '🇺🇸 EUA',
-        time: '22:00',
-        homeOdds: 1.85,
-        drawOdds: 3.40,
-        awayOdds: 4.20,
-        status: 'scheduled',
-        date: todayStr,
-        attendance: 18807,
-        stadium: 'Inter Miami CF Stadium',
-        formHome: 'VVVDV',
-        formAway: 'DVVVD'
-      },
-      // Campeonato Português
-      {
-        id: 8,
-        homeTeam: 'Benfica',
-        homeFlag: '🇵🇹',
-        awayTeam: 'Sporting CP',
-        awayFlag: '🇵🇹',
-        competition: 'Primeira Liga',
-        country: '🇵🇹 Portugal',
-        time: '20:15',
-        homeOdds: 1.95,
-        drawOdds: 3.60,
-        awayOdds: 4.00,
-        status: 'scheduled',
-        date: todayStr,
-        attendance: 65647,
-        stadium: 'Estádio da Luz',
-        formHome: 'VVVVD',
-        formAway: 'VVDVV'
+        homeTeam: 'Palmeiras',        homeFlag: '',
+        awayTeam: 'Flamengo',         awayFlag: '',
+        competition: 'Brasileirão',   country: ' Brazil',
+        time: '19:00', homeOdds: 2.50, drawOdds: 3.30, awayOdds: 2.80,
+        status: 'scheduled', date: todayStr
       }
     ];
 
     res.json({
       success: true,
-      games: realGames,
-      count: realGames.length,
-      source: 'real-verified-games',
-      leagues: ['Premier League', 'La Liga', 'Bundesliga', 'Série A', 'Ligue 1', 'Campeonato Brasileiro', 'MLS', 'Primeira Liga'],
-      updated: new Date().toISOString(),
-      note: 'Todos os jogos são reais, com dados verificados das principais ligas de futebol mundial'
+      games: fallbackGames,
+      count:  fallbackGames.length,
+      source: 'fallback-static'
     });
-
   } catch (error) {
-    console.error('Erro ao buscar jogos:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Erro ao buscar jogos',
-      message: error.message
-    });
+    console.error('Erro ao retornar fallback:', error);
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 

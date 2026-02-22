@@ -163,10 +163,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   checkPremiumStatus();
   loadAnalysisCount();
 
-  // ——— Top Picks (principal, sem backend) ———
-  if (typeof renderTopPicks === 'function' && window.TOP_PICKS_TODAY) {
-    renderTopPicks(window.TOP_PICKS_TODAY, 'topPicksSection');
-  }
+  // ── Top Picks via API-Football (backend) ──
+  loadTopPicks();
 
   // refetchGames para fallback/gamesList (oculto por padrão no HTML)
   // refetchGames(); (Too Many Requests)
@@ -266,9 +264,10 @@ function formatDate(dateString) {
   });
 }
 
-// Ativar Premium (pagamento PIX via Mercado Pago)
+// ── Pagamento PIX via Asaas ──
 const BACKEND_URL = 'https://metafy-8qk7.onrender.com';
 let paymentCheckInterval = null;
+let currentPixTxid = null;     // ID da cobrança Asaas em andamento
 
 // Gerar ou recuperar userId único
 function getUserId() {
@@ -389,154 +388,249 @@ function updateAnalysisCounter() {
   });
 }
 
+// ══════════════════════════════════════════════════
+// PAGAMENTO PIX — ASAAS
+// ══════════════════════════════════════════════════
+
+/** Abre o modal PIX */
 function activatePremium() {
-  showPaymentModal();
+  openPixModal();
 }
 
-// Modal PIX antigo removido - agora usa showPaymentModal() que redireciona para Mercado Pago
 function openPixModal() {
-  // Deprecado - usar showPaymentModal()
-  showPaymentModal();
+  if (!currentUser) {
+    alert('⚠️ Você precisa fazer login antes de assinar Premium');
+    showLoginModal();
+    return;
+  }
+  resetPixModal();
+  const modal = document.getElementById('pixPaymentModal');
+  if (modal) modal.style.display = 'flex';
 }
 
-// Funções de validação (ainda usadas no auto-formatar CPF)
+/** Formata CPF enquanto o usuário digita */
+function formatCPFInput(input) {
+  const nums = input.value.replace(/\D/g, '').slice(0, 11);
+  let formatted = nums;
+  if (nums.length > 9) formatted = nums.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, '$1.$2.$3-$4');
+  else if (nums.length > 6) formatted = nums.replace(/(\d{3})(\d{3})(\d{1,3})/, '$1.$2.$3');
+  else if (nums.length > 3) formatted = nums.replace(/(\d{3})(\d{1,3})/, '$1.$2');
+  input.value = formatted;
+}
+
+/** Validação de CPF (formato) */
 function validateCPF(cpf) {
-  const numbers = cpf.replace(/\D/g, '');
-  return numbers.length === 11;
+  return cpf.replace(/\D/g, '').length === 11;
 }
 
 function validateEmail(email) {
-  const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return re.test(email);
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
 function formatCPF(value) {
-  const numbers = value.replace(/\D/g, '');
-  
-  // Formata: 000.000.000-00
-  if (numbers.length <= 11) {
-    return numbers
-      .replace(/(\d{3})(\d)/, '$1.$2')
-      .replace(/(\d{3})(\d)/, '$1.$2')
-      .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
-  }
-  return numbers.slice(0, 11);
+  const n = value.replace(/\D/g, '').slice(0, 11);
+  return n
+    .replace(/(\d{3})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
 }
 
-// Função deprecada - agora usa Mercado Pago Checkout Pro
-async function generatePixPayment() {
-  console.warn('⚠️ generatePixPayment() deprecado - usando Mercado Pago');
-  closePixModal();
-  showPaymentModal();
-}
-
-// Modal PIX antigo deprecado - agora fecha qualquer modal  
-function closePixModal() {
-  const oldModal = document.getElementById('pixPaymentModal');
-  if (oldModal) oldModal.style.display = 'none';
-  
-  // Fechar modal novo também
-  closeAnalysisModal();
-  
-  // Parar verificação
+/** Reseta estado do modal para a tela inicial (CPF) */
+function resetPixModal() {
+  _pixSection('pixForm');
+  const cpfInput = document.getElementById('cpfInput');
+  if (cpfInput) cpfInput.value = '';
+  const cpfError = document.getElementById('cpfError');
+  if (cpfError) cpfError.style.display = 'none';
+  // Parar polling anterior
   if (paymentCheckInterval) {
     clearInterval(paymentCheckInterval);
     paymentCheckInterval = null;
   }
+  currentPixTxid = null;
 }
 
-// Função deprecada - modal antigo não é mais usado
-function resetPixModal() {
-  console.warn('⚠️ resetPixModal() deprecado');
-  // Não faz nada - modal antigo removido
+/** Mostra apenas uma seção do modal */
+function _pixSection(visibleId) {
+  ['pixForm', 'pixLoading', 'pixContent', 'pixSuccess', 'pixError'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = id === visibleId ? '' : 'none';
+  });
 }
 
-// Função deprecada - modal antigo não é mais usado
-function copyPixCode() {
-  console.warn('⚠️ copyPixCode() deprecado');
-  return false;
+/** Fecha o modal e limpa estado */
+function closePixModal() {
+  const modal = document.getElementById('pixPaymentModal');
+  if (modal) modal.style.display = 'none';
+  if (paymentCheckInterval) {
+    clearInterval(paymentCheckInterval);
+    paymentCheckInterval = null;
+  }
+  currentPixTxid = null;
 }
 
-// Função deprecada - agora o webhook do Mercado Pago ativa automaticamente
-// Função deprecada - agora o webhook do Mercado Pago ativa automaticamente
-function startPaymentCheck() {
-  console.warn('⚠️ startPaymentCheck() deprecado - webhook do MP ativa premium automaticamente');
-  return null;
+/** Copia o código PIX para a área de transferência */
+async function copyPixCode() {
+  const textarea = document.getElementById('pixCode');
+  const btn = document.getElementById('btnCopyPix');
+  if (!textarea?.value) return;
+  try {
+    await navigator.clipboard.writeText(textarea.value);
+    if (btn) {
+      const orig = btn.innerHTML;
+      btn.innerHTML = '✅ Copiado!';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.innerHTML = orig; btn.classList.remove('copied'); }, 2500);
+    }
+  } catch {
+    textarea.select();
+    document.execCommand('copy');
+  }
 }
 
-// Confirmar pagamento e redirecionar para Mercado Pago
-async function confirmPayment() {
+/** Gera cobrança PIX via backend (Asaas) */
+async function generatePixPayment() {
+  const cpfInput = document.getElementById('cpfInput');
+  const cpfError = document.getElementById('cpfError');
+  const cpf = cpfInput?.value || '';
+
+  // Validar CPF
+  if (!validateCPF(cpf)) {
+    if (cpfError) cpfError.style.display = 'block';
+    cpfInput?.focus();
+    return;
+  }
+  if (cpfError) cpfError.style.display = 'none';
+
+  // Verificar login
   if (!currentUser) {
-    alert('⚠️ Você precisa estar logado para assinar Premium');
+    closePixModal();
     showLoginModal();
     return;
   }
 
-  try {
-    // Mostrar loading
-    const btn = document.querySelector('.btn-confirm-payment');
-    if (btn) {
-      btn.disabled = true;
-      btn.innerHTML = '⏳ Criando checkout...';
-    }
+  // Mostrar loading
+  _pixSection('pixLoading');
 
-    // Criar checkout no backend
-    const response = await fetch(`${BACKEND_URL}/api/payments/checkout`, {
+  try {
+    const resp = await fetch(`${BACKEND_URL}/api/payments/pix`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${authToken}`
-      },
-      body: JSON.stringify({ userId: currentUser.id })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: currentUser.id,
+        cpf: cpf,
+        name: currentUser.name || currentUser.email?.split('@')[0] || 'Usuario'
+      })
     });
 
-    const data = await response.json();
+    const data = await resp.json();
 
-    if (!response.ok || !data.success) {
-      throw new Error(data.error?.message || 'Erro ao criar checkout');
+    if (!resp.ok || !data.success) {
+      throw new Error(data.error || 'Erro ao gerar PIX');
     }
 
-    // Redirecionar para Mercado Pago
-    console.log('✅ Redirecionando para Mercado Pago...');
-    window.location.href = data.init_point;
+    // Guardar txid para polling
+    currentPixTxid = data.txid;
+
+    // Exibir QR Code
+    const qrImg = document.getElementById('qrCodeImage');
+    if (qrImg) qrImg.src = data.qrCodeImage;
+
+    const pixCodeEl = document.getElementById('pixCode');
+    if (pixCodeEl) pixCodeEl.value = data.pixCopiaECola;
+
+    const expiresLabel = document.getElementById('pixExpiresLabel');
+    if (expiresLabel && data.expiresAt) {
+      expiresLabel.textContent = `⏱️ Expira em: ${new Date(data.expiresAt).toLocaleDateString('pt-BR')}`;
+    }
+
+    _pixSection('pixContent');
+
+    // Iniciar polling a cada 5s
+    startPaymentCheck(currentPixTxid);
+
+    console.log(`✅ PIX gerado: ${currentPixTxid}`);
 
   } catch (error) {
-    console.error('❌ Erro ao criar checkout:', error);
-    alert(`❌ Erro ao processar pagamento: ${error.message}`);
-    
-    // Restaurar botão
-    const btn = document.querySelector('.btn-confirm-payment');
-    if (btn) {
-      btn.disabled = false;
-      btn.innerHTML = '💳 Pagar com Mercado Pago - R$ 3,50';
-    }
+    console.error('❌ Erro ao gerar PIX:', error);
+    const msgEl = document.getElementById('errorMessage');
+    if (msgEl) msgEl.textContent = error.message || 'Tente novamente em alguns instantes';
+    _pixSection('pixError');
   }
 }
 
-// Verificar retorno do pagamento do Mercado Pago
+/** Polling de confirmação a cada 5s */
+function startPaymentCheck(txid) {
+  if (!txid || !currentUser) return;
+
+  if (paymentCheckInterval) clearInterval(paymentCheckInterval);
+
+  let attempts = 0;
+  const MAX_ATTEMPTS = 72; // ~6 minutos
+
+  paymentCheckInterval = setInterval(async () => {
+    attempts++;
+    try {
+      const resp = await fetch(
+        `${BACKEND_URL}/api/payments/pix/status/${txid}?userId=${currentUser.id}`
+      );
+      const data = await resp.json();
+
+      if (data.isPaid) {
+        clearInterval(paymentCheckInterval);
+        paymentCheckInterval = null;
+        // Atualizar dados do usuário
+        await fetchUserStatus();
+        updateAnalysisCounter();
+        updatePremiumUI();
+        // Mostrar sucesso
+        _pixSection('pixSuccess');
+        return;
+      }
+
+      // Atualizar texto de status
+      const statusText = document.getElementById('pixStatusText');
+      if (statusText) {
+        statusText.textContent = `Aguardando pagamento... (${Math.floor(attempts * 5)}s)`;
+      }
+
+      if (attempts >= MAX_ATTEMPTS) {
+        clearInterval(paymentCheckInterval);
+        paymentCheckInterval = null;
+        const msgEl = document.getElementById('errorMessage');
+        if (msgEl) msgEl.textContent = 'Tempo expirado. Gere um novo QR Code.';
+        _pixSection('pixError');
+      }
+    } catch (err) {
+      console.warn('⚠️ Falha ao verificar status PIX:', err.message);
+    }
+  }, 5000);
+}
+
+/** showPaymentModal agora abre o modal PIX nativo */
+function showPaymentModal() {
+  openPixModal();
+}
+
+/** confirmPayment alias para generatePixPayment (compatibilidade) */
+async function confirmPayment() {
+  openPixModal();
+}
+
+// Verificar retorno de pagamento via URL params (legado Mercado Pago — pode ser removido)
 function checkPaymentReturn() {
   const urlParams = new URLSearchParams(window.location.search);
   const paymentStatus = urlParams.get('payment');
-  
   if (!paymentStatus) return;
-  
-  // Limpar URL sem recarregar página
-  const cleanUrl = window.location.pathname;
-  window.history.replaceState({}, document.title, cleanUrl);
-  
+  // Limpar URL sem recarregar
+  window.history.replaceState({}, document.title, window.location.pathname);
+  // Com PIX Asaas o premium é ativado automaticamente — apenas informar se vier via URL legada
   if (paymentStatus === 'success') {
-    // Aguardar alguns segundos e recarregar status do usuário
     setTimeout(async () => {
       await fetchUserStatus();
       updateAnalysisCounter();
       updatePremiumUI();
-      
-      alert('🎉 Pagamento aprovado! Seu Premium foi ativado com sucesso!');
     }, 2000);
-  } else if (paymentStatus === 'pending') {
-    alert('⏳ Seu pagamento está sendo processado. O Premium será ativado automaticamente quando aprovado.');
-  } else if (paymentStatus === 'failure') {
-    alert('❌ O pagamento não foi concluído. Tente novamente ou entre em contato com o suporte.');
   }
 }
 
@@ -596,6 +690,88 @@ function updateAnalysisCounter() {
     if (badge) {
       badge.innerHTML = `<span class="badge-icon">💎</span><span class="badge-text">Premium</span>`;
       badge.classList.remove('active');
+    }
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// TOP PICKS — carregamento via API-Football (backend)
+// ══════════════════════════════════════════════════════════
+
+async function loadTopPicks() {
+  const container = document.getElementById('topPicksSection');
+  if (!container) return;
+
+  // Skeleton enquanto carrega
+  container.innerHTML = `
+    <section class="tp-section">
+      <div class="tp-header">
+        <div class="tp-title-group">
+          <span class="tp-title-icon">⚡</span>
+          <h2 class="tp-title">Top Picks <span class="tp-today-badge">Hoje</span></h2>
+        </div>
+        <span class="tp-counter" style="opacity:.5">carregando...</span>
+      </div>
+      <div class="tp-loading-grid">
+        ${Array(4).fill('<div class="tp-card-skeleton"></div>').join('')}
+      </div>
+    </section>`;
+
+  try {
+    const resp = await fetch(`${BACKEND_URL}/api/top-picks/today`);
+
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+
+    const data = await resp.json();
+
+    const picks = data.picks || [];
+
+    if (picks.length === 0) {
+      container.innerHTML = `
+        <section class="tp-section">
+          <div class="tp-header">
+            <div class="tp-title-group">
+              <span class="tp-title-icon">⚡</span>
+              <h2 class="tp-title">Top Picks <span class="tp-today-badge">Hoje</span></h2>
+            </div>
+          </div>
+          <p class="tp-empty">Sem jogos principais hoje.</p>
+        </section>`;
+      return;
+    }
+
+    // Armazenar globalmente para que topPicksAnalyzeAI() funcione
+    window.TOP_PICKS_TODAY = picks;
+
+    if (typeof renderTopPicks === 'function') {
+      renderTopPicks(picks, 'topPicksSection');
+    }
+
+    console.log(`⚡ Top Picks carregados: ${picks.length} jogos`);
+
+  } catch (err) {
+    console.warn('⚠️ Não foi possível carregar Top Picks:', err.message);
+
+    // Fallback: usar mock pré-definido para nunca ficar vazio
+    const fallback = (window.TOP_PICKS_TODAY && window.TOP_PICKS_TODAY.length > 0)
+      ? window.TOP_PICKS_TODAY
+      : (window.TOP_PICKS_TODAY_FALLBACK || []);
+
+    if (fallback.length > 0 && typeof renderTopPicks === 'function') {
+      window.TOP_PICKS_TODAY = fallback;
+      renderTopPicks(fallback, 'topPicksSection');
+      console.log(`📦 Top Picks exibindo ${fallback.length} picks do fallback`);
+    } else {
+      container.innerHTML = `
+        <section class="tp-section">
+          <div class="tp-header">
+            <div class="tp-title-group">
+              <span class="tp-title-icon">⚡</span>
+              <h2 class="tp-title">Top Picks <span class="tp-today-badge">Hoje</span></h2>
+            </div>
+          </div>
+          <p class="tp-empty">Sem jogos principais hoje.</p>
+        </section>`;
     }
   }
 }
@@ -828,6 +1004,7 @@ function renderGames(gamesInput = GAMES) {
 // Expor renderizacao principal
 window.renderGames = renderGames;
 window.refetchGames = refetchGames;
+window.loadTopPicks = loadTopPicks;
 
 // Função para filtrar e renderizar jogos
 function filterAndRenderGames(filterState) {
@@ -1463,52 +1640,9 @@ function showPremiumModal() {
   document.body.appendChild(modal);
 }
 
-// Modal de pagamento
+// Modal de pagamento — agora usa PIX nativo via Asaas
 function showPaymentModal() {
-  const modal = document.createElement('div');
-  modal.className = 'analysis-modal-overlay';
-  modal.onclick = (e) => { if (e.target === modal) closeAnalysisModal(); };
-  modal.innerHTML = `
-    <div class="payment-modal">
-      <button class="btn-close" onclick="closeAnalysisModal()">✕</button>
-      
-      <div class="payment-header">
-        <div class="payment-icon">�</div>
-        <h2>Assinar Premium</h2>
-      </div>
-      
-      <div class="payment-summary">
-        <div class="summary-item">
-          <span>Plano</span>
-          <span>Premium 7 dias</span>
-        </div>
-        <div class="summary-item">
-          <span>Acesso</span>
-          <span>Análises Ilimitadas</span>
-        </div>
-        <div class="summary-item total">
-          <span>Total</span>
-          <span class="price">R$ 3,50</span>
-        </div>
-      </div>
-      
-      <div class="payment-info">
-        <p>✅ Pagamento via PIX ou Cartão</p>
-        <p>✅ Processado pelo Mercado Pago</p>
-        <p>✅ Acesso liberado automaticamente</p>
-        <p>✅ Válido por 7 dias corridos</p>
-      </div>
-      
-      <button class="btn-confirm-payment" onclick="confirmPayment()">
-        💳 Pagar com Mercado Pago - R$ 3,50
-      </button>
-      
-      <button class="btn-cancel" onclick="closeAnalysisModal()">
-        Cancelar
-      </button>
-    </div>
-  `;
-  document.body.appendChild(modal);
+  openPixModal();
 }
 
 // Modal de confirmação do Premium
@@ -1816,10 +1950,10 @@ function showPaywallModal(message = 'Limite de análises gratuitas atingido') {
       <p class="premium-subtitle">${message}</p>
       
       <div class="premium-offer">
-        <div class="offer-badge">PAGAMENTO ÚNICO</div>
+        <div class="offer-badge">PAGAMENTO ÚNICO VIA PIX</div>
         <div class="offer-price">
           <span class="price-currency">R$</span>
-          <span class="price-value">3,50</span>
+          <span class="price-value">4,50</span>
         </div>
         <p class="offer-duration">7 dias de acesso • Sem renovação automática</p>
       </div>
@@ -1835,11 +1969,11 @@ function showPaywallModal(message = 'Limite de análises gratuitas atingido') {
         </ul>
       </div>
       
-      <button class="btn-premium-cta" onclick="initiatePayment()">
-        💎 Pagar R$ 3,50 e Liberar Acesso
+      <button class="btn-premium-cta" onclick="closePaywallModal(); openPixModal()">
+        💚 Pagar R$ 4,50 via PIX
       </button>
       
-      <p class="premium-note">Pagamento único • Acesso imediato • 7 dias</p>
+      <p class="premium-note">QR Code imediato • Acesso automático • 7 dias</p>
       
       <div class="premium-divider"></div>
       
@@ -1854,10 +1988,10 @@ function closePaywallModal() {
   if (modal) modal.remove();
 }
 
-// Função deprecada - agora usa confirmPayment() que redireciona para Mercado Pago
+// initiatePayment → abre o modal PIX
 async function initiatePayment() {
-  console.warn('⚠️ initiatePayment() deprecado - usando confirmPayment()');
-  return confirmPayment();
+  closePaywallModal();
+  openPixModal();
 }
 
 // Função deprecada - Mercado Pago gerencia a interface de pagamento
@@ -2245,6 +2379,9 @@ window.closePixModal = closePixModal;
 window.resetPixModal = resetPixModal;
 window.copyPixCode = copyPixCode;
 window.generatePixPayment = generatePixPayment;
+window.openPixModal = openPixModal;
+window.formatCPFInput = formatCPFInput;
+window.startPaymentCheck = startPaymentCheck;
 // Autenticação
 window.showLoginModal = showLoginModal;
 window.showRegisterModal = showRegisterModal;

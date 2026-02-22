@@ -5,7 +5,9 @@ import analyzeRoute from "./routes/analyze.js";
 import gamesRoute from "./routes/games.js";
 import userRoute from "./routes/user.js";
 import paymentsRoute from "./routes/payments.js";
+import webhooksRoute from "./routes/webhooks.js";
 import authRoute from "./routes/auth.js";
+import topPicksRoute from "./routes/top-picks.js";
 import matchesTodayHandler from "./routes/matches-today.js";
 // import matchesLiveHandler from "./routes/matches-live.js"; // REMOVIDO: não usa mais RapidAPI
 
@@ -35,8 +37,11 @@ app.get('/health', (req, res) => {
 // Rotas de autenticação
 app.use("/api/auth", authRoute);
 
-// Webhook do Mercado Pago (antes das outras rotas)
-app.use("/api/webhooks", paymentsRoute);
+// Webhooks (antes das outras rotas para evitar conflito)
+app.use("/api/webhooks", webhooksRoute);
+
+// Top Picks via API-Football
+app.use("/api/top-picks", topPicksRoute);
 
 // Rotas protegidas/públicas
 app.use("/api/analyze", analyzeRoute);
@@ -60,8 +65,10 @@ app.listen(PORT, () => {
   console.log("   POST /api/analyze (com paywall)");
   console.log("   GET  /api/user/:userId");
   console.log("   GET  /api/me?userId=xxx");
-  console.log("   POST /api/payments/checkout");
+  console.log("   GET  /api/top-picks/today");
+  console.log("   POST /api/payments/pix");
+  console.log("   GET  /api/payments/pix/status/:chargeId");
   console.log("   POST /api/payments/simulate-approval");
-  console.log("   POST /api/webhooks/mercadopago");
+  console.log("   POST /api/webhooks/pix");
   console.log("   GET  /api/matches/today");
 });

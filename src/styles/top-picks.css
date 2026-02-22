@@ -422,3 +422,38 @@
   padding: 40px;
   font-size: 0.9rem;
 }
+
+/* ————— Skeleton loading ————— */
+.tp-loading-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  padding: 0 0 8px;
+}
+
+.tp-card-skeleton {
+  background: var(--tp-bg-card, #12121f);
+  border: 1px solid var(--tp-border, rgba(255,255,255,0.08));
+  border-radius: 16px;
+  height: 220px;
+  position: relative;
+  overflow: hidden;
+}
+
+.tp-card-skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255,255,255,0.04) 50%,
+    transparent 100%
+  );
+  animation: tp-shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes tp-shimmer {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
