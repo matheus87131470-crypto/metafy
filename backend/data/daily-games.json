@@ -1,5 +1,5 @@
 {
-  "date": "2026-02-18",
+  "date": "2026-02-22",
   "matches": [
     {
       "id": 1,
@@ -7,7 +7,7 @@
       "country": "England",
       "home": "Wolverhampton",
       "away": "Arsenal",
-      "kickoff": "2026-02-18T20:00:00Z",
+      "kickoff": "2026-02-22T16:30:00Z",
       "odds": {
         "home": 4.50,
         "draw": 3.80,
@@ -28,7 +28,7 @@
       "country": "Europe",
       "home": "Qarabag",
       "away": "Newcastle United",
-      "kickoff": "2026-02-18T17:45:00Z",
+      "kickoff": "2026-02-22T17:45:00Z",
       "odds": {
         "home": 5.20,
         "draw": 4.00,
@@ -49,7 +49,7 @@
       "country": "Europe",
       "home": "Bodø/Glimt",
       "away": "Inter de Milão",
-      "kickoff": "2026-02-18T17:45:00Z",
+      "kickoff": "2026-02-22T20:00:00Z",
       "odds": {
         "home": 6.50,
         "draw": 4.20,
@@ -70,7 +70,7 @@
       "country": "Europe",
       "home": "Olympiacos",
       "away": "Bayer Leverkusen",
-      "kickoff": "2026-02-18T20:00:00Z",
+      "kickoff": "2026-02-22T20:00:00Z",
       "odds": {
         "home": 3.60,
         "draw": 3.50,
@@ -91,7 +91,7 @@
       "country": "Europe",
       "home": "Club Brugge",
       "away": "Atlético Madrid",
-      "kickoff": "2026-02-18T20:00:00Z",
+      "kickoff": "2026-02-22T21:00:00Z",
       "odds": {
         "home": 3.40,
         "draw": 3.30,
@@ -112,7 +112,7 @@
       "country": "Spain",
       "home": "Levante",
       "away": "Villarreal",
-      "kickoff": "2026-02-18T21:00:00Z",
+      "kickoff": "2026-02-22T21:30:00Z",
       "odds": {
         "home": 3.80,
         "draw": 3.40,
@@ -133,7 +133,7 @@
       "country": "Italy",
       "home": "AC Milan",
       "away": "Como",
-      "kickoff": "2026-02-18T19:45:00Z",
+      "kickoff": "2026-02-22T22:00:00Z",
       "odds": {
         "home": 1.55,
         "draw": 4.20,
@@ -154,7 +154,7 @@
       "country": "South America",
       "home": "O'Higgins",
       "away": "Bahia",
-      "kickoff": "2026-02-18T23:00:00Z",
+      "kickoff": "2026-02-22T23:00:00Z",
       "odds": {
         "home": 2.80,
         "draw": 3.10,
@@ -175,7 +175,7 @@
       "country": "South America",
       "home": "Barcelona SC",
       "away": "Argentinos Juniors",
-      "kickoff": "2026-02-19T00:30:00Z",
+      "kickoff": "2026-02-23T00:30:00Z",
       "odds": {
         "home": 2.40,
         "draw": 3.20,
@@ -196,7 +196,7 @@
       "country": "South America",
       "home": "Nacional Potosí",
       "away": "Botafogo",
-      "kickoff": "2026-02-19T01:30:00Z",
+      "kickoff": "2026-02-23T01:30:00Z",
       "odds": {
         "home": 4.20,
         "draw": 3.40,

@@ -706,15 +706,17 @@ function matchToTopPick(match) {
   const va  = match.valueAnalysis || {};
   const isFallback = !!match.isFallback;
 
-  // Horário: kickoff ISO → HH:mm em BRT (UTC-3)
-  let time = '--:--';
-  try {
-    time = new Date(match.kickoff).toLocaleTimeString('pt-BR', {
-      hour: '2-digit',
-      minute: '2-digit',
-      timeZone: 'America/Sao_Paulo',
-    });
-  } catch (_) { /* mantém '--:--' */ }
+  // Horário: preferir timeBRT do backend (já convertido); fallback local
+  let time = match.timeBRT || '--:--';
+  if (!match.timeBRT && match.kickoff) {
+    try {
+      time = new Date(match.kickoff).toLocaleTimeString('pt-BR', {
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZone: 'America/Sao_Paulo',
+      });
+    } catch (_) { /* mantém '--:--' */ }
+  }
 
   // Nível de confiança a partir do rating
   const levelMap = {

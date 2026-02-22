@@ -46,23 +46,31 @@ const handler = async (req, res) => {
 
   try {
     console.log('🔄 GET /api/matches/today - Scanner automático');
-    
-    // Processar jogos com análise de value
-    const matchesWithValue = gamesData.matches.map(game => {
+
+    const now = new Date();
+
+    // 1. Filtrar apenas jogos futuros (kickoff >= agora)
+    const futureMatches = gamesData.matches.filter(g => new Date(g.kickoff) >= now);
+
+    // 2. Processar: adicionar timeBRT (já convertido para America/Sao_Paulo)
+    //    e calcular value analysis
+    const matchesWithValue = futureMatches.map(game => {
+      const timeBRT = new Date(game.kickoff).toLocaleTimeString('pt-BR', {
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZone: 'America/Sao_Paulo',
+      });
       const valueAnalysis = calculateValue(game);
-      return {
-        ...game,
-        valueAnalysis
-      };
+      return { ...game, timeBRT, valueAnalysis };
     });
-    
-    // Ordenar por edge (maior para menor)
+
+    // 3. Ordenar por edge (maior para menor)
     matchesWithValue.sort((a, b) => b.valueAnalysis.edge - a.valueAnalysis.edge);
-    
-    // Manter apenas os top 10
+
+    // 4. Manter apenas os top 10
     const topGames = matchesWithValue.slice(0, 10);
-    
-    console.log(`✅ Scanner processou ${matchesWithValue.length} jogos, retornando top ${topGames.length}`);
+
+    console.log(`✅ Scanner: ${gamesData.matches.length} total, ${futureMatches.length} futuros, retornando top ${topGames.length}`);
     
     // Retornar top 10 jogos ordenados por edge
     const response = {
