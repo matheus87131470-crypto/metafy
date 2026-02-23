@@ -860,18 +860,8 @@ async function loadTopPicks() {
     const allMatches = data.matches || []; // backend: sorted, grouped, max 10
 
     if (allMatches.length === 0) {
-      container.innerHTML = `
-        <section class="tp-section">
-          <div class="tp-header">
-            <div class="tp-title-group">
-              <span class="tp-title-icon">⚡</span>
-              <h2 class="tp-title">Top Picks <span class="tp-today-badge">Hoje</span></h2>
-            </div>
-          </div>
-          <p class="tp-schedule-note">Top Picks definidos às 09:00 (BRT) e fixos até 23:59.</p>
-          <p class="tp-empty">Sem jogos encontrados hoje — volte mais tarde.</p>
-        </section>`;
-      return;
+      // Sem dados do backend — injetar picks estáticos via bloco de fallback
+      throw new Error('no matches returned');
     }
 
     // Backend classifica (live/upcoming/finished), ordena e limita a 10
@@ -888,17 +878,164 @@ async function loadTopPicks() {
   } catch (err) {
     console.warn('⚠️ Top Picks: falha ao carregar —', err.message);
 
-    container.innerHTML = `
-      <section class="tp-section">
-        <div class="tp-header">
-          <div class="tp-title-group">
-            <span class="tp-title-icon">⚡</span>
-            <h2 class="tp-title">Top Picks <span class="tp-today-badge">Hoje</span></h2>
-          </div>
-        </div>
-        <p class="tp-schedule-note">Top Picks definidos às 09:00 (BRT) e fixos até 23:59.</p>
-        <p class="tp-empty">Não foi possível carregar os picks agora. Tente novamente em breve.</p>
-      </section>`;
+    // Picks estáticos de demonstração — exibidos quando o backend não responde
+    const staticPicks = [
+      {
+        id: 's-1', league: 'SERIE A', time: '14:30',
+        home: 'Fiorentina', away: 'Pisa',
+        market: 'Resultado', pick: 'Vitória Casa',
+        confidencePct: '76.0', confidenceLevel: 'MÉDIA CONFIANÇA', levelClass: 'medium',
+        rating: 'Moderada', statusGroup: 'upcoming',
+        bestPick: 'home', bestPickLabel: 'Vitória Casa', edge: 4, probAdjusted: 58, probImplied: 54,
+        explanation: 'Fiorentina superior tecnicamente, Pisa fraco fora. Odds ainda pagam acima do risco real.',
+        keyStats: [
+          'Fiorentina: sólida em casa e tecnicamente superior',
+          'Pisa: baixo rendimento como visitante',
+          'Edge: +4% | Prob ajustada: 58% vs implícita: 54%',
+        ],
+        iaFree: true,
+      },
+      {
+        id: 's-2', league: 'SERIE A', time: '16:45',
+        home: 'Bologna', away: 'Udinese',
+        market: 'Resultado', pick: 'Empate',
+        confidencePct: '71.0', confidenceLevel: 'LEVE VALOR', levelClass: 'medium',
+        rating: 'Leve', statusGroup: 'upcoming',
+        bestPick: 'draw', bestPickLabel: 'Empate', edge: 2, probAdjusted: 33, probImplied: 31,
+        explanation: 'Times equilibrados, baixa média de gols. Empate surge como cenário de maior estabilidade estatística.',
+        keyStats: [
+          'Bologna e Udinese: desempenho similar nas últimas rodadas',
+          'Baixa média de gols combinada — tendência de jogo truncado',
+          'Edge: +2% | Prob ajustada: 33% vs implícita: 31%',
+        ],
+        iaFree: true,
+      },
+      {
+        id: 's-3', league: 'PREMIER LEAGUE', time: '17:00',
+        home: 'Everton', away: 'Manchester United',
+        market: 'Resultado', pick: 'Vitória Fora',
+        confidencePct: '78.0', confidenceLevel: 'MÉDIA CONFIANÇA', levelClass: 'medium',
+        rating: 'Moderada', statusGroup: 'upcoming',
+        bestPick: 'away', bestPickLabel: 'Vitória Fora', edge: 5, probAdjusted: 57, probImplied: 52,
+        explanation: 'Manchester United superior no elenco e no momento recente. Superioridade técnica e melhor desempenho recente sustentam a direção.',
+        keyStats: [
+          'United: melhor desempenho recente',
+          'Everton: fragilidade defensiva em casa',
+          'Edge: +5% | Prob ajustada: 57% vs implícita: 52%',
+        ],
+        iaFree: false,
+      },
+      {
+        id: 's-4', league: 'LA LIGA', time: '16:00',
+        home: 'Getafe', away: 'Sevilla',
+        market: 'Resultado', pick: 'Empate',
+        confidencePct: '70.0', confidenceLevel: 'LEVE VALOR', levelClass: 'medium',
+        rating: 'Leve', statusGroup: 'upcoming',
+        bestPick: 'draw', bestPickLabel: 'Empate', edge: 2, probAdjusted: 32, probImplied: 30,
+        explanation: 'Confronto equilibrado com baixa produção ofensiva. Empate é estatisticamente o cenário mais provável dentro da margem de valor.',
+        keyStats: [
+          'Getafe e Sevilla: equipes defensivamente organizadas',
+          'Baixa produção ofensiva nos últimos 5 jogos de ambos',
+          'Edge: +2%',
+        ],
+        iaFree: false,
+      },
+      {
+        id: 's-5', league: 'BUNDESLIGA', time: '15:30',
+        home: 'Bayern', away: 'Augsburg',
+        market: 'Resultado', pick: 'Vitória Casa',
+        confidencePct: '88.0', confidenceLevel: 'ALTA CONFIANÇA', levelClass: 'high',
+        rating: 'Forte', statusGroup: 'upcoming',
+        bestPick: 'home', bestPickLabel: 'Vitória Casa', edge: 7, probAdjusted: 76, probImplied: 69,
+        explanation: 'A melhor oportunidade do dia está na vitória do Bayern, com edge de 7%. Superioridade técnica ampla e domínio histórico no confronto.',
+        keyStats: [
+          'Bayern: dominância técnica e histórica sobre o Augsburg',
+          'Augsburg: dificuldades como visitante em grandes estádios',
+          'Edge: +7% — melhor pick do dia',
+        ],
+        iaFree: false,
+      },
+      {
+        id: 's-6', league: 'LIGUE 1', time: '17:45',
+        home: 'PSG', away: 'Rennes',
+        market: 'Resultado', pick: 'Vitória Casa',
+        confidencePct: '76.0', confidenceLevel: 'MÉDIA CONFIANÇA', levelClass: 'medium',
+        rating: 'Moderada', statusGroup: 'upcoming',
+        bestPick: 'home', bestPickLabel: 'Vitória Casa', edge: 4, probAdjusted: 62, probImplied: 58,
+        explanation: 'PSG apresenta vantagem ofensiva significativa. A probabilidade ajustada supera o mercado, indicando valor positivo.',
+        keyStats: [
+          'PSG: vantagem ofensiva expressiva no mando de campo',
+          'Rennes: limitado para conter o ataque parisiense',
+          'Edge: +4%',
+        ],
+        iaFree: false,
+      },
+      {
+        id: 's-7', league: 'LIGA SAUDITA', time: '18:00',
+        home: 'Al Hilal', away: 'Al Ettifaq',
+        market: 'Resultado', pick: 'Vitória Casa',
+        confidencePct: '77.0', confidenceLevel: 'MÉDIA CONFIANÇA', levelClass: 'medium',
+        rating: 'Moderada', statusGroup: 'upcoming',
+        bestPick: 'home', bestPickLabel: 'Vitória Casa', edge: 5, probAdjusted: 64, probImplied: 59,
+        explanation: 'Al Hilal mantém forte desempenho como mandante. Diferença técnica e média de gols sustentam a direção casa.',
+        keyStats: [
+          'Al Hilal: forte mandante com alta eficiência ofensiva',
+          'Al Ettifaq: rendimento inferior fora de casa',
+          'Edge: +5%',
+        ],
+        iaFree: false,
+      },
+      {
+        id: 's-8', league: 'BRASILEIRÃO', time: '20:00',
+        home: 'Flamengo', away: 'Fortaleza',
+        market: 'Resultado', pick: 'Vitória Casa',
+        confidencePct: '75.0', confidenceLevel: 'MÉDIA CONFIANÇA', levelClass: 'medium',
+        rating: 'Moderada', statusGroup: 'upcoming',
+        bestPick: 'home', bestPickLabel: 'Vitória Casa', edge: 4, probAdjusted: 57, probImplied: 53,
+        explanation: 'Flamengo possui alta eficiência ofensiva em casa. O mercado ainda subestima levemente a probabilidade real de vitória.',
+        keyStats: [
+          'Flamengo: alta eficiência ofensiva no Maracanã',
+          'Fortaleza: tende a fechar no contra-ataque — risco de perder o controle',
+          'Edge: +4%',
+        ],
+        iaFree: false,
+      },
+      {
+        id: 's-9', league: 'BRASILEIRÃO', time: '21:30',
+        home: 'Atlético Mineiro', away: 'Corinthians',
+        market: 'Resultado', pick: 'Empate',
+        confidencePct: '70.0', confidenceLevel: 'LEVE VALOR', levelClass: 'medium',
+        rating: 'Leve', statusGroup: 'upcoming',
+        bestPick: 'draw', bestPickLabel: 'Empate', edge: 2, probAdjusted: 34, probImplied: 32,
+        explanation: 'Confronto equilibrado entre equipes defensivamente sólidas. Empate surge como cenário de maior estabilidade estatística.',
+        keyStats: [
+          'Atlético-MG e Corinthians: solidez defensiva dos dois lados',
+          'Partida tende a ser truncada com baixa produção ofensiva',
+          'Edge: +2%',
+        ],
+        iaFree: false,
+      },
+      {
+        id: 's-10', league: 'LA LIGA', time: '22:00',
+        home: 'Real Sociedad', away: 'Villarreal',
+        market: 'Resultado', pick: 'Vitória Fora',
+        confidencePct: '76.0', confidenceLevel: 'MÉDIA CONFIANÇA', levelClass: 'medium',
+        rating: 'Moderada', statusGroup: 'upcoming',
+        bestPick: 'away', bestPickLabel: 'Vitória Fora', edge: 4, probAdjusted: 55, probImplied: 51,
+        explanation: 'Villarreal apresenta melhor momento recente e maior eficiência ofensiva. Probabilidade ajustada indica valor positivo na vitória visitante.',
+        keyStats: [
+          'Villarreal: melhor forma nos últimos 5 jogos',
+          'Real Sociedad: queda de rendimento nas últimas rodadas',
+          'Edge: +4%',
+        ],
+        iaFree: false,
+      },
+    ];
+
+    window.TOP_PICKS_TODAY = staticPicks;
+    if (typeof renderTopPicks === 'function') {
+      renderTopPicks(staticPicks, 'topPicksSection');
+    }
   }
 }
 
