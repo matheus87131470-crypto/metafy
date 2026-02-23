@@ -389,12 +389,42 @@ function updateAnalysisCounter() {
 }
 
 // ══════════════════════════════════════════════════
-// PAGAMENTO PIX — ASAAS
+// PAGAMENTO — MERCADO PAGO
 // ══════════════════════════════════════════════════
 
-/** Abre o modal PIX */
+/** Abre o link do Mercado Pago e registra a flag de intenção */
 function activatePremium() {
-  openPixModal();
+  window.open('https://mpago.la/2aExDUM', '_blank');
+  localStorage.setItem('mp_clicked', Date.now().toString());
+  refreshPremiumTabUI();
+}
+
+/**
+ * Atualiza o bloco da aba Premium conforme o estado:
+ *  - Premium ativo  → limpa flag, oculta ambos os blocos (o status "✅ Premium" já aparece)
+ *  - Flag mp_clicked → oculta CTA, exibe instruções de 3 passos
+ *  - Sem flag        → exibe CTA, oculta instruções
+ */
+function refreshPremiumTabUI() {
+  const ctaBlock     = document.getElementById('mpCtaBlock');
+  const pendingBlock = document.getElementById('mpPendingBlock');
+  if (!ctaBlock || !pendingBlock) return;
+
+  // Se já é Premium, limpar flag e manter CTA oculto (o bloco "✅ Premium" cuida da UI)
+  if (typeof isPremiumUser === 'function' && isPremiumUser()) {
+    localStorage.removeItem('mp_clicked');
+    ctaBlock.style.display     = 'none';
+    pendingBlock.style.display = 'none';
+    return;
+  }
+
+  if (localStorage.getItem('mp_clicked')) {
+    ctaBlock.style.display     = 'none';
+    pendingBlock.style.display = 'block';
+  } else {
+    ctaBlock.style.display     = 'block';
+    pendingBlock.style.display = 'none';
+  }
 }
 
 function openPixModal() {
@@ -2415,6 +2445,7 @@ window.closePaywallModal = closePaywallModal;
 window.showPaywallModal = showPaywallModal;
 window.initiatePayment = initiatePayment;
 window.activatePremium = activatePremium;
+window.refreshPremiumTabUI = refreshPremiumTabUI;
 window.confirmPayment = confirmPayment;
 window.isPremiumUser = isPremiumUser;
 window.getPremiumData = getPremiumData;

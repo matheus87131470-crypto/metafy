@@ -1299,10 +1299,27 @@
                     </div>
                 </div>
 
-                <button class="btn-premium-cta" id="premiumCtaBtn" onclick="activatePremium()" style="margin-top: 24px;">
-                    💎 Pagar R$ 4,50 via PIX
-                </button>
-                <p style="text-align: center; color: var(--text-muted); font-size: 0.85rem; margin-top: 12px;">Pagamento PIX • Liberação automática • 7 dias de acesso</p>
+                <!-- Estado padrão: botão de upgrade -->
+                <div id="mpCtaBlock" style="margin-top: 24px;">
+                    <button class="btn-premium-cta" id="premiumCtaBtn" onclick="activatePremium()">
+                        💎 Fazer Upgrade — R$ 4,50
+                    </button>
+                    <p style="text-align: center; color: var(--text-muted); font-size: 0.85rem; margin-top: 12px;">Mercado Pago • 7 dias de acesso • Sem renovação automática</p>
+                </div>
+
+                <!-- Estado pendente: após clicar em upgrade -->
+                <div id="mpPendingBlock" style="display: none; margin-top: 24px; padding: 20px; background: rgba(251, 191, 36, 0.08); border: 1px solid rgba(251, 191, 36, 0.3); border-radius: 12px;">
+                    <p style="color: var(--text-primary); font-size: 0.95rem; font-weight: 600; margin-bottom: 12px;">✅ Quase lá! Siga os passos:</p>
+                    <ol style="color: var(--text-secondary); font-size: 0.9rem; padding-left: 20px; line-height: 2.2; margin: 0;">
+                        <li>Finalize o pagamento no Mercado Pago</li>
+                        <li>Volte para o Metafy</li>
+                        <li>Faça login com Google no mesmo e-mail usado no pagamento</li>
+                    </ol>
+                    <p style="color: var(--text-muted); font-size: 0.8rem; margin-top: 12px;">⏳ Ativação pode levar alguns minutos.</p>
+                    <button class="btn-premium-cta" onclick="location.reload()" style="margin-top: 16px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2);">
+                        🔄 Já paguei (recarregar)
+                    </button>
+                </div>
                 
                 <!-- Status Premium (visível apenas para usuários Premium) -->
                 <div id="premiumStatus" style="display: none; margin-top: 24px; padding: 20px; background: rgba(16, 185, 129, 0.1); border: 1px solid var(--accent-green); border-radius: 12px;">
@@ -1803,6 +1820,8 @@
         // Inicializar dados ao carregar
         document.addEventListener('DOMContentLoaded', () => {
             atualizarInterface();
+            // Renderizar estado correto da aba Premium (CTA ou passos pós-clique)
+            if (typeof refreshPremiumTabUI === 'function') refreshPremiumTabUI();
         });
     </script>
 
@@ -1898,6 +1917,14 @@
                 statusElement.innerHTML = isPremium 
                     ? '💎 Premium - Análises Ilimitadas'
                     : `🆓 ${remaining} análises restantes hoje`;
+            }
+            // Se Premium confirmado, limpa flag de intenção de pagamento
+            if (status.isPremium) {
+                localStorage.removeItem('mp_clicked');
+            }
+            // Atualiza bloco da aba Premium
+            if (typeof refreshPremiumTabUI === 'function') {
+                refreshPremiumTabUI();
             }
         }
 
@@ -2060,7 +2087,7 @@
                                 📊 Ganhos/Perdas
                             </button>
                             ${!firebaseUserStatus?.isPremium ? `
-                            <button class="dropdown-item" onclick="alert('Em breve: Upgrade Premium')" style="color: #fbbf24;">
+                            <button class="dropdown-item" onclick="activatePremium()" style="color: #fbbf24;">
                                 💎 Fazer Upgrade
                             </button>
                             ` : ''}
@@ -2292,7 +2319,7 @@
                         <div class="unlock-text">
                             Desbloqueie todas as análises<br>com Premium
                         </div>
-                        <button class="btn-premium" onclick="alert('Em breve: Upgrade Premium')">
+                        <button class="btn-premium" onclick="activatePremium()">
                             💎 Fazer Upgrade
                         </button>
                     </div>
