@@ -26,6 +26,17 @@ const __dirname  = dirname(__filename);
 // ── Cache diário fixo (reseta só quando muda o dia BRT) ───────────────────
 let _cache = { dateBRT: null, body: null };
 
+// Hora mínima BRT para travar o cache (09:00)
+const LOCK_HOUR_BRT = 9;
+
+/** Retorna a hora atual em BRT (0-23). */
+function nowBRTHour() {
+  return parseInt(
+    new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', hour12: false, timeZone: 'America/Sao_Paulo' }),
+    10
+  );
+}
+
 // ── statusGroup a partir do código da API ──────────────────────────────
 const STATUS_GROUP_MAP = {
   NS: 'upcoming', TBD: 'upcoming',
@@ -181,7 +192,10 @@ const handler = async (req, res) => {
 
   try {
     const todayBRT = brtDateStr();
+    const hourBRT   = nowBRTHour();
+    const canLock   = hourBRT >= LOCK_HOUR_BRT;
 
+    // Cache válido: mesmo dia E já foi bloqueado (>= 09:00 quando foi gerado)
     if (_cache.body && _cache.dateBRT === todayBRT) {
       console.log(`📦 /api/matches/today — cache diário hit (${todayBRT})`);
       return res.status(200).json(_cache.body);
@@ -215,8 +229,14 @@ const handler = async (req, res) => {
     const matches = pickTop10(games);
 
     const body = { success: true, dateBRT: todayBRT, source: 'api-football', count: matches.length, matches };
-    _cache = { dateBRT: todayBRT, body };
-    console.log(`💾 Top10 do dia ${todayBRT} salvo em cache (fixo até meia-noite BRT)`);
+
+    if (canLock) {
+      _cache = { dateBRT: todayBRT, body };
+      console.log(`💾 Top10 DEFINITIVO do dia ${todayBRT} travado até meia-noite BRT`);
+    } else {
+      console.log(`⏳ Top10 PROVISÓRIO (${hourBRT}h BRT < ${LOCK_HOUR_BRT}h) — não travado ainda`);
+    }
+
     return res.status(200).json(body);
 
   } catch (err) {
