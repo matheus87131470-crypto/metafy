@@ -1,75 +1,77 @@
 /**
  * config/topLeagues.js
  * Curadoria de ligas para o /api/matches/today.
+ * Matching por { country, name } — case-insensitive, trim.
  *
- * TIER_1 — Prateleira principal (exibidos com prioridade máxima)
- * TIER_2 — Segunda prateleira (preenchimento quando TIER_1 < 10 jogos no dia)
+ * COMO CALIBRAR:
+ *   Após a Render subir, procure no log a linha [LIGAS DO DIA]:
+ *   Ex: "39:Premier League (England) | 71:Série A (Brazil) | ..."
+ *   Se a grafia de country/name for diferente do esperado, ajuste aqui.
  *
- * Como descobrir IDs de novas ligas:
- *   • O endpoint /api/matches/today loga TODOS os league.id + league.name
- *     do dia no console da Render → procure "[LIGAS DO DIA]".
- *   • Ou acesse: https://api-football-v1.p.rapidapi.com/v3/leagues?search=nome
+ * NOTA: "Serie A" existe no Brasil (Brasileirão) e na Itália.
+ *   Diferenciar pelo country: "Brazil" vs "Italy".
  */
 
 // ─── PRATELEIRA 1 ─────────────────────────────────────────────────────────────
-// Ligas e competições que SEMPRE queremos mostrar quando houver jogos.
-export const TIER_1 = new Set([
-  // UEFA / Clubes europeus
-  2,    // Champions League
-  3,    // Europa League
-  848,  // Conference League
+// Ligas que SEMPRE queremos mostrar quando houver jogos.
+// Matching por { country, name } — case-insensitive.
+const TIER_1_LIST = [
+  // UEFA / Competições mundiais de clubes
+  { country: 'World', name: 'UEFA Champions League' },
+  { country: 'World', name: 'UEFA Europa League' },
+  { country: 'World', name: 'UEFA Europa Conference League' },
+  { country: 'World', name: 'CONMEBOL Libertadores' },
+  { country: 'World', name: 'CONMEBOL Sudamericana' },
 
   // Big-5 europeus
-  39,   // Premier League (Inglaterra)
-  140,  // La Liga (Espanha)
-  78,   // Bundesliga (Alemanha)
-  135,  // Serie A (Itália)
-  61,   // Ligue 1 (França)
+  { country: 'England',     name: 'Premier League' },
+  { country: 'Spain',       name: 'La Liga' },
+  { country: 'Italy',       name: 'Serie A' },
+  { country: 'Germany',     name: 'Bundesliga' },
+  { country: 'France',      name: 'Ligue 1' },
 
   // Brasil
-  71,   // Brasileirão Série A
-  73,   // Copa do Brasil
-  13,   // CONMEBOL Libertadores
-  11,   // CONMEBOL Sudamericana
+  { country: 'Brazil', name: 'Serie A' },       // Brasileirão — country diferencia de Itália
+  { country: 'Brazil', name: 'Copa Do Brasil' }, // case-insensitive cobre variações
+  { country: 'Brazil', name: 'Copa do Brasil' },
 
-  // Estaduais brasileiros principais
-  268,  // Campeonato Paulista  (verificar via log se o ID bater)
-  351,  // Campeonato Carioca   (verificar via log)
-  475,  // Campeonato Mineiro   (verificar via log)
-  479,  // Campeonato Gaúcho    (verificar via log)
-
-  // Seleções / Mundiais
-  15,   // FIFA World Cup
-  4,    // UEFA Euro Championship
-  9,    // Copa América
-  1,    // World Cup Qualification
-]);
+  // Oriente Médio
+  { country: 'Saudi Arabia', name: 'Saudi Pro League' },
+];
 
 // ─── PRATELEIRA 2 ─────────────────────────────────────────────────────────────
 // Preenchimento quando TIER_1 retorna < 10 jogos no dia.
-// Ligas sólidas mas de segundo alcance para o público-alvo.
-export const TIER_2 = new Set([
-  94,   // Primeira Liga (Portugal)
-  88,   // Eredivisie (Holanda)
-  128,  // Liga Profesional (Argentina)
-  203,  // Süper Lig (Turquia)
-  262,  // Liga MX (México)
-  253,  // MLS (EUA)
-  34,   // Scottish Premiership
-  72,   // Brasileirão Série B
-  81,   // DFB-Pokal (Alemanha)
-  137,  // Coppa Italia
-  141,  // Copa del Rey (Espanha)
-  65,   // Coupe de France
-  3,    // (já em tier1, duplicata segura no Set)
-  5,    // UEFA Nations League
-  10,   // Friendlies (Internacionais)
-]);
+const TIER_2_LIST = [
+  { country: 'Netherlands', name: 'Eredivisie' },
+  { country: 'Portugal',    name: 'Primeira Liga' },
+  { country: 'Turkey',      name: 'Süper Lig' },
+  { country: 'Argentina',   name: 'Liga Profesional' },
+  { country: 'Mexico',      name: 'Liga MX' },
+  { country: 'USA',         name: 'MLS' },
+  { country: 'Brazil',      name: 'Serie B' },
+  { country: 'Scotland',    name: 'Premiership' },
+  { country: 'Germany',     name: 'DFB Pokal' },
+  { country: 'Italy',       name: 'Coppa Italia' },
+  { country: 'Spain',       name: 'Copa del Rey' },
+  { country: 'France',      name: 'Coupe de France' },
+  { country: 'World',       name: 'UEFA Nations League' },
+  { country: 'World',       name: 'World Cup' },
+  { country: 'World',       name: 'Copa America' },
+];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-/** Retorna o tier do jogo (1, 2 ou null = ignorar). */
-export function leagueTier(leagueId) {
-  if (TIER_1.has(leagueId)) return 1;
-  if (TIER_2.has(leagueId)) return 2;
+/** Normaliza string para comparação (lower-case, sem espaços extras). */
+const norm = s => (s || '').toLowerCase().trim();
+
+/**
+ * Retorna o tier da liga (1, 2 ou null = ignorar).
+ * @param {string} country  - f.league.country da API-Football
+ * @param {string} name     - f.league.name da API-Football
+ */
+export function leagueTier(country, name) {
+  const c = norm(country);
+  const n = norm(name);
+  if (TIER_1_LIST.some(e => norm(e.country) === c && norm(e.name) === n)) return 1;
+  if (TIER_2_LIST.some(e => norm(e.country) === c && norm(e.name) === n)) return 2;
   return null;
 }

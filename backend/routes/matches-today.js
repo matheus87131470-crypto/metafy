@@ -180,7 +180,7 @@ const handler = async (req, res) => {
 
     // ── Mapear fixtures válidos pelo dia BRT ──────────────────────────────────
     const allMapped = allFixtures.map(f => {
-      const t = leagueTier(f.league?.id);
+      const t = leagueTier(f.league?.country, f.league?.name);
       if (!t) return null;                  // liga fora da curadoria — ignorar
       const mapped = mapFixture(f, todayBRT);
       if (!mapped) return null;
