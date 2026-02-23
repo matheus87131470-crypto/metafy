@@ -34,27 +34,25 @@ Forma (Fora): ${data.awayLast5 ?? '—'}
 Média de gols (Casa): ${data.homeGoalsAvg ?? '—'} | Média de gols (Fora): ${data.awayGoalsAvg ?? '—'}
 
 Regras obrigatórias:
-1. Escolha apenas o mercado com MAIOR edge real.
-2. Se o edge for inferior a 2%, classifique como "Sem valor claro".
-3. Nunca escolha automaticamente "Empate" se houver outro mercado com edge maior.
-4. Explique de forma objetiva:
-   - Por que existe valor
-   - O risco envolvido
-   - Se é aposta agressiva ou conservadora
-5. Nunca use frases genéricas como "Jogo equilibrado", "Pode surpreender" ou "Tudo pode acontecer".
+1. Compare os três mercados (Casa, Empate, Fora) e escolha o de MAIOR edge.
+2. Nunca seja neutro. Sempre dê uma direção clara.
+3. Nunca use frases genéricas como "Jogo equilibrado", "Pode surpreender" ou "Tudo pode acontecer".
+4. Classifique a força da aposta pelo edge:
+   - Edge acima de 4% → Forte
+   - Edge entre 2% e 4% → Moderada
+   - Edge entre 0% e 2% → Leve
+   - Edge negativo → Alto risco
 
 Formato obrigatório da resposta:
 
-🔎 Análise Técnica:
-(2-3 parágrafos objetivos)
+⭐ Melhor Opção:
+Vitória Casa / Empate / Vitória Fora
 
-📊 Valor Identificado:
-Mercado: X
-Odd: X
-Edge: X%
+📊 Confiança:
+Forte / Moderada / Leve / Alto Risco
 
-⚠️ Nível de Risco:
-Baixo / Médio / Alto
+📈 Justificativa:
+Explique matematicamente com base em probabilidade ajustada vs implícita.
 
 Conclusão direta e profissional.
 `;

@@ -68,11 +68,17 @@
       return '<span class="tp-status-badge tp-status-badge--finished">✓ Encerrado</span>';
     }
     // upcoming → badge de rating
-    if (pick.rating === 'Forte oportunidade') {
-      return '<span class="tp-rating-badge tp-rating-badge--strong">🔥 Forte oportunidade</span>';
+    if (pick.rating === 'Forte' || pick.rating === 'Forte oportunidade') {
+      return '<span class="tp-rating-badge tp-rating-badge--strong">🔥 Forte</span>';
     }
-    if (pick.rating === 'Valor moderado') {
-      return '<span class="tp-rating-badge tp-rating-badge--moderate">📊 Valor moderado</span>';
+    if (pick.rating === 'Moderada' || pick.rating === 'Valor moderado') {
+      return '<span class="tp-rating-badge tp-rating-badge--moderate">📊 Moderada</span>';
+    }
+    if (pick.rating === 'Leve') {
+      return '<span class="tp-rating-badge tp-rating-badge--moderate">📉 Leve</span>';
+    }
+    if (pick.rating === 'Alto risco') {
+      return '<span class="tp-rating-badge tp-rating-badge--watch">⚠️ Alto risco</span>';
     }
     if (pick.rating === 'fallback') {
       return '<span class="tp-rating-badge tp-rating-badge--watch">👁 Em observação</span>';

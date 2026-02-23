@@ -80,14 +80,14 @@ function calculateMarket(game, marketType) {
   
   // 6. Classificação
   let rating;
-  if (edge >= 0.08) {
-    rating = "Forte oportunidade";
-  } else if (edge >= 0.04) {
-    rating = "Valor moderado";
-  } else if (edge > 0) {
-    rating = "Leve valor";
+  if (edge >= 0.04) {
+    rating = "Forte";
+  } else if (edge >= 0.02) {
+    rating = "Moderada";
+  } else if (edge >= 0) {
+    rating = "Leve";
   } else {
-    rating = "Sem valor";
+    rating = "Alto risco";
   }
   
   return {
@@ -118,19 +118,7 @@ export function calculateValue(game) {
     return current.edge > best.edge ? current : best;
   });
 
-  // Sem edge real (< 2%) → retorna 'Sem valor claro'
-  if (bestMarketData.edge < 2) {
-    return {
-      bestMarket: bestMarketData.type,
-      marketLabel: 'Sem valor claro',
-      impliedProb:  bestMarketData.implied,
-      adjustedProb: bestMarketData.adjusted,
-      edge:         bestMarketData.edge,
-      rating:       'Sem valor claro',
-    };
-  }
-
-  // Retornar apenas o melhor mercado
+  // Sempre retorna o melhor mercado, independente do edge
   return {
     bestMarket: bestMarketData.type,
     marketLabel: bestMarketData.label,

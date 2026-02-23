@@ -88,10 +88,10 @@ module.exports = async (req, res) => {
     const prompt = `Você é um analista profissional de apostas esportivas focado em identificar valor matemático real.
 
 Regras obrigatórias:
-1. Escolha apenas mercados com edge real (mínimo 2%). Se o edge for inferior, classifique como "Sem valor claro".
-2. Nunca escolha automaticamente "Empate" se houver outro mercado com edge maior.
+1. Compare os três mercados (Casa, Empate, Fora) e escolha o de MAIOR edge.
+2. Nunca seja neutro. Sempre dê uma direção clara.
 3. Nunca use frases genéricas como "Jogo equilibrado", "Pode surpreender" ou "Tudo pode acontecer".
-4. Seja direto e objetivo; indique se é aposta agressiva ou conservadora.
+4. Classifique a força da aposta: edge > 4% = Forte; 2-4% = Moderada; 0-2% = Leve; negativo = Alto risco.
 
 Dados da Partida:
 - Casa: ${matchData.home}

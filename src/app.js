@@ -751,8 +751,13 @@ function matchToTopPick(match) {
 
   // Nível de confiança — statusGroup tem prioridade sobre rating
   const levelMap = {
-    'Forte oportunidade': { levelClass: 'high',   confidenceLevel: 'ALTA CONFIANÇA'    },
-    'Valor moderado':     { levelClass: 'medium',  confidenceLevel: 'MÉDIA CONFIANÇA'  },
+    'Forte':      { levelClass: 'high',   confidenceLevel: 'ALTA CONFIANÇA'   },
+    'Moderada':   { levelClass: 'medium', confidenceLevel: 'MÉDIA CONFIANÇA'  },
+    'Leve':       { levelClass: 'medium', confidenceLevel: 'LEVE VALOR'       },
+    'Alto risco': { levelClass: 'low',    confidenceLevel: 'ALTO RISCO'       },
+    // compat. retroativa com rótulos antigos
+    'Forte oportunidade': { levelClass: 'high',   confidenceLevel: 'ALTA CONFIANÇA'  },
+    'Valor moderado':     { levelClass: 'medium',  confidenceLevel: 'MÉDIA CONFIANÇA' },
   };
   const level = statusGroup === 'live'    ? { levelClass: 'high',  confidenceLevel: 'AO VIVO'         }
               : statusGroup === 'finished' ? { levelClass: 'low',   confidenceLevel: 'ENCERRADO'       }
@@ -774,11 +779,13 @@ function matchToTopPick(match) {
     null;
 
   // Confiança no VALUE do pick
-  // "Forte oportunidade" (edge ≥ 8) → 82–92 %
-  // "Valor moderado"     (edge 7)   → 72–80 %
-  // fallback preenchimento          → 62–70 %
-  const baseConf = isFallback ? 65 :
-    va.rating === 'Forte oportunidade' ? 86 : 74;
+  // Confiança derivada do edge real
+  const baseConf = isFallback ? 65
+    : va.rating === 'Forte'      || va.rating === 'Forte oportunidade' ? 86
+    : va.rating === 'Moderada'   || va.rating === 'Valor moderado'     ? 80
+    : va.rating === 'Leve'                                              ? 73
+    : va.rating === 'Alto risco'                                        ? 63
+    : 74;
   const jitter   = ((match.id || 1) * 3) % 6;
   const pct      = Math.min(95, Math.max(60, baseConf + jitter));
 
