@@ -789,13 +789,24 @@ function matchToTopPick(match) {
   // Estatísticas do card
   const s = match.stats || {};
   const fmt = n => (typeof n === 'number' ? n.toFixed(1) : '—');
-  const last5 = arr => (arr || []).join('-');
 
-  const keyStats = [
-    `Últimos 5 (${match.home}): ${last5(s.homeLast5)}`,
-    `Últimos 5 (${match.away}): ${last5(s.awayLast5)}`,
+  // Odds dos 3 mercados (disponíveis sempre via stableOdds ou real)
+  const oddsH = match.odds?.home ?? '—';
+  const oddsD = match.odds?.draw ?? '—';
+  const oddsA = match.odds?.away ?? '—';
+
+  // Constrói keyStats com info real disponível
+  const hasStats = s.homeLast5?.length || s.awayLast5?.length || s.homeGoalsAvg != null;
+  const keyStats = hasStats ? [
+    `Últimos 5 (${match.home}): ${(s.homeLast5 || []).join('-') || '—'}`,
+    `Últimos 5 (${match.away}): ${(s.awayLast5 || []).join('-') || '—'}`,
     `Média gols: ${fmt(s.homeGoalsAvg)} × ${fmt(s.awayGoalsAvg)} por jogo`,
-    va.edge ? `Edge de valor: +${va.edge}%  |  Odds: ${oddValue ?? '—'}` : `Em observação — acompanhe o jogo`,
+    va.edge ? `Edge: +${va.edge}%  |  Odd do pick: ${oddValue ?? '—'}` : `Em observação — acompanhe as odds`,
+  ] : [
+    `Odds — Casa: ${oddsH}  |  Empate: ${oddsD}  |  Fora: ${oddsA}`,
+    `Pick: ${va.marketLabel || pickLabel}  (prob implícita ${fmt(va.impliedProb)}%)`,
+    `Prob ajustada: ${fmt(va.adjustedProb)}%  —  Edge: ${(va.edge ?? 0) >= 0 ? '+' : ''}${fmt(va.edge)}%`,
+    `Confiança: ${va.rating || 'Leve'}  |  Odd do pick: ${oddValue ?? '—'}`,
   ];
 
   const explanation = isFallback
