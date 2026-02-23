@@ -94,19 +94,49 @@ async function fetchFixtures(dateStr, apiKey) {
 }
 
 /**
- * Gera odds pseudo-estáveis por fixture ID usando um LCG simples.
- * Garante variedade de favoritos (Casa/Empate/Fora) entre os jogos.
- *   home: 1.35 – 3.90  |  draw: 2.60 – 4.50  |  away: 1.55 – 5.20
+ * Gera odds pseudo-estáveis por fixture ID com distribuição realista.
+ * 5 cenários determinísticos (derivados do ID) refletem proporções reais do futebol:
+ *   A) Casa forte favorito  (5/20 = 25%) — H 1.40-1.85, D 3.50-4.50, A 3.50-5.00
+ *   B) Casa leve favorito   (4/20 = 20%) — H 2.00-2.60, D 3.00-3.80, A 2.80-3.50
+ *   C) Equilibrado/empate   (4/20 = 20%) — H 2.90-3.40, D 2.55-2.85, A 2.90-3.40  [D sempre mínimo]
+ *   D) Fora leve favorito   (3/20 = 15%) — H 2.80-3.50, D 3.00-3.80, A 2.00-2.60
+ *   E) Fora forte favorito  (4/20 = 20%) — H 3.50-5.00, D 3.50-4.50, A 1.40-1.85
  */
 function stableOdds(fixtureId) {
   const id = Number(fixtureId) || 1;
-  const h1 = ((id * 1664525 + 1013904223) >>> 0);
-  const h2 = ((h1 * 1664525 + 1013904223) >>> 0);
-  const h3 = ((h2 * 1664525 + 1013904223) >>> 0);
-  const homeOdd = +(1.35 + (h1 % 256) / 100).toFixed(2); // 1.35 – 3.90
-  const drawOdd = +(2.60 + (h2 % 191) / 100).toFixed(2); // 2.60 – 4.50
-  const awayOdd = +(1.55 + (h3 % 366) / 100).toFixed(2); // 1.55 – 5.20
-  return { home: homeOdd, draw: drawOdd, away: awayOdd };
+  const h1 = ((id * 1664525  + 1013904223) >>> 0);
+  const h2 = ((h1 * 1664525  + 1013904223) >>> 0);
+  const h3 = ((h2 * 1664525  + 1013904223) >>> 0);
+  const h4 = ((h3 * 1664525  + 1013904223) >>> 0);
+
+  const f1 = (h1 & 0xFF) / 255; // 0-1
+  const f2 = (h2 & 0xFF) / 255;
+  const f3 = (h3 & 0xFF) / 255;
+  const scene = h4 % 20; // 0-19 → 20 buckets
+
+  let home, draw, away;
+  if (scene < 5) {           // A: casa forte (25%)
+    home = +(1.40 + f1 * 0.45).toFixed(2);
+    draw = +(3.50 + f2 * 1.00).toFixed(2);
+    away = +(3.50 + f3 * 1.50).toFixed(2);
+  } else if (scene < 9) {   // B: casa leve (20%)
+    home = +(2.00 + f1 * 0.60).toFixed(2);
+    draw = +(3.00 + f2 * 0.80).toFixed(2);
+    away = +(2.80 + f3 * 0.70).toFixed(2);
+  } else if (scene < 13) {  // C: equilibrado — D sempre o mais baixo (20%)
+    home = +(2.90 + f1 * 0.50).toFixed(2);
+    draw = +(2.55 + f2 * 0.30).toFixed(2); // range 2.55-2.85: sempre < home/away
+    away = +(2.90 + f3 * 0.50).toFixed(2);
+  } else if (scene < 16) {  // D: fora leve (15%)
+    home = +(2.80 + f1 * 0.70).toFixed(2);
+    draw = +(3.00 + f2 * 0.80).toFixed(2);
+    away = +(2.00 + f3 * 0.60).toFixed(2);
+  } else {                   // E: fora forte (20%)
+    home = +(3.50 + f1 * 1.50).toFixed(2);
+    draw = +(3.50 + f2 * 1.00).toFixed(2);
+    away = +(1.40 + f3 * 0.45).toFixed(2);
+  }
+  return { home, draw, away };
 }
 
 // ── Mapeia fixture API → objeto interno ────────────────────────────────
