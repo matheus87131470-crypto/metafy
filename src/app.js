@@ -703,8 +703,9 @@ function updateAnalysisCounter() {
  * esperado pelos cards de TopPicks.js
  */
 function matchToTopPick(match) {
-  const va  = match.valueAnalysis || {};
-  const isFallback = !!match.isFallback;
+  const va          = match.valueAnalysis || {};
+  const isFallback  = !!match.isFallback;
+  const statusGroup = match.statusGroup || (isFallback ? 'finished' : 'upcoming');
 
   // Horário: preferir timeBRT do backend (já convertido); fallback local
   let time = match.timeBRT || '--:--';
@@ -718,14 +719,15 @@ function matchToTopPick(match) {
     } catch (_) { /* mantém '--:--' */ }
   }
 
-  // Nível de confiança a partir do rating
+  // Nível de confiança — statusGroup tem prioridade sobre rating
   const levelMap = {
-    'Forte oportunidade': { levelClass: 'high',   confidenceLevel: 'ALTA CONFIANÇA'  },
-    'Valor moderado':     { levelClass: 'medium',  confidenceLevel: 'MÉDIA CONFIANÇA' },
+    'Forte oportunidade': { levelClass: 'high',   confidenceLevel: 'ALTA CONFIANÇA'    },
+    'Valor moderado':     { levelClass: 'medium',  confidenceLevel: 'MÉDIA CONFIANÇA'  },
   };
-  const level = isFallback
-    ? { levelClass: 'low', confidenceLevel: 'EM OBSERVAÇÃO' }
-    : (levelMap[va.rating] || { levelClass: 'low', confidenceLevel: 'BAIXA CONFIANÇA' });
+  const level = statusGroup === 'live'    ? { levelClass: 'high',  confidenceLevel: 'AO VIVO'         }
+              : statusGroup === 'finished' ? { levelClass: 'low',   confidenceLevel: 'ENCERRADO'       }
+              : isFallback                 ? { levelClass: 'low',   confidenceLevel: 'EM OBSERVAÇÃO'  }
+              : (levelMap[va.rating] ||    { levelClass: 'low',    confidenceLevel: 'BAIXA CONFIANÇA' });
 
   // Pick: nome legível do mercado vencedor
   const pickLabel =
@@ -780,6 +782,7 @@ function matchToTopPick(match) {
     confidenceLevel:  level.confidenceLevel,
     levelClass:       level.levelClass,
     rating:           isFallback ? 'fallback' : (va.rating || ''),
+    statusGroup,
     explanation,
     keyStats,
   };
@@ -809,38 +812,9 @@ async function loadTopPicks() {
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
 
     const data = await resp.json();
-    const allMatches = data.matches || [];
+    const allMatches = data.matches || []; // backend: sorted, grouped, max 10
 
-    // ── 1. Separar por rating ──────────────────────────────
-    const byEdgeDesc = (a, b) => (b.valueAnalysis?.edge ?? 0) - (a.valueAnalysis?.edge ?? 0);
-    const byKickoff  = (a, b) => new Date(a.kickoff) - new Date(b.kickoff);
-
-    const strong   = allMatches
-      .filter(m => m.valueAnalysis?.rating === 'Forte oportunidade')
-      .sort(byEdgeDesc);
-
-    const moderate = allMatches
-      .filter(m => m.valueAnalysis?.rating === 'Valor moderado')
-      .sort(byEdgeDesc);
-
-    // ── 2. Montar lista: até 3 strong + até 7 moderate ────
-    let finalMatches = [
-      ...strong.slice(0, 3),
-      ...moderate.slice(0, 7),
-    ].slice(0, 10);
-
-    // ── 3. Completar até 10 com restantes (se necessário) ─
-    if (finalMatches.length < 10) {
-      const usedIds = new Set(finalMatches.map(m => m.id));
-      const extras  = allMatches
-        .filter(m => !usedIds.has(m.id))
-        .sort(byKickoff)
-        .slice(0, 10 - finalMatches.length)
-        .map(m => ({ ...m, isFallback: true }));
-      finalMatches = [...finalMatches, ...extras];
-    }
-
-    if (finalMatches.length === 0) {
+    if (allMatches.length === 0) {
       container.innerHTML = `
         <section class="tp-section">
           <div class="tp-header">
@@ -854,22 +828,16 @@ async function loadTopPicks() {
       return;
     }
 
-    // ── 4. Mapear para formato dos cards ──────────────────
-    const picks = finalMatches.map(matchToTopPick);
-
-    // ── 5. Armazenar globalmente (usado por topPicksAnalyzeAI)
+    // Backend classifica (live/upcoming/finished), ordena e limita a 10
+    const picks = allMatches.map(matchToTopPick);
     window.TOP_PICKS_TODAY = picks;
 
-    // ── 6. Renderizar ─────────────────────────────────────
     if (typeof renderTopPicks === 'function') {
       renderTopPicks(picks, 'topPicksSection');
     }
 
-    console.log(
-      `⚡ Top Picks: ${picks.length} jogos` +
-      ` (${strong.slice(0,3).length} forte + ${moderate.slice(0,7).length} moderado` +
-      ` + ${Math.max(0, finalMatches.length - strong.slice(0,3).length - moderate.slice(0,7).length)} observação)`
-    );
+    const g = data.groups || {};
+    console.log(`⚡ Top Picks: ${picks.length} jogos (${g.live||0} ao vivo · ${g.upcoming||0} próximos · ${g.finished||0} encerrados)`);
 
   } catch (err) {
     console.warn('⚠️ Top Picks: falha ao carregar —', err.message);

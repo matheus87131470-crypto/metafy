@@ -33,7 +33,18 @@
         <div class="tp-grid">
     `;
 
+    let lastGroup = null;
     picks.forEach((pick, index) => {
+      // Separador de seção quando o grupo muda
+      if (pick.statusGroup && pick.statusGroup !== lastGroup) {
+        lastGroup = pick.statusGroup;
+        const seps = {
+          live:     `<div class="tp-section-sep tp-section-sep--live"><span class="tp-sep-pulse"></span>Ao Vivo Agora</div>`,
+          upcoming: `<div class="tp-section-sep tp-section-sep--upcoming"><span>⏳</span> Próximos</div>`,
+          finished: `<div class="tp-section-sep tp-section-sep--finished"><span>✓</span> Encerrados Hoje</div>`,
+        };
+        if (seps[pick.statusGroup]) html += seps[pick.statusGroup];
+      }
       const isLocked = !isPremium && index >= freeLimit;
       html += isLocked ? renderLockedCard(pick) : renderPickCard(pick);
     });
@@ -46,8 +57,16 @@
     container.innerHTML = html;
   }
 
-  // ————— Badge por rating —————
+  // ————— Badge por status / rating —————
   function ratingBadge(pick) {
+    // Status sobrescreve rating: live e finished têm badges próprios
+    if (pick.statusGroup === 'live') {
+      return '<span class="tp-status-badge tp-status-badge--live"><span class="tp-live-dot"></span>AO VIVO</span>';
+    }
+    if (pick.statusGroup === 'finished') {
+      return '<span class="tp-status-badge tp-status-badge--finished">✓ Encerrado</span>';
+    }
+    // upcoming → badge de rating
     if (pick.rating === 'Forte oportunidade') {
       return '<span class="tp-rating-badge tp-rating-badge--strong">🔥 Forte oportunidade</span>';
     }
@@ -95,9 +114,10 @@
           <button class="tp-btn tp-btn--free" onclick="topPicksToggleAnalysis('${pick.id}')">
             ⚡ VER ANÁLISE COMPLETA
           </button>
-          <button class="tp-btn tp-btn--ai" onclick="topPicksAnalyzeAI('${pick.id}')">
-            🤖 ANALISAR COM IA
-          </button>
+          ${(!pick.statusGroup || pick.statusGroup === 'upcoming')
+            ? `<button class="tp-btn tp-btn--ai" onclick="topPicksAnalyzeAI('${pick.id}')">🤖 ANALISAR COM IA</button>`
+            : `<button class="tp-btn tp-btn--ai tp-btn--disabled" disabled>🤖 IA (apenas pré-jogo)</button>`
+          }
         </div>
 
         <div class="tp-accordion ${isExpanded ? 'tp-accordion--open' : ''}" id="tp-acc-${pick.id}">

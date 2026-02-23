@@ -502,3 +502,84 @@
   0%   { transform: translateX(-100%); }
   100% { transform: translateX(100%); }
 }
+
+/* ──────────────────────────────────────────────────
+   Separadores de seção no grid
+────────────────────────────────────────────────── */
+.tp-section-sep {
+  grid-column: 1 / -1;          /* spaná o grid inteiro */
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 6px 2px 2px;
+  margin-top: 4px;
+  opacity: 0.85;
+}
+
+.tp-section-sep--live   { color: #ff4d4d; }
+.tp-section-sep--upcoming { color: #94a3b8; }
+.tp-section-sep--finished { color: #64748b; }
+
+/* Ponto pulsante para AO VIVO */
+.tp-sep-pulse {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ff4d4d;
+  animation: tp-live-pulse 1.2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+@keyframes tp-live-pulse {
+  0%, 100% { opacity: 1;   transform: scale(1);    box-shadow: 0 0 0 0 rgba(255,77,77,.7); }
+  50%       { opacity: 0.7; transform: scale(1.15); box-shadow: 0 0 0 6px rgba(255,77,77,0); }
+}
+
+/* ──────────────────────────────────────────────────
+   Badges de status (AO VIVO / ENCERRADO)
+────────────────────────────────────────────────── */
+.tp-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.67rem;
+  font-weight: 800;
+  padding: 3px 9px;
+  border-radius: 10px;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+
+.tp-status-badge--live {
+  background: rgba(255, 77, 77, 0.15);
+  color: #ff6b6b;
+  border: 1px solid rgba(255, 77, 77, 0.4);
+}
+
+.tp-live-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ff4d4d;
+  animation: tp-live-pulse 1.2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+.tp-status-badge--finished {
+  background: rgba(100, 116, 139, 0.12);
+  color: #64748b;
+  border: 1px solid rgba(100, 116, 139, 0.25);
+}
+
+/* Botão IA desabilitado */
+.tp-btn--disabled {
+  opacity: 0.38 !important;
+  cursor: not-allowed !important;
+  pointer-events: none;
+}

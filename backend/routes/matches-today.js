@@ -47,40 +47,47 @@ const handler = async (req, res) => {
   try {
     console.log('🔄 GET /api/matches/today - Scanner automático');
 
-    const now = new Date();
+    const now            = new Date();
+    const LIVE_WINDOW_MS  = 115 * 60 * 1000; // ~duração de uma partida
 
-    // 1. Filtrar apenas jogos futuros (kickoff >= agora)
-    const futureMatches = gamesData.matches.filter(g => new Date(g.kickoff) >= now);
+    // 1. Classificar TODOS os jogos: upcoming / live / finished
+    const allProcessed = gamesData.matches.map(game => {
+      const kickoffMs = new Date(game.kickoff).getTime();
+      const diffMs    = now.getTime() - kickoffMs;
 
-    // 2. Processar: adicionar timeBRT (já convertido para America/Sao_Paulo)
-    //    e calcular value analysis
-    const matchesWithValue = futureMatches.map(game => {
+      const statusGroup = kickoffMs > now.getTime()  ? 'upcoming'
+                        : diffMs <= LIVE_WINDOW_MS    ? 'live'
+                        :                              'finished';
+
       const timeBRT = new Date(game.kickoff).toLocaleTimeString('pt-BR', {
         hour: '2-digit',
         minute: '2-digit',
         timeZone: 'America/Sao_Paulo',
       });
+
       const valueAnalysis = calculateValue(game);
-      return { ...game, timeBRT, valueAnalysis };
+      return { ...game, timeBRT, statusGroup, valueAnalysis };
     });
 
-    // 3. Ordenar por edge (maior para menor)
-    matchesWithValue.sort((a, b) => b.valueAnalysis.edge - a.valueAnalysis.edge);
+    // 2. Separar e ordenar cada grupo
+    const byEdge   = (a, b) => (b.valueAnalysis.edge ?? 0) - (a.valueAnalysis.edge ?? 0);
+    const live     = allProcessed.filter(m => m.statusGroup === 'live')
+                                  .sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff));
+    const upcoming = allProcessed.filter(m => m.statusGroup === 'upcoming').sort(byEdge);
+    const finished = allProcessed.filter(m => m.statusGroup === 'finished').sort(byEdge);
 
-    // 4. Manter apenas os top 10
-    const topGames = matchesWithValue.slice(0, 10);
+    // 3. Top 10: ao vivo → próximos → encerrados
+    const topGames = [...live, ...upcoming, ...finished].slice(0, 10);
 
-    console.log(`✅ Scanner: ${gamesData.matches.length} total, ${futureMatches.length} futuros, retornando top ${topGames.length}`);
-    
-    // Retornar top 10 jogos ordenados por edge
-    const response = {
+    console.log(`✅ ${live.length} ao vivo | ${upcoming.length} próximos | ${finished.length} encerrados → top ${topGames.length}`);
+
+    return res.status(200).json({
       success: true,
-      count: topGames.length,
-      date: gamesData.date,
-      matches: topGames
-    };
-    
-    return res.status(200).json(response);
+      count:   topGames.length,
+      date:    gamesData.date,
+      groups:  { live: live.length, upcoming: upcoming.length, finished: finished.length },
+      matches: topGames,
+    });
     
   } catch (error) {
     console.error('❌ Erro ao retornar partidas:', error.message);
