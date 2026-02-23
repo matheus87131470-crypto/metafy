@@ -8,6 +8,7 @@ import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { calculateValue } from '../services/value-calculator.js';
+import { leagueTier } from '../config/topLeagues.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = dirname(__filename);
@@ -120,7 +121,7 @@ function buildResponse(allGames, todayBRT, source) {
   const finished  = allGames.filter(m => m.statusGroup === 'finished').sort(byEdge);
   const topGames  = [...live, ...upcoming, ...finished].slice(0, 10);
 
-  console.log(`✅ [${source}] ${live.length} ao vivo | ${upcoming.length} próximos | ${finished.length} encerrados → top ${topGames.length}`);
+  console.log(`✅ [${source}] ${live.length} ao vivo | ${upcoming.length} próximos | ${finished.length} encerrados → retornando ${topGames.length}`);
 
   return {
     success: true,
@@ -168,8 +169,31 @@ const handler = async (req, res) => {
 
     console.log(`📡 ${allFixtures.length} fixtures recebidos, filtrando por BRT=${todayBRT}...`);
 
-    // Mapear e filtrar pelo dia BRT = hoje
-    const games = allFixtures.map(f => mapFixture(f, todayBRT)).filter(Boolean);
+    // ── Log diagnóstico: todas as ligas do dia (útil para calibrar topLeagues.js) ──
+    const leagueMap = new Map();
+    allFixtures.forEach(f => {
+      const id = f.league?.id;
+      if (id && !leagueMap.has(id)) leagueMap.set(id, `${f.league.name} (${f.league.country})`);
+    });
+    const sortedLeagues = [...leagueMap.entries()].sort((a, b) => a[0] - b[0]);
+    console.log('[LIGAS DO DIA]', sortedLeagues.map(([id, name]) => `${id}:${name}`).join(' | '));
+
+    // ── Mapear fixtures válidos pelo dia BRT ──────────────────────────────────
+    const allMapped = allFixtures.map(f => {
+      const t = leagueTier(f.league?.id);
+      if (!t) return null;                  // liga fora da curadoria — ignorar
+      const mapped = mapFixture(f, todayBRT);
+      if (!mapped) return null;
+      return { ...mapped, leagueTier: t };
+    }).filter(Boolean);
+
+    // ── Curadoria: tier-1 primeiro; se < 10 completar com tier-2 ─────────────
+    const tier1 = allMapped.filter(g => g.leagueTier === 1);
+    const tier2 = allMapped.filter(g => g.leagueTier === 2);
+    const needed = Math.max(0, 10 - tier1.length);
+    const games  = [...tier1, ...tier2.slice(0, needed)];
+
+    console.log(`🎯 Curadoria: ${tier1.length} tier-1 + ${Math.min(needed, tier2.length)} tier-2 = ${games.length} jogos selecionados (de ${allMapped.length} mapeados)`);
 
     const body = buildResponse(games, todayBRT, 'api-football');
     _cache = { ts: Date.now(), body };
