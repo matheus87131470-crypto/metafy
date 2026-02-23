@@ -1,4 +1,4 @@
-﻿/**
+/**
  * routes/payments.js
  * Pagamento PIX via Asaas
  */
@@ -8,7 +8,7 @@ import { setPremium, getUser } from '../../lib/userStore.js';
 
 const router = express.Router();
 
-const PREMIUM_PRICE = 4.50; // R$ 4,50
+const PREMIUM_PRICE = 3.50; // R$ 4,50
 const PREMIUM_DAYS = 7;
 
 const ASAAS_BASE_URL =
@@ -19,9 +19,9 @@ const ASAAS_BASE_URL =
 const ASAAS_KEY = process.env.ASAAS_API_KEY || '';
 
 if (ASAAS_KEY) {
-  console.log(`✅ Asaas configurado (${process.env.ASAAS_ENV === 'production' ? 'produção' : 'sandbox'})`);
+  console.log(`? Asaas configurado (${process.env.ASAAS_ENV === 'production' ? 'produ��o' : 'sandbox'})`);
 } else {
-  console.warn('⚠️ ASAAS_API_KEY não configurado – pagamentos PIX desabilitados');
+  console.warn('?? ASAAS_API_KEY n�o configurado � pagamentos PIX desabilitados');
 }
 
 /**
@@ -52,43 +52,43 @@ async function asaas(method, path, body = null) {
   return data;
 }
 
-/* ─────────────────────────────────────────────────────────
+/* ---------------------------------------------------------
    POST /api/payments/pix
-   Cria cobrança PIX → retorna { qrCodeImage, pixCopiaECola, txid, expiresAt }
-───────────────────────────────────────────────────────── */
+   Cria cobran�a PIX ? retorna { qrCodeImage, pixCopiaECola, txid, expiresAt }
+--------------------------------------------------------- */
 router.post('/pix', async (req, res) => {
   try {
     const { userId, cpf, name } = req.body;
 
     if (!userId || !cpf) {
-      return res.status(400).json({ success: false, error: 'userId e CPF são obrigatórios' });
+      return res.status(400).json({ success: false, error: 'userId e CPF s�o obrigat�rios' });
     }
 
     if (!ASAAS_KEY) {
-      return res.status(503).json({ success: false, error: 'Pagamento temporariamente indisponível' });
+      return res.status(503).json({ success: false, error: 'Pagamento temporariamente indispon�vel' });
     }
 
     const cpfNumerico = cpf.replace(/\D/g, '');
     if (cpfNumerico.length !== 11) {
-      return res.status(400).json({ success: false, error: 'CPF inválido – deve ter 11 dígitos' });
+      return res.status(400).json({ success: false, error: 'CPF inv�lido � deve ter 11 d�gitos' });
     }
 
-    // Verificar se usuário existe no sistema
+    // Verificar se usu�rio existe no sistema
     const user = await getUser(userId);
     if (!user) {
-      return res.status(404).json({ success: false, error: 'Usuário não encontrado' });
+      return res.status(404).json({ success: false, error: 'Usu�rio n�o encontrado' });
     }
 
-    // ── 1. Buscar ou criar cliente no Asaas ──────────────────────
+    // -- 1. Buscar ou criar cliente no Asaas ----------------------
     let customerId;
     try {
       const searchRes = await asaas('GET', `/customers?cpfCnpj=${cpfNumerico}&limit=1`);
       if (searchRes.data?.length > 0) {
         customerId = searchRes.data[0].id;
-        console.log(`↩️  Cliente Asaas reutilizado: ${customerId}`);
+        console.log(`??  Cliente Asaas reutilizado: ${customerId}`);
       }
     } catch (e) {
-      console.warn('⚠️ Falha ao buscar cliente:', e.message);
+      console.warn('?? Falha ao buscar cliente:', e.message);
     }
 
     if (!customerId) {
@@ -101,7 +101,7 @@ router.post('/pix', async (req, res) => {
       console.log(` Cliente criado no Asaas: ${customerId}`);
     }
 
-    //  2. Criar cobrança PIX 
+    //  2. Criar cobran�a PIX 
     const dueDate = new Date();
     dueDate.setDate(dueDate.getDate() + 1);
     const dueDateStr = dueDate.toISOString().split('T')[0]; // YYYY-MM-DD
@@ -115,7 +115,7 @@ router.post('/pix', async (req, res) => {
       externalReference: userId
     });
 
-    console.log(` Cobrança PIX criada: ${charge.id} (userId: ${userId})`);
+    console.log(` Cobran�a PIX criada: ${charge.id} (userId: ${userId})`);
 
     //  3. Buscar QR Code 
     const qrData = await asaas('GET', `/payments/${charge.id}/pixQrCode`);
@@ -130,7 +130,7 @@ router.post('/pix', async (req, res) => {
 
   } catch (error) {
     console.error(' Erro ao criar PIX:', error.message);
-    return res.status(500).json({ success: false, error: 'Erro ao gerar cobrança PIX: ' + error.message });
+    return res.status(500).json({ success: false, error: 'Erro ao gerar cobran�a PIX: ' + error.message });
   }
 });
 
@@ -144,17 +144,17 @@ router.get('/pix/status/:chargeId', async (req, res) => {
     const { userId } = req.query;
 
     if (!chargeId || !userId) {
-      return res.status(400).json({ success: false, error: 'chargeId e userId são obrigatórios' });
+      return res.status(400).json({ success: false, error: 'chargeId e userId s�o obrigat�rios' });
     }
 
     if (!ASAAS_KEY) {
-      return res.status(503).json({ success: false, error: 'Serviço indisponível' });
+      return res.status(503).json({ success: false, error: 'Servi�o indispon�vel' });
     }
 
     const charge = await asaas('GET', `/payments/${chargeId}`);
     const isPaid = charge.status === 'RECEIVED' || charge.status === 'CONFIRMED';
 
-    // Se pago e referência bate, ativar premium
+    // Se pago e refer�ncia bate, ativar premium
     if (isPaid && charge.externalReference === userId) {
       const user = await getUser(userId);
       const now = new Date();
@@ -187,7 +187,7 @@ router.post('/simulate-approval', async (req, res) => {
   try {
     const { userId } = req.body;
     if (!userId) {
-      return res.status(400).json({ success: false, error: 'userId é obrigatório' });
+      return res.status(400).json({ success: false, error: 'userId � obrigat�rio' });
     }
 
     const ok = await setPremium(userId, {
@@ -205,7 +205,7 @@ router.post('/simulate-approval', async (req, res) => {
     });
 
   } catch (error) {
-    console.error(' Erro ao simular aprovação:', error.message);
+    console.error(' Erro ao simular aprova��o:', error.message);
     return res.status(500).json({ success: false, error: error.message });
   }
 });

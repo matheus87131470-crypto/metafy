@@ -1680,7 +1680,7 @@ function showAnalysisModal(game, analysis) {
               <li>💰 Gestão de banca personalizada</li>
             </ul>
             <button class="btn-unlock-premium" onclick="closeAnalysisModal(); activatePremium();">
-              💎 Ativar Premium por R$ 4,50
+              💎 Ativar Premium por R$ 3,50
             </button>
           </div>
         </div>
@@ -1722,7 +1722,7 @@ function showPremiumModal() {
         <div class="offer-badge">PAGAMENTO ÚNICO</div>
         <div class="offer-price">
           <span class="price-currency">R$</span>
-          <span class="price-value">4,50</span>
+          <span class="price-value">3,50</span>
         </div>
         <p class="offer-duration">7 dias de acesso • Sem renovação automática</p>
       </div>
@@ -1739,7 +1739,7 @@ function showPremiumModal() {
       </div>
       
       <button class="btn-premium-cta" onclick="activatePremium()">
-        💎 Pagar R$ 4,50 e Liberar Acesso
+        💎 Pagar R$ 3,50 e Liberar Acesso
       </button>
       
       <p class="premium-note">Pagamento único • Acesso imediato • 7 dias</p>
@@ -2065,7 +2065,7 @@ function showPaywallModal(message = 'Limite de análises gratuitas atingido') {
         <div class="offer-badge">PAGAMENTO ÚNICO VIA PIX</div>
         <div class="offer-price">
           <span class="price-currency">R$</span>
-          <span class="price-value">4,50</span>
+          <span class="price-value">3,50</span>
         </div>
         <p class="offer-duration">7 dias de acesso • Sem renovação automática</p>
       </div>
@@ -2082,7 +2082,7 @@ function showPaywallModal(message = 'Limite de análises gratuitas atingido') {
       </div>
       
       <button class="btn-premium-cta" onclick="closePaywallModal(); openPixModal()">
-        💚 Pagar R$ 4,50 via PIX
+        💚 Pagar R$ 3,50 via PIX
       </button>
       
       <p class="premium-note">QR Code imediato • Acesso automático • 7 dias</p>
