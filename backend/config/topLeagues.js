@@ -75,3 +75,40 @@ export function leagueTier(country, name) {
   if (TIER_2_LIST.some(e => norm(e.country) === c && norm(e.name) === n)) return 2;
   return null;
 }
+
+// ─── TOP_LEAGUE_IDS (Set de IDs numéricos) ────────────────────────────────────
+// Exportado para compatibilidade com top-picks.js (usa .has()).
+// IDs confirmados via API-Football.
+export const TOP_LEAGUE_IDS = new Set([
+  // Tier 1 — prateleira principal
+  2,    // UEFA Champions League
+  3,    // UEFA Europa League
+  848,  // UEFA Europa Conference League
+  13,   // CONMEBOL Libertadores
+  11,   // CONMEBOL Sudamericana
+  39,   // Premier League
+  140,  // La Liga
+  135,  // Serie A (Itália)
+  78,   // Bundesliga
+  61,   // Ligue 1
+  71,   // Brasileirão Série A
+  73,   // Copa do Brasil
+  307,  // Saudi Pro League (confirmar via [LIGAS DO DIA])
+
+  // Tier 2 — segunda prateleira
+  88,   // Eredivisie
+  94,   // Primeira Liga
+  203,  // Süper Lig
+  128,  // Liga Profesional (Argentina)
+  262,  // Liga MX
+  253,  // MLS
+  72,   // Brasileirão Série B
+  34,   // Scottish Premiership
+  81,   // DFB Pokal
+  137,  // Coppa Italia
+  141,  // Copa del Rey
+  65,   // Coupe de France
+  5,    // UEFA Nations League
+  15,   // FIFA World Cup
+  9,    // Copa America
+]);

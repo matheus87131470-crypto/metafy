@@ -112,10 +112,11 @@ router.get('/today', async (req, res) => {
     const fixtures = payload.response || [];
     console.log(`✅ ${fixtures.length} fixtures recebidos — filtrando top ligas...`);
 
-    // ── 1. Filtrar por whitelist ────────────────────────────
-    const filtered = fixtures.filter(f =>
-      f.league?.id && TOP_LEAGUE_IDS.has(f.league.id)
-    );
+    // ── 1. Filtrar por whitelist (seguro: se Set vazio, passa tudo) ───────
+    const hasFilter = TOP_LEAGUE_IDS instanceof Set && TOP_LEAGUE_IDS.size > 0;
+    const filtered = hasFilter
+      ? fixtures.filter(f => f.league?.id && TOP_LEAGUE_IDS.has(f.league.id))
+      : fixtures;
 
     // ── 2. Ordenar por horário ──────────────────────────────
     filtered.sort((a, b) =>
