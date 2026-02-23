@@ -155,7 +155,7 @@ router.get('/today', async (req, res) => {
         awayScore:  goals.away,
       };
 
-      return { ...base, ...generateAnalysis(base, i) };
+      return { ...base, ...generateAnalysis(base, i), iaFree: i < 2 };
     });
 
     console.log(`⚡ Top Picks: ${picks.length} jogos selecionados`);

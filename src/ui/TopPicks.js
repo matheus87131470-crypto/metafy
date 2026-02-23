@@ -47,7 +47,7 @@
         if (seps[pick.statusGroup]) html += seps[pick.statusGroup];
       }
       const isLocked = !isPremium && index >= freeLimit;
-      html += isLocked ? renderLockedCard(pick) : renderPickCard(pick);
+      html += isLocked ? renderLockedCard(pick) : renderPickCard(pick, isPremium);
     });
 
     html += `
@@ -81,7 +81,7 @@
   }
 
   // ————— Card desbloqueado —————
-  function renderPickCard(pick) {
+  function renderPickCard(pick, isPremium) {
     const isExpanded = expandedIds.has(pick.id);
     const levelColor = pick.levelClass === 'high' ? 'var(--tp-high)' :
                        pick.levelClass === 'medium' ? 'var(--tp-medium)' : 'var(--tp-low)';
@@ -116,7 +116,9 @@
             ⚡ VER ANÁLISE COMPLETA
           </button>
           ${(!pick.statusGroup || pick.statusGroup === 'upcoming')
-            ? `<button class="tp-btn tp-btn--ai" onclick="topPicksAnalyzeAI('${pick.id}')">🤖 ANALISAR COM IA</button>`
+            ? (isPremium || pick.iaFree
+                ? `<button class="tp-btn tp-btn--ai" onclick="topPicksAnalyzeAI('${pick.id}')">🤖 ANALISAR COM IA</button>`
+                : `<button class="tp-btn tp-btn--ai" onclick="topPicksAnalyzeAI('${pick.id}')">🔒 IA (Premium)</button>`)
             : `<button class="tp-btn tp-btn--ai tp-btn--disabled" disabled>🤖 IA (apenas pré-jogo)</button>`
           }
         </div>
@@ -218,7 +220,8 @@
   // ————— Botão IA —————
   window.topPicksAnalyzeAI = function (pickId) {
     const isPremium = (typeof isPremiumUser === 'function') ? isPremiumUser() : false;
-    if (!isPremium) {
+    const pick = (window.TOP_PICKS_TODAY || []).find(p => p.id === pickId);
+    if (!isPremium && !pick?.iaFree) {
       if (typeof activatePremium === 'function') {
         activatePremium();
       } else {
@@ -243,7 +246,6 @@
       return;
     }
 
-    const pick = (window.TOP_PICKS_TODAY || []).find(p => p.id === pickId);
     if (!pick) return;
     console.log('🤖 Analisando com IA:', pick);
     alert(`🤖 Análise IA: ${pick.home} vs ${pick.away}\nPick: ${pick.pick} (${pick.confidencePct}%)\n\n${pick.explanation}`);

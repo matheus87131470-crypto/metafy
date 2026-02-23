@@ -815,6 +815,7 @@ function matchToTopPick(match) {
     statusGroup,
     explanation,
     keyStats,
+    iaFree:           !!match.iaFree,
   };
 }
 
@@ -861,7 +862,7 @@ async function loadTopPicks() {
     }
 
     // Backend classifica (live/upcoming/finished), ordena e limita a 10
-    const picks = allMatches.map(matchToTopPick);
+    const picks = allMatches.map((m, i) => matchToTopPick({ ...m, iaFree: m.iaFree ?? (i < 2) }));
     window.TOP_PICKS_TODAY = picks;
 
     if (typeof renderTopPicks === 'function') {

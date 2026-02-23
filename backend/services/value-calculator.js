@@ -59,19 +59,17 @@ function calculateMarket(game, marketType) {
       if (game.stats.homeGoalsAvg > game.stats.awayConcededAvg) adjustment -= 0.02;
       
     } else if (marketType === 'draw') {
-      // Regras para DRAW
-      if (formDiff <= 0.15) adjustment += 0.03; // Forma similar
-      if (avgGoalsCombined < 2.0) adjustment += 0.03; // Jogo defensivo
-      // Histórico de empates seria analisado aqui, mas simplificado
-      if (Math.abs(game.stats.homeGoalsAvg - game.stats.awayGoalsAvg) < 0.3) {
-        adjustment += 0.02;
-      }
+      // Regras para DRAW — exige TODAS as condições simultâneas para evitar empate padrão
+      const bothEqualized = formDiff <= 0.15
+        && avgGoalsCombined < 1.8
+        && Math.abs(game.stats.homeGoalsAvg - game.stats.awayGoalsAvg) < 0.3;
+      if (bothEqualized) adjustment += 0.05;
     }
   } else {
-    // Sem estatísticas: ajuste conservador baseado nas odds
-    if (marketType === 'home' && odd < 2.0) adjustment += 0.02;
-    else if (marketType === 'away' && odd < 2.5) adjustment += 0.02;
-    else if (marketType === 'draw' && odd >= 3.0 && odd <= 3.5) adjustment += 0.02;
+    // Sem estatísticas: apenas o favorito forte recebe pequeno ajuste.
+    // Draw intencialmente sem bônus para não vencer o reduce por padrão.
+    if (marketType === 'home' && odd < 1.7) adjustment += 0.025;
+    else if (marketType === 'away' && odd < 1.9) adjustment += 0.02;
   }
   
   // 4. Probabilidade ajustada
@@ -119,7 +117,19 @@ export function calculateValue(game) {
   const bestMarketData = markets.reduce((best, current) => {
     return current.edge > best.edge ? current : best;
   });
-  
+
+  // Sem edge real (< 2%) → retorna 'Sem valor claro'
+  if (bestMarketData.edge < 2) {
+    return {
+      bestMarket: bestMarketData.type,
+      marketLabel: 'Sem valor claro',
+      impliedProb:  bestMarketData.implied,
+      adjustedProb: bestMarketData.adjusted,
+      edge:         bestMarketData.edge,
+      rating:       'Sem valor claro',
+    };
+  }
+
   // Retornar apenas o melhor mercado
   return {
     bestMarket: bestMarketData.type,

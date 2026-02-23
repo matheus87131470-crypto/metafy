@@ -85,9 +85,15 @@ module.exports = async (req, res) => {
     console.log('🤖 Gerando insights com OpenAI...');
     
     // Criar prompt estruturado
-    const prompt = `Você é um especialista em análise de apostas esportivas. Analise a partida e forneça insights detalhados.
+    const prompt = `Você é um analista profissional de apostas esportivas focado em identificar valor matemático real.
 
-Contexto da Partida:
+Regras obrigatórias:
+1. Escolha apenas mercados com edge real (mínimo 2%). Se o edge for inferior, classifique como "Sem valor claro".
+2. Nunca escolha automaticamente "Empate" se houver outro mercado com edge maior.
+3. Nunca use frases genéricas como "Jogo equilibrado", "Pode surpreender" ou "Tudo pode acontecer".
+4. Seja direto e objetivo; indique se é aposta agressiva ou conservadora.
+
+Dados da Partida:
 - Casa: ${matchData.home}
 - Fora: ${matchData.away}
 - Liga: ${matchData.league} (${matchData.country})
@@ -100,11 +106,11 @@ ${matchData.stats && Object.keys(matchData.stats).length > 0 ? `- Estatísticas:
 ${matchData.h2h && matchData.h2h.length > 0 ? `- Últimos ${matchData.h2h.length} confrontos diretos` : ''}
 
 Forneça uma análise estruturada em JSON com:
-1. summary: resumo geral da partida (2-3 frases)
-2. picks: array de 3-5 apostas recomendadas, cada uma com:
+1. summary: resumo objetivo da partida (2-3 frases, sem clichês)
+2. picks: array de 2-4 apostas com maior edge real, cada uma com:
    - market: nome do mercado (ex: "Over 2.5", "Casa Vence", "Ambas Marcam")
-   - confidence: número de 0-100 indicando confiança
-   - reason: justificativa breve (1 frase)
+   - confidence: número de 0-100 indicando confiança baseada no edge
+   - reason: justificativa objetiva com base nos dados (1 frase)
 3. bankroll: recomendação de gestão de banca (1 frase)
 
 Responda APENAS com JSON válido, sem markdown ou texto adicional.`;
@@ -123,7 +129,7 @@ Responda APENAS com JSON válido, sem markdown ou texto adicional.`;
           },
           { role: 'user', content: prompt }
         ],
-        temperature: 0.7,
+        temperature: 0.3,
         max_tokens: 500,
       }, {
         signal: controller.signal
