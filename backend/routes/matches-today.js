@@ -4,6 +4,9 @@
  *
  * Retorna exatamente 10 jogos do dia (BRT), ou menos se não houver.
  *
+ * CACHE DIÁRIO: o Top 10 é selecionado uma vez por dia (BRT) e fica fixo
+ * o dia inteiro — igual seleção manual. Só muda quando vira o dia.
+ *
  * SELEÇÃO (fixa, não muda mais):
  *   1. Importantes (whitelist por country+league) — NS → ao vivo → encerrados
  *   2. Completar até 10 com qualquer outro jogo do dia (mesma ordem)
@@ -20,9 +23,8 @@ import { calculateValue } from '../services/value-calculator.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = dirname(__filename);
 
-// ── Cache (15 min) ─────────────────────────────────────────────────────
-const CACHE_TTL = 15 * 60 * 1000;
-let _cache = { ts: 0, body: null };
+// ── Cache diário fixo (reseta só quando muda o dia BRT) ───────────────────
+let _cache = { dateBRT: null, body: null };
 
 // ── statusGroup a partir do código da API ──────────────────────────────
 const STATUS_GROUP_MAP = {
@@ -180,8 +182,8 @@ const handler = async (req, res) => {
   try {
     const todayBRT = brtDateStr();
 
-    if (_cache.body && (Date.now() - _cache.ts) < CACHE_TTL) {
-      console.log('📦 /api/matches/today — cache hit');
+    if (_cache.body && _cache.dateBRT === todayBRT) {
+      console.log(`📦 /api/matches/today — cache diário hit (${todayBRT})`);
       return res.status(200).json(_cache.body);
     }
 
@@ -213,7 +215,8 @@ const handler = async (req, res) => {
     const matches = pickTop10(games);
 
     const body = { success: true, dateBRT: todayBRT, source: 'api-football', count: matches.length, matches };
-    _cache = { ts: Date.now(), body };
+    _cache = { dateBRT: todayBRT, body };
+    console.log(`💾 Top10 do dia ${todayBRT} salvo em cache (fixo até meia-noite BRT)`);
     return res.status(200).json(body);
 
   } catch (err) {
