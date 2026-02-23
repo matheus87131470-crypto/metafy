@@ -118,13 +118,20 @@ export function calculateValue(game) {
     return current.edge > best.edge ? current : best;
   });
 
+  // Tiebreaker: se edges muito próximos (<0.3%), preferir Casa (mando) ou Fora (se muito favorito)
+  const [home, draw, away] = markets;
+  const allClose = Math.abs(home.edge - draw.edge) < 0.3 && Math.abs(away.edge - draw.edge) < 0.3;
+  const resolved = allClose
+    ? (away.edge > home.edge ? away : home)
+    : bestMarketData;
+
   // Sempre retorna o melhor mercado, independente do edge
   return {
-    bestMarket: bestMarketData.type,
-    marketLabel: bestMarketData.label,
-    impliedProb: bestMarketData.implied,
-    adjustedProb: bestMarketData.adjusted,
-    edge: bestMarketData.edge,
-    rating: bestMarketData.rating
+    bestMarket:   resolved.type,
+    marketLabel:  resolved.label,
+    impliedProb:  resolved.implied,
+    adjustedProb: resolved.adjusted,
+    edge:         resolved.edge,
+    rating:       resolved.rating
   };
 }

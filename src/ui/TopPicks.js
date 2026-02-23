@@ -112,6 +112,13 @@
           <div class="tp-level">${pick.confidenceLevel}</div>
         </div>
 
+        ${pick.bestPickLabel && pick.bestPickLabel !== '—' ? `
+        <div class="tp-direction">
+          <span class="tp-direction-label">Direção:</span>
+          <span class="tp-direction-value">${pick.bestPickLabel}</span>
+          ${pick.rating && pick.rating !== 'fallback' ? `<span class="tp-direction-conf">(${pick.rating})</span>` : ''}
+        </div>` : ''}
+
         <div class="tp-pick-chip">
           <span class="tp-market">${pick.market}:</span>
           <span class="tp-pick-label">${pick.pick}</span>
@@ -254,7 +261,187 @@
 
     if (!pick) return;
     console.log('🤖 Analisando com IA:', pick);
-    alert(`🤖 Análise IA: ${pick.home} vs ${pick.away}\nPick: ${pick.pick} (${pick.confidencePct}%)\n\n${pick.explanation}`);
+    openAIModal(pick);
+  };
+
+  // ————— Modal IA —————
+  function buildSummary(pick) {
+    const edge = pick.edge ?? 0;
+    const label = pick.bestPickLabel || pick.pick || 'Melhor opção';
+    const conf = pick.rating || 'Leve';
+    if (conf === 'Forte' || conf === 'Moderada')
+      return `A melhor relação risco/retorno hoje está em ${label}, com edge de ${Number(edge).toFixed(2)}%.`;
+    if (conf === 'Leve')
+      return `A direção mais consistente é ${label}, mas com edge baixo; stake conservadora.`;
+    return `Mercado sem valor estatístico; se entrar, faça stake mínima. Melhor opção ainda é ${label}.`;
+  }
+
+  function openAIModal(pick) {
+    // Injeta modal no DOM se ainda não existir
+    if (!document.getElementById('tp-ai-modal')) {
+      const modalEl = document.createElement('div');
+      modalEl.id = 'tp-ai-modal';
+      modalEl.className = 'tp-modal-overlay';
+      modalEl.setAttribute('role', 'dialog');
+      modalEl.setAttribute('aria-modal', 'true');
+      modalEl.innerHTML = `
+        <div class="tp-modal">
+          <button class="tp-modal-close" onclick="closeTpAIModal()" aria-label="Fechar">&times;</button>
+          <div id="tp-modal-body"></div>
+        </div>`;
+      modalEl.addEventListener('click', e => { if (e.target === modalEl) closeTpAIModal(); });
+      document.body.appendChild(modalEl);
+
+      // Estilos injetados uma única vez
+      const style = document.createElement('style');
+      style.textContent = `
+        .tp-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;}
+        .tp-modal{background:#1a1f2e;border:1px solid rgba(255,255,255,.1);border-radius:16px;width:100%;max-width:480px;position:relative;padding:28px 24px 24px;}
+        .tp-modal-close{position:absolute;top:12px;right:14px;background:none;border:none;color:#9ca3af;font-size:1.4rem;cursor:pointer;line-height:1;}
+        .tp-modal-close:hover{color:#fff;}
+        .tp-modal-title{font-size:1rem;font-weight:700;color:#e5e7eb;margin-bottom:18px;}
+        .tp-modal-best{font-size:1.25rem;font-weight:800;color:#fbbf24;margin-bottom:6px;}
+        .tp-modal-badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:.8rem;font-weight:700;margin-bottom:14px;}
+        .tp-modal-badge.forte{background:rgba(16,185,129,.15);color:#10b981;border:1px solid #10b981;}
+        .tp-modal-badge.moderada{background:rgba(59,130,246,.15);color:#60a5fa;border:1px solid #60a5fa;}
+        .tp-modal-badge.leve{background:rgba(251,191,36,.15);color:#fbbf24;border:1px solid #fbbf24;}
+        .tp-modal-badge.alto-risco{background:rgba(239,68,68,.15);color:#f87171;border:1px solid #f87171;}
+        .tp-modal-edge{font-size:.8rem;color:#9ca3af;margin-bottom:16px;}
+        .tp-modal-summary{font-size:.9rem;color:#d1d5db;margin-bottom:14px;line-height:1.5;}
+        .tp-modal-bullets{list-style:none;padding:0;margin:0 0 18px;display:flex;flex-direction:column;gap:6px;}
+        .tp-modal-bullets li{font-size:.85rem;color:#d1d5db;padding:6px 10px;background:rgba(255,255,255,.04);border-radius:8px;border-left:3px solid rgba(251,191,36,.4);}
+        .tp-modal-actions{display:flex;justify-content:flex-end;}
+        .tp-modal-btn-close{padding:8px 20px;border-radius:8px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#e5e7eb;font-size:.9rem;cursor:pointer;}
+        .tp-modal-btn-close:hover{background:rgba(255,255,255,.15);}
+        .tp-modal-loading{text-align:center;color:#9ca3af;font-size:.95rem;padding:20px 0;}
+      `;
+      document.head.appendChild(style);
+    }
+
+    const overlay = document.getElementById('tp-ai-modal');
+    const body    = document.getElementById('tp-modal-body');
+
+    // Loading
+    body.innerHTML = `<p class="tp-modal-loading">🤖 Analisando...</p>`;
+    overlay.style.display = 'flex';
+
+    // Gera resposta local (instantânea, sem backend)
+    const summary  = buildSummary(pick);
+    const conf     = pick.rating || 'Leve';
+    const badgeCls = conf === 'Forte' ? 'forte' : conf === 'Moderada' ? 'moderada' : conf === 'Alto risco' ? 'alto-risco' : 'leve';
+    const bullets  = pick.keyStats && pick.keyStats.length >= 3
+      ? pick.keyStats.slice(0, 3)
+      : [
+          `Pick: ${pick.bestPickLabel || pick.pick}`,
+          pick.explanation || 'Sem dados adicionais',
+          `Confiança calculada: ${pick.confidencePct}%`,
+        ];
+
+    body.innerHTML = `
+      <p class="tp-modal-title">🤖 Análise IA: ${pick.home} vs ${pick.away}</p>
+      <p class="tp-modal-best">⭐ Melhor Opção: ${pick.bestPickLabel || pick.pick}</p>
+      <span class="tp-modal-badge ${badgeCls}">📊 Confiança: ${conf}</span>
+      <p class="tp-modal-edge">📈 Edge: ${Number(pick.edge ?? 0).toFixed(2)}%  |  Prob ajustada: ${Number(pick.probAdjusted ?? 0).toFixed(1)}% vs implícita: ${Number(pick.probImplied ?? 0).toFixed(1)}%</p>
+      <p class="tp-modal-summary">${summary}</p>
+      <ul class="tp-modal-bullets">${bullets.map(b => `<li>${b}</li>`).join('')}</ul>
+      <div class="tp-modal-actions">
+        <button class="tp-modal-btn-close" onclick="closeTpAIModal()">Fechar</button>
+      </div>
+    `;
+  }
+
+  window.closeTpAIModal = function () {
+    const el = document.getElementById('tp-ai-modal');
+    if (el) el.style.display = 'none';
+  };
+
+  // ————— Modal IA —————
+  function buildSummary(pick) {
+    const edge = pick.edge ?? 0;
+    const label = pick.bestPickLabel || pick.pick || 'Melhor opção';
+    const conf = pick.rating || 'Leve';
+    if (conf === 'Forte' || conf === 'Moderada')
+      return `A melhor relação risco/retorno hoje está em ${label}, com edge de ${Number(edge).toFixed(2)}%.`;
+    if (conf === 'Leve')
+      return `A direção mais consistente é ${label}, mas com edge baixo; stake conservadora.`;
+    return `Mercado sem valor estatístico; se entrar, faça stake mínima. Melhor opção ainda é ${label}.`;
+  }
+
+  function openAIModal(pick) {
+    if (!document.getElementById('tp-ai-modal')) {
+      const modalEl = document.createElement('div');
+      modalEl.id = 'tp-ai-modal';
+      modalEl.className = 'tp-modal-overlay';
+      modalEl.setAttribute('role', 'dialog');
+      modalEl.setAttribute('aria-modal', 'true');
+      modalEl.innerHTML = `
+        <div class="tp-modal">
+          <button class="tp-modal-close" onclick="closeTpAIModal()" aria-label="Fechar">&times;</button>
+          <div id="tp-modal-body"></div>
+        </div>`;
+      modalEl.addEventListener('click', e => { if (e.target === modalEl) closeTpAIModal(); });
+      document.body.appendChild(modalEl);
+
+      const style = document.createElement('style');
+      style.textContent = [
+        '.tp-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;}',
+        '.tp-modal{background:#1a1f2e;border:1px solid rgba(255,255,255,.1);border-radius:16px;width:100%;max-width:480px;position:relative;padding:28px 24px 24px;}',
+        '.tp-modal-close{position:absolute;top:12px;right:14px;background:none;border:none;color:#9ca3af;font-size:1.4rem;cursor:pointer;line-height:1;}',
+        '.tp-modal-close:hover{color:#fff;}',
+        '.tp-modal-title{font-size:1rem;font-weight:700;color:#e5e7eb;margin:0 0 18px;}',
+        '.tp-modal-best{font-size:1.25rem;font-weight:800;color:#fbbf24;margin:0 0 8px;}',
+        '.tp-modal-badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:.8rem;font-weight:700;margin-bottom:12px;}',
+        '.tp-modal-badge.forte{background:rgba(16,185,129,.15);color:#10b981;border:1px solid #10b981;}',
+        '.tp-modal-badge.moderada{background:rgba(59,130,246,.15);color:#60a5fa;border:1px solid #60a5fa;}',
+        '.tp-modal-badge.leve{background:rgba(251,191,36,.15);color:#fbbf24;border:1px solid #fbbf24;}',
+        '.tp-modal-badge.alto-risco{background:rgba(239,68,68,.15);color:#f87171;border:1px solid #f87171;}',
+        '.tp-modal-edge{font-size:.8rem;color:#9ca3af;margin:0 0 14px;}',
+        '.tp-modal-summary{font-size:.9rem;color:#d1d5db;margin:0 0 14px;line-height:1.6;}',
+        '.tp-modal-bullets{list-style:none;padding:0;margin:0 0 20px;display:flex;flex-direction:column;gap:6px;}',
+        '.tp-modal-bullets li{font-size:.85rem;color:#d1d5db;padding:7px 10px;background:rgba(255,255,255,.04);border-radius:8px;border-left:3px solid rgba(251,191,36,.4);}',
+        '.tp-modal-actions{display:flex;justify-content:flex-end;}',
+        '.tp-modal-btn-close{padding:8px 20px;border-radius:8px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#e5e7eb;font-size:.9rem;cursor:pointer;}',
+        '.tp-modal-btn-close:hover{background:rgba(255,255,255,.15);}',
+        '.tp-modal-loading{text-align:center;color:#9ca3af;font-size:.95rem;padding:20px 0;}',
+        '.tp-direction{display:flex;align-items:center;gap:6px;font-size:.82rem;margin:6px 0 10px;padding:5px 10px;background:rgba(251,191,36,.07);border-radius:8px;}',
+        '.tp-direction-label{color:#9ca3af;}',
+        '.tp-direction-value{color:#fbbf24;font-weight:700;}',
+        '.tp-direction-conf{color:#6b7280;font-size:.78rem;}',
+      ].join('');
+      document.head.appendChild(style);
+    }
+
+    const overlay = document.getElementById('tp-ai-modal');
+    const body    = document.getElementById('tp-modal-body');
+    body.innerHTML = '<p class="tp-modal-loading">🤖 Analisando...</p>';
+    overlay.style.display = 'flex';
+
+    const summary  = buildSummary(pick);
+    const conf     = pick.rating || 'Leve';
+    const badgeCls = conf === 'Forte' ? 'forte' : conf === 'Moderada' ? 'moderada' : conf === 'Alto risco' ? 'alto-risco' : 'leve';
+    const bullets  = pick.keyStats && pick.keyStats.length >= 3
+      ? pick.keyStats.slice(0, 3)
+      : [
+          `Pick: ${pick.bestPickLabel || pick.pick || '?'}`,
+          pick.explanation || 'Análise baseada em probabilidades calc. localmente.',
+          `Confiança calculada: ${pick.confidencePct}%`,
+        ];
+
+    body.innerHTML = `
+      <p class="tp-modal-title">🤖 Análise IA: ${pick.home} vs ${pick.away}</p>
+      <p class="tp-modal-best">⭐ Melhor Opção: ${pick.bestPickLabel || pick.pick}</p>
+      <span class="tp-modal-badge ${badgeCls}">📊 Confiança: ${conf}</span>
+      <p class="tp-modal-edge">📈 Edge: ${Number(pick.edge ?? 0).toFixed(2)}%  |  Prob ajustada: ${Number(pick.probAdjusted ?? 0).toFixed(1)}% vs implícita: ${Number(pick.probImplied ?? 0).toFixed(1)}%</p>
+      <p class="tp-modal-summary">${summary}</p>
+      <ul class="tp-modal-bullets">${bullets.map(b => `<li>${b}</li>`).join('')}</ul>
+      <div class="tp-modal-actions">
+        <button class="tp-modal-btn-close" onclick="closeTpAIModal()">Fechar</button>
+      </div>`;
+  }
+
+  window.closeTpAIModal = function () {
+    const el = document.getElementById('tp-ai-modal');
+    if (el) el.style.display = 'none';
   };
 
   // ————— Export —————

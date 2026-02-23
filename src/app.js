@@ -823,6 +823,12 @@ function matchToTopPick(match) {
     explanation,
     keyStats,
     iaFree:           !!match.iaFree,
+    // Campos estruturados para o modal IA
+    bestPick:         isFallback ? 'home' : (va.bestMarket || 'home'),
+    bestPickLabel:    isFallback ? '—'    : pickLabel,
+    edge:             isFallback ? 0      : (va.edge          ?? 0),
+    probAdjusted:     isFallback ? 0      : (va.adjustedProb  ?? 0),
+    probImplied:      isFallback ? 0      : (va.impliedProb   ?? 0),
   };
 }
 
