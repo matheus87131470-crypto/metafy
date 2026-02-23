@@ -1,7 +1,7 @@
 /**
  * routes/matches-today.js
- * Endpoint Express para retornar partidas de hoje
- * Lê dados locais de daily-games.json
+ * Fonte primária: API-Football (api-sports.io)
+ * Fallback:       data/daily-games.json
  */
 
 import { readFileSync } from 'fs';
@@ -10,93 +10,192 @@ import { dirname, join } from 'path';
 import { calculateValue } from '../services/value-calculator.js';
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const __dirname  = dirname(__filename);
 
-// Carregar dados locais
-const gamesDataPath = join(__dirname, '../data/daily-games.json');
-let gamesData = null;
+// ── Cache em memória (15 min) ──────────────────────────────────────────
+const CACHE_TTL = 15 * 60 * 1000;
+let _cache = { ts: 0, body: null };
 
-function loadGamesData() {
-  try {
-    const rawData = readFileSync(gamesDataPath, 'utf-8');
-    gamesData = JSON.parse(rawData);
-    console.log('✅ Dados carregados:', gamesData.matches.length, 'jogos');
-  } catch (error) {
-    console.error('❌ Erro ao carregar daily-games.json:', error.message);
-    gamesData = { date: new Date().toISOString().split('T')[0], matches: [] };
-  }
+// ── Status da API-Football → grupo interno ─────────────────────────────
+const STATUS_GROUP = {
+  NS:   'upcoming',
+  TBD:  'upcoming',
+  '1H': 'live',  HT:  'live',  '2H': 'live',
+  ET:   'live',  P:   'live',  BT:   'live',
+  FT:   'finished', AET: 'finished', PEN: 'finished',
+  AWD:  'finished', WO:  'finished',
+};
+// PST / CANC / ABD / SUSP / INT → undefined → ignorar
+
+// ── Data "hoje no Brasil" em YYYY-MM-DD (UTC-3) ────────────────────────
+function brtDateStr(date = new Date()) {
+  return date.toLocaleDateString('pt-BR', {
+    timeZone: 'America/Sao_Paulo',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+  }).split('/').reverse().join('-'); // dd/mm/yyyy → yyyy-mm-dd
 }
 
-// Carregar dados na inicialização
-loadGamesData();
+// ── Busca fixtures de uma data na API-Football ─────────────────────────
+async function fetchFixtures(dateStr, apiKey) {
+  const url = `https://v3.football.api-sports.io/fixtures?date=${dateStr}`;
+  const r   = await fetch(url, {
+    headers: { 'x-apisports-key': apiKey, 'Accept': 'application/json' },
+  });
+  if (!r.ok) throw new Error(`API-Football ${r.status} para ${dateStr}`);
+  const payload = await r.json();
+  if (payload.errors && Object.keys(payload.errors).length > 0)
+    throw new Error(`API-Football erro: ${Object.values(payload.errors).join('; ')}`);
+  return payload.response || [];
+}
 
+// ── Mapeia um fixture da API-Football para o formato interno ─────────
+function mapFixture(f, todayBRT) {
+  const fix    = f.fixture;
+  const status = fix.status?.short || 'NS';
+  const grp    = STATUS_GROUP[status];
+  if (!grp) return null; // ignorar PST/CANC/etc.
+
+  // Verificar se o "dia BRT" do jogo é hoje
+  const kickoffDate  = new Date(fix.date);
+  const kickoffBRT   = kickoffDate.toLocaleDateString('pt-BR', {
+    timeZone: 'America/Sao_Paulo',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+  }).split('/').reverse().join('-');
+  if (kickoffBRT !== todayBRT) return null;
+
+  const timeBRT = kickoffDate.toLocaleTimeString('pt-BR', {
+    hour: '2-digit', minute: '2-digit',
+    timeZone: 'America/Sao_Paulo',
+  });
+
+  const home = f.teams?.home?.name || '?';
+  const away = f.teams?.away?.name || '?';
+
+  // Odds sintéticas neutras para value-calculator (sem odds reais na /fixtures)
+  // → garante que calculateValue não crasha; values reais viriam de /odds
+  const odds = { home: 2.5, draw: 3.20, away: 2.80 };
+
+  const game = {
+    id:      fix.id,
+    league:  f.league?.name   || 'Liga',
+    country: f.league?.country || '',
+    home,
+    away,
+    kickoff: fix.date,
+    odds,
+    // stats ausentes → calculateValue usa fallback por odds puras
+  };
+
+  const valueAnalysis = calculateValue(game);
+
+  return {
+    ...game,
+    timeBRT,
+    statusGroup: grp,
+    statusShort: status,
+    goals: { home: f.goals?.home ?? null, away: f.goals?.away ?? null },
+    leagueLogo: f.league?.logo  || '',
+    homeLogo:   f.teams?.home?.logo || '',
+    awayLogo:   f.teams?.away?.logo || '',
+    valueAnalysis,
+    source: 'api-football',
+  };
+}
+
+// ── Carrega fallback (daily-games.json) ────────────────────────────────
+function loadFallback() {
+  try {
+    const raw  = readFileSync(join(__dirname, '../data/daily-games.json'), 'utf-8');
+    const data = JSON.parse(raw);
+    return data.matches || [];
+  } catch { return []; }
+}
+
+// ── Monta resposta final: live → upcoming → finished, top 10 ──────────
+function buildResponse(allGames, todayBRT, source) {
+  const byEdge    = (a, b) => (b.valueAnalysis?.edge ?? 0) - (a.valueAnalysis?.edge ?? 0);
+  const live      = allGames.filter(m => m.statusGroup === 'live')
+                             .sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff));
+  const upcoming  = allGames.filter(m => m.statusGroup === 'upcoming').sort(byEdge);
+  const finished  = allGames.filter(m => m.statusGroup === 'finished').sort(byEdge);
+  const topGames  = [...live, ...upcoming, ...finished].slice(0, 10);
+
+  console.log(`✅ [${source}] ${live.length} ao vivo | ${upcoming.length} próximos | ${finished.length} encerrados → top ${topGames.length}`);
+
+  return {
+    success: true,
+    count:   topGames.length,
+    date:    todayBRT,
+    source,
+    groups:  { live: live.length, upcoming: upcoming.length, finished: finished.length },
+    matches: topGames,
+  };
+}
+
+// ── Handler principal ──────────────────────────────────────────────────
 const handler = async (req, res) => {
-  // CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-  
-  if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
-    console.log('🔄 GET /api/matches/today - Scanner automático');
+    const todayBRT = brtDateStr();
 
-    const now            = new Date();
-    const LIVE_WINDOW_MS  = 115 * 60 * 1000; // ~duração de uma partida
+    // Cache hit
+    if (_cache.body && (Date.now() - _cache.ts) < CACHE_TTL) {
+      console.log('📦 /api/matches/today cache hit');
+      return res.status(200).json(_cache.body);
+    }
 
-    // 1. Classificar TODOS os jogos: upcoming / live / finished
-    const allProcessed = gamesData.matches.map(game => {
-      const kickoffMs = new Date(game.kickoff).getTime();
-      const diffMs    = now.getTime() - kickoffMs;
+    const API_KEY = process.env.API_FOOTBALL_KEY;
 
-      const statusGroup = kickoffMs > now.getTime()  ? 'upcoming'
-                        : diffMs <= LIVE_WINDOW_MS    ? 'live'
-                        :                              'finished';
+    if (!API_KEY) {
+      console.warn('⚠️  API_FOOTBALL_KEY não configurado — usando fallback');
+      throw new Error('no_api_key');
+    }
 
-      const timeBRT = new Date(game.kickoff).toLocaleTimeString('pt-BR', {
-        hour: '2-digit',
-        minute: '2-digit',
-        timeZone: 'America/Sao_Paulo',
+    console.log(`🌐 Buscando fixtures da API-Football para BRT ${todayBRT}...`);
+
+    // Buscar hoje e amanhã UTC (para capturar jogos BRT que cruzam meia-noite UTC)
+    const tomorrowBRT = brtDateStr(new Date(Date.now() + 24 * 60 * 60 * 1000));
+    const datesToFetch = Array.from(new Set([todayBRT, tomorrowBRT]));
+
+    const allFixtures = (
+      await Promise.all(datesToFetch.map(d => fetchFixtures(d, API_KEY)))
+    ).flat();
+
+    console.log(`📡 ${allFixtures.length} fixtures recebidos, filtrando por BRT=${todayBRT}...`);
+
+    // Mapear e filtrar pelo dia BRT = hoje
+    const games = allFixtures.map(f => mapFixture(f, todayBRT)).filter(Boolean);
+
+    const body = buildResponse(games, todayBRT, 'api-football');
+    _cache = { ts: Date.now(), body };
+    return res.status(200).json(body);
+
+  } catch (err) {
+    console.error('⚠️  API-Football falhou, usando fallback:', err.message);
+
+    const todayBRT  = brtDateStr();
+    const fallbacks = loadFallback();
+
+    // Enriquecer fallback com timeBRT + statusGroup (time-based) + valueAnalysis
+    const LIVE_MS = 115 * 60 * 1000;
+    const now     = Date.now();
+    const games   = fallbacks.map(g => {
+      const ms  = new Date(g.kickoff).getTime();
+      const sg  = ms > now ? 'upcoming' : (now - ms <= LIVE_MS ? 'live' : 'finished');
+      const tBRT = new Date(g.kickoff).toLocaleTimeString('pt-BR', {
+        hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo',
       });
-
-      const valueAnalysis = calculateValue(game);
-      return { ...game, timeBRT, statusGroup, valueAnalysis };
+      return { ...g, timeBRT: tBRT, statusGroup: sg, source: 'fallback',
+               valueAnalysis: calculateValue(g) };
     });
 
-    // 2. Separar e ordenar cada grupo
-    const byEdge   = (a, b) => (b.valueAnalysis.edge ?? 0) - (a.valueAnalysis.edge ?? 0);
-    const live     = allProcessed.filter(m => m.statusGroup === 'live')
-                                  .sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff));
-    const upcoming = allProcessed.filter(m => m.statusGroup === 'upcoming').sort(byEdge);
-    const finished = allProcessed.filter(m => m.statusGroup === 'finished').sort(byEdge);
-
-    // 3. Top 10: ao vivo → próximos → encerrados
-    const topGames = [...live, ...upcoming, ...finished].slice(0, 10);
-
-    console.log(`✅ ${live.length} ao vivo | ${upcoming.length} próximos | ${finished.length} encerrados → top ${topGames.length}`);
-
-    return res.status(200).json({
-      success: true,
-      count:   topGames.length,
-      date:    gamesData.date,
-      groups:  { live: live.length, upcoming: upcoming.length, finished: finished.length },
-      matches: topGames,
-    });
-    
-  } catch (error) {
-    console.error('❌ Erro ao retornar partidas:', error.message);
-    
-    return res.status(500).json({
-      success: false,
-      error: 'Erro ao retornar partidas',
-      message: error.message
-    });
+    const body = buildResponse(games, todayBRT, 'fallback');
+    return res.status(200).json(body);
   }
 };
 
