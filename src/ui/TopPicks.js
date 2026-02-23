@@ -30,6 +30,7 @@
           </div>
           <span class="tp-counter">${picks.length} análises</span>
         </div>
+        <p class="tp-schedule-note">Top Picks definidos às 09:00 (BRT) e fixos até 23:59.</p>
         <div class="tp-grid">
     `;
 

@@ -67,6 +67,15 @@
   border-radius: 20px;
 }
 
+.tp-schedule-note {
+  font-size: 12px;
+  color: var(--text-secondary, #888);
+  opacity: 0.65;
+  margin: 4px 0 0 0;
+  letter-spacing: 0.2px;
+  line-height: 1.4;
+}
+
 /* ————— Grid ————— */
 .tp-grid {
   display: grid;

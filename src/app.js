@@ -802,6 +802,7 @@ async function loadTopPicks() {
         </div>
         <span class="tp-counter" style="opacity:.5">carregando...</span>
       </div>
+      <p class="tp-schedule-note">Top Picks definidos às 09:00 (BRT) e fixos até 23:59.</p>
       <div class="tp-loading-grid">
         ${Array(4).fill('<div class="tp-card-skeleton"></div>').join('')}
       </div>
@@ -823,6 +824,7 @@ async function loadTopPicks() {
               <h2 class="tp-title">Top Picks <span class="tp-today-badge">Hoje</span></h2>
             </div>
           </div>
+          <p class="tp-schedule-note">Top Picks definidos às 09:00 (BRT) e fixos até 23:59.</p>
           <p class="tp-empty">Sem jogos encontrados hoje — volte mais tarde.</p>
         </section>`;
       return;
@@ -850,6 +852,7 @@ async function loadTopPicks() {
             <h2 class="tp-title">Top Picks <span class="tp-today-badge">Hoje</span></h2>
           </div>
         </div>
+        <p class="tp-schedule-note">Top Picks definidos às 09:00 (BRT) e fixos até 23:59.</p>
         <p class="tp-empty">Não foi possível carregar os picks agora. Tente novamente em breve.</p>
       </section>`;
   }
