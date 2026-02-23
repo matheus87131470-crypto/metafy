@@ -778,16 +778,13 @@ function matchToTopPick(match) {
     va.bestMarket === 'away' ? match.odds?.away :
     null;
 
-  // Confiança no VALUE do pick
-  // Confiança derivada do edge real
-  const baseConf = isFallback ? 65
-    : va.rating === 'Forte'      || va.rating === 'Forte oportunidade' ? 86
-    : va.rating === 'Moderada'   || va.rating === 'Valor moderado'     ? 80
-    : va.rating === 'Leve'                                              ? 73
-    : va.rating === 'Alto risco'                                        ? 63
-    : 74;
-  const jitter   = ((match.id || 1) * 3) % 6;
-  const pct      = Math.min(95, Math.max(60, baseConf + jitter));
+  // Confiança = prob implícita do pick mapeada para escala visual 55–84%.
+  // Mercado equilibrado (implied ~33%) → 55%; favorito forte (implied ≥60%) → 84%.
+  // Garante variação real entre jogos sem depender de stats externos.
+  const implPct  = isFallback ? 40 : (va.impliedProb ?? 40);
+  const implFrac = implPct / 100;
+  const scaled   = 55 + Math.min(1, Math.max(0, (implFrac - 0.33) / 0.27)) * 29;
+  const pct      = Math.min(84, Math.max(55, scaled));
 
   // Estatísticas do card
   const s = match.stats || {};

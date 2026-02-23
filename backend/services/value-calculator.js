@@ -66,10 +66,12 @@ function calculateMarket(game, marketType) {
       if (bothEqualized) adjustment += 0.05;
     }
   } else {
-    // Sem estatísticas: apenas o favorito forte recebe pequeno ajuste.
-    // Draw intencialmente sem bônus para não vencer o reduce por padrão.
-    if (marketType === 'home' && odd < 1.7) adjustment += 0.025;
-    else if (marketType === 'away' && odd < 1.9) adjustment += 0.02;
+    // Sem estatísticas: ajuste baseado na faixa da odd (igual para todos os mercados).
+    // Odds baixas (favorito) ganham boost; odds altas (azarão) ficam neutras.
+    // Isso garante que o pick siga o favorito de mercado quando não há stats.
+    if      (odd < 2.10) adjustment += 0.03; // favorito claro → +3pp
+    else if (odd <= 2.80) adjustment += 0.01; // leve favorito → +1pp
+    // odd > 2.80 → 0pp (azarão, sem ajuste)
   }
   
   // 4. Probabilidade ajustada
@@ -118,11 +120,15 @@ export function calculateValue(game) {
     return current.edge > best.edge ? current : best;
   });
 
-  // Tiebreaker: se edges muito próximos (<0.3%), preferir Casa (mando) ou Fora (se muito favorito)
+  // Tiebreaker: quando edges são todos iguais (mercado equilibrado sem stats),
+  // escolhe o favorito do mercado (maior prob implícita = odd mais baixa).
+  // Isso gera variedade natural: Casa/Empate/Fora conforme as odds do jogo.
   const [home, draw, away] = markets;
-  const allClose = Math.abs(home.edge - draw.edge) < 0.3 && Math.abs(away.edge - draw.edge) < 0.3;
-  const resolved = allClose
-    ? (away.edge > home.edge ? away : home)
+  const allEdgesEqual = Math.abs(home.edge - draw.edge) < 0.3
+                     && Math.abs(draw.edge  - away.edge) < 0.3
+                     && Math.abs(home.edge  - away.edge) < 0.3;
+  const resolved = allEdgesEqual
+    ? markets.reduce((best, cur) => cur.implied > best.implied ? cur : best)
     : bestMarketData;
 
   // Sempre retorna o melhor mercado, independente do edge

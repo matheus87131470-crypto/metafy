@@ -93,6 +93,22 @@ async function fetchFixtures(dateStr, apiKey) {
   return payload.response || [];
 }
 
+/**
+ * Gera odds pseudo-estáveis por fixture ID usando um LCG simples.
+ * Garante variedade de favoritos (Casa/Empate/Fora) entre os jogos.
+ *   home: 1.35 – 3.90  |  draw: 2.60 – 4.50  |  away: 1.55 – 5.20
+ */
+function stableOdds(fixtureId) {
+  const id = Number(fixtureId) || 1;
+  const h1 = ((id * 1664525 + 1013904223) >>> 0);
+  const h2 = ((h1 * 1664525 + 1013904223) >>> 0);
+  const h3 = ((h2 * 1664525 + 1013904223) >>> 0);
+  const homeOdd = +(1.35 + (h1 % 256) / 100).toFixed(2); // 1.35 – 3.90
+  const drawOdd = +(2.60 + (h2 % 191) / 100).toFixed(2); // 2.60 – 4.50
+  const awayOdd = +(1.55 + (h3 % 366) / 100).toFixed(2); // 1.55 – 5.20
+  return { home: homeOdd, draw: drawOdd, away: awayOdd };
+}
+
 // ── Mapeia fixture API → objeto interno ────────────────────────────────
 function mapFixture(f, todayBRT) {
   const fix    = f.fixture;
@@ -121,7 +137,7 @@ function mapFixture(f, todayBRT) {
     home:    f.teams?.home?.name || '?',
     away:    f.teams?.away?.name || '?',
     kickoff: fix.date,
-    odds:    { home: 2.5, draw: 3.20, away: 2.80 }, // sintéticas (sem odds na /fixtures)
+    odds:    stableOdds(fix.id), // pseudo-estáveis por fixture (garante variedade)
   };
 
   return {
