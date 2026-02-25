@@ -312,138 +312,122 @@
         }
 
         /* ── Odds Altas tab ─────────────────────────────── */
-        .oa-page {
-            padding: 16px 0 40px;
-            max-width: 520px;
-            margin: 0 auto;
-        }
-        .oa-card {
+        .oa-page { padding: 16px 0 100px; }
+        /* IA card */
+        .oa-ia-card {
             background: var(--bg-card, #1a1a2e);
-            border: 1px solid rgba(139, 92, 246, 0.35);
+            border: 1px solid rgba(139,92,246,.4);
             border-radius: 18px;
             overflow: hidden;
-            box-shadow: 0 4px 24px rgba(139,92,246,0.10);
+            box-shadow: 0 4px 28px rgba(139,92,246,.12);
+            margin-bottom: 20px;
         }
-        .oa-card-header {
-            background: linear-gradient(135deg, rgba(139,92,246,0.18) 0%, rgba(99,62,196,0.10) 100%);
-            border-bottom: 1px solid rgba(139,92,246,0.25);
-            padding: 18px 20px 14px;
-            display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            gap: 12px;
+        .oa-ia-loading, .oa-ia-empty {
+            padding: 28px 20px; text-align: center;
+            color: var(--text-secondary, #aaa); font-size: .9rem;
         }
-        .oa-header-left h2 {
-            font-size: 1.25rem;
-            font-weight: 700;
-            color: var(--text-primary, #fff);
-            margin: 0 0 3px;
+        .oa-ia-header {
+            background: linear-gradient(135deg,rgba(139,92,246,.2),rgba(99,62,196,.1));
+            border-bottom: 1px solid rgba(139,92,246,.25);
+            padding: 14px 18px;
+            display: flex; align-items: center; justify-content: space-between; gap: 10px;
         }
-        .oa-header-left p {
-            font-size: 0.8rem;
-            color: var(--text-secondary, #aaa);
-            margin: 0;
+        .oa-ia-title { font-size: 1rem; font-weight: 700; color: var(--text-primary,#fff); }
+        .oa-ia-level {
+            font-size: .68rem; font-weight: 700; padding: 3px 10px;
+            border-radius: 20px; white-space: nowrap;
         }
-        .oa-badge {
-            background: rgba(139,92,246,0.22);
-            color: #c084fc;
-            border: 1px solid rgba(139,92,246,0.4);
-            border-radius: 20px;
-            font-size: 0.7rem;
-            font-weight: 600;
-            padding: 3px 10px;
-            white-space: nowrap;
-            flex-shrink: 0;
-            margin-top: 2px;
+        .oa-level-conservador { background: rgba(16,185,129,.18); color: #34d399; border: 1px solid rgba(16,185,129,.4); }
+        .oa-level-moderado    { background: rgba(251,191,36,.15); color: #fbbf24;  border: 1px solid rgba(251,191,36,.35); }
+        .oa-level-agressivo   { background: rgba(239,68,68,.15);  color: #f87171;  border: 1px solid rgba(239,68,68,.35); }
+        .oa-ia-legs { padding: 4px 0; }
+        .oa-ia-leg {
+            display: flex; align-items: center; justify-content: space-between; gap: 12px;
+            padding: 11px 18px; border-bottom: 1px solid rgba(255,255,255,.04);
         }
-        .oa-total-block {
-            text-align: center;
-            padding: 22px 20px 18px;
-            border-bottom: 1px solid rgba(255,255,255,0.06);
+        .oa-ia-leg:last-child { border-bottom: none; }
+        .oa-ia-leg-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+        .oa-ia-leg-market { font-size: .87rem; font-weight: 600; color: var(--text-primary,#fff); }
+        .oa-ia-leg-game   { font-size: .73rem; color: var(--text-secondary,#aaa); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .oa-ia-leg-odd    { font-size: .95rem; font-weight: 700; color: #a78bfa; flex-shrink: 0; }
+        .oa-est-badge {
+            font-size: .6rem; color: #f59e0b;
+            background: rgba(245,158,11,.12); border: 1px solid rgba(245,158,11,.3);
+            border-radius: 4px; padding: 1px 5px; display: inline-block; margin-top: 2px;
         }
-        .oa-total-label {
-            font-size: 0.7rem;
-            font-weight: 700;
-            letter-spacing: 0.12em;
-            color: var(--text-secondary, #aaa);
-            text-transform: uppercase;
-            margin-bottom: 6px;
+        .oa-ia-total-block {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 12px 18px; background: rgba(255,255,255,.03);
+            border-top: 1px solid rgba(255,255,255,.06);
         }
-        .oa-total-value {
-            font-size: 3rem;
-            font-weight: 800;
-            color: #fbbf24;
-            line-height: 1;
-            text-shadow: 0 0 24px rgba(251,191,36,0.3);
+        .oa-ia-total-label { font-size: .82rem; color: var(--text-secondary,#aaa); font-weight: 600; }
+        .oa-ia-total-value { font-size: 1.6rem; font-weight: 800; color: #fbbf24; }
+        .oa-ia-actions { display: flex; gap: 8px; padding: 10px 18px; }
+        .oa-btn {
+            flex: 1; padding: 11px 10px; border: none; border-radius: 10px;
+            font-size: .85rem; font-weight: 700; cursor: pointer; transition: opacity .2s, transform .1s;
         }
-        .oa-legs {
-            list-style: none;
-            padding: 0;
-            margin: 0;
+        .oa-btn:active { transform: scale(.97); }
+        .oa-btn-copy  { background: linear-gradient(135deg,#7c3aed,#6d28d9); color: #fff; }
+        .oa-btn-add   { background: rgba(139,92,246,.18); color: #c084fc; border: 1px solid rgba(139,92,246,.35) !important; }
+        .oa-btn-clear { background: rgba(239,68,68,.15); color: #f87171; border: 1px solid rgba(239,68,68,.3) !important; }
+        .oa-btn:hover { opacity: .88; }
+        .oa-disclaimer { font-size: .68rem; color: var(--text-muted,#666); padding: 0 18px 12px; margin: 0; line-height: 1.4; }
+        /* Games list */
+        .oa-games-section { margin-bottom: 12px; }
+        .oa-games-title { font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--text-secondary,#aaa); margin: 0 0 10px; }
+        .oa-no-games { color: var(--text-secondary,#aaa); font-size: .9rem; padding: 20px 0; text-align: center; }
+        .oa-game-item {
+            display: flex; align-items: center; justify-content: space-between; gap: 12px;
+            background: var(--bg-card,#1a1a2e);
+            border: 1px solid var(--border-color,rgba(255,255,255,.07));
+            border-radius: 12px; padding: 12px 16px; margin-bottom: 8px;
         }
-        .oa-leg {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            padding: 13px 20px;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-            transition: background .15s;
+        .oa-game-info  { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+        .oa-game-teams { font-size: .88rem; font-weight: 600; color: var(--text-primary,#fff); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .oa-game-meta  { font-size: .72rem; color: var(--text-secondary,#aaa); }
+        .oa-add-btn {
+            flex-shrink: 0; padding: 8px 14px; border-radius: 8px; cursor: pointer;
+            font-size: .8rem; font-weight: 700; transition: opacity .2s;
+            background: rgba(139,92,246,.2); color: #c084fc; border: 1px solid rgba(139,92,246,.35) !important;
         }
-        .oa-leg:last-child { border-bottom: none; }
-        .oa-leg:hover { background: rgba(255,255,255,0.03); }
-        .oa-leg-info {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-            min-width: 0;
+        .oa-add-btn.added    { background: rgba(16,185,129,.15); color: #34d399; border-color: rgba(16,185,129,.3) !important; cursor: default; }
+        .oa-add-btn.oa-disabled { opacity: .35; cursor: not-allowed; }
+        /* Floating ticket */
+        .oa-float-ticket {
+            position: fixed; bottom: 16px; right: 16px; z-index: 900;
+            width: min(340px, calc(100vw - 32px));
+            background: #15132a; border: 1px solid rgba(139,92,246,.55);
+            border-radius: 16px; box-shadow: 0 8px 40px rgba(0,0,0,.55);
+            flex-direction: column; overflow: hidden;
+            animation: oa-slideup .22s ease;
         }
-        .oa-leg-market {
-            font-size: 0.88rem;
-            font-weight: 600;
-            color: var(--text-primary, #fff);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+        @keyframes oa-slideup { from { transform: translateY(18px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .oa-ticket-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 11px 14px;
+            background: linear-gradient(135deg,rgba(139,92,246,.22),rgba(99,62,196,.12));
+            border-bottom: 1px solid rgba(139,92,246,.25);
+            font-size: .9rem; font-weight: 700; color: var(--text-primary,#fff);
         }
-        .oa-leg-jogo {
-            font-size: 0.74rem;
-            color: var(--text-secondary, #aaa);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+        .oa-ticket-legs { max-height: 220px; overflow-y: auto; }
+        .oa-ticket-leg {
+            display: flex; align-items: flex-start; justify-content: space-between; gap: 8px;
+            padding: 9px 14px; border-bottom: 1px solid rgba(255,255,255,.05);
         }
-        .oa-leg-odd {
-            font-size: 1rem;
-            font-weight: 700;
-            color: #a78bfa;
-            min-width: 38px;
-            text-align: right;
-            flex-shrink: 0;
+        .oa-ticket-leg:last-child { border-bottom: none; }
+        .oa-ticket-leg-info { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; }
+        .oa-ticket-teams { font-size: .78rem; font-weight: 600; color: var(--text-primary,#fff); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .oa-mkt-select {
+            font-size: .73rem; background: rgba(255,255,255,.08); color: var(--text-primary,#fff);
+            border: 1px solid rgba(255,255,255,.15); border-radius: 6px; padding: 3px 6px; cursor: pointer; max-width: 160px;
         }
-        .oa-footer {
-            padding: 16px 20px;
-            border-top: 1px solid rgba(139,92,246,0.2);
-        }
-        .oa-copy-btn {
-            width: 100%;
-            padding: 14px;
-            background: linear-gradient(135deg, #7c3aed, #6d28d9);
-            color: #fff;
-            border: none;
-            border-radius: 12px;
-            font-size: 0.95rem;
-            font-weight: 700;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            transition: opacity .2s, transform .1s;
-        }
-        .oa-copy-btn:hover  { opacity: .9; }
-        .oa-copy-btn:active { transform: scale(.98); }
-        .oa-copy-btn.copied { background: linear-gradient(135deg,#059669,#047857); }
+        .oa-ticket-leg-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+        .oa-ticket-odd  { font-size: .9rem; font-weight: 700; color: #a78bfa; }
+        .oa-remove-btn  { background: none; border: none; color: #f87171; cursor: pointer; font-size: .85rem; padding: 2px 4px; }
+        .oa-ticket-total { padding: 9px 14px; font-size: .88rem; color: var(--text-secondary,#aaa); border-top: 1px solid rgba(255,255,255,.06); }
+        .oa-ticket-total strong { color: #fbbf24; font-size: 1rem; }
+        .oa-ticket-btns { display: flex; gap: 8px; padding: 10px 14px; }
         /* ── fim Odds Altas ──────────────────────────────── */
 
         /* Premium tab content */
@@ -1236,29 +1220,18 @@
         <!-- Tab: Odds Altas -->
         <div class="tab-content" id="tab-odds-altas">
             <div class="oa-page">
-                <div class="oa-card">
-                    <div class="oa-card-header">
-                        <div class="oa-header-left">
-                            <h2>📈 Odds Altas</h2>
-                            <p>Bilhete do dia</p>
-                        </div>
-                        <span class="oa-badge">Aposta combinada</span>
-                    </div>
-
-                    <div class="oa-total-block">
-                        <div class="oa-total-label">Odd Total</div>
-                        <div class="oa-total-value" id="oa-total-value">12.40</div>
-                    </div>
-
-                    <ul class="oa-legs" id="oa-legs-list"></ul>
-
-                    <div class="oa-footer">
-                        <button class="oa-copy-btn" id="oa-copy-btn" onclick="oddsAltasCopiar()">
-                            📋 Copiar bilhete
-                        </button>
-                    </div>
+                <!-- Bilhete IA -->
+                <div class="oa-ia-card" id="oa-ia-card">
+                    <div class="oa-ia-loading">⏳ Carregando bilhete...</div>
+                </div>
+                <!-- Lista jogos -->
+                <div class="oa-games-section">
+                    <p class="oa-games-title">🎯 Jogos do Dia — Adicione ao seu bilhete</p>
+                    <div id="oa-games-list"><div class="oa-ia-loading">⏳</div></div>
                 </div>
             </div>
+            <!-- Bilhete flutuante -->
+            <div class="oa-float-ticket" id="oa-float-ticket" style="display:none"></div>
         </div>
 
         <!-- Tab: Ganhos/Perdas -->
@@ -1655,6 +1628,10 @@
             if (tabId === 'premium') {
                 updatePremiumStatusUI();
             }
+            // Carregar Odds Altas ao entrar na aba
+            if (tabId === 'odds-altas') {
+                setTimeout(() => { if (typeof oddsAltasInit === 'function') oddsAltasInit(); }, 80);
+            }
         }
 
         function showPremiumInfo() {
@@ -1662,48 +1639,231 @@
         }
 
         // ── Odds Altas ──────────────────────────────────────────────────
-        const _bilheteDoDia = {
-            totalOdd: 12.40,
-            legs: [
-                { jogo: 'Irlanda do Norte x Alemanha', mercado: 'ML HT Alemanha',      odd: 3.10 },
-                { jogo: 'Islândia x França',           mercado: 'Over 1.5 França',      odd: 4.00 },
-                { jogo: 'Juventus x Galatasaray',      mercado: 'Vitória Juventus',     odd: 2.40 },
-            ],
-        };
+        (function () {
+            const _BACKEND = window.BACKEND_URL || 'https://metafy-backend.onrender.com';
+            const _DEF = { home: 2.10, draw: 3.10, away: 3.30, over25: 1.95, under35: 1.85 };
+            const _MKTS = [
+                { key: 'home',    label: 'Vitória Casa' },
+                { key: 'draw',    label: 'Empate'        },
+                { key: 'away',    label: 'Vitória Fora'  },
+                { key: 'over25',  label: 'Over 2.5'      },
+                { key: 'under35', label: 'Under 3.5'     },
+            ];
+            let _cache  = { date: null, picks: [] };
+            let _iaSug  = [];   // [{pick,market,odd,estimated}]
+            let _manual = [];   // [{pick,market,odd,estimated}]
 
-        function oddsAltasRender() {
-            const listEl = document.getElementById('oa-legs-list');
-            const totalEl = document.getElementById('oa-total-value');
-            if (!listEl || !totalEl) return;
-            totalEl.textContent = _bilheteDoDia.totalOdd.toFixed(2);
-            listEl.innerHTML = _bilheteDoDia.legs.map(l => `
-                <li class="oa-leg">
-                    <div class="oa-leg-info">
-                        <span class="oa-leg-market">${l.mercado}</span>
-                        <span class="oa-leg-jogo">${l.jogo}</span>
+            function _brtDate() {
+                return new Date().toLocaleDateString('pt-BR', {
+                    timeZone:'America/Sao_Paulo', year:'numeric', month:'2-digit', day:'2-digit'
+                }).split('/').reverse().join('-');
+            }
+            function _mktLabel(k) { return _MKTS.find(m=>m.key===k)?.label || k; }
+            function _getOdd(pick, k) {
+                const o = pick.odds || {};
+                const estimated = !o.home;
+                const odd = k==='home' ? (o.home||_DEF.home)
+                          : k==='draw' ? (o.draw||_DEF.draw)
+                          : k==='away' ? (o.away||_DEF.away)
+                          : k==='over25' ? _DEF.over25 : _DEF.under35;
+                return { odd: +odd, estimated };
+            }
+            function _pickMkt(pick) {
+                const d = pick.bestPick || pick.direction;
+                return (d==='home'||d==='draw'||d==='away') ? d : 'home';
+            }
+            function _isGood(p) {
+                const pct  = parseFloat(p.confidencePct) || 0;
+                const edge = parseFloat(p.edge) || 0;
+                const conf = (p.confidenceLevel||'').toLowerCase();
+                const rat  = (p.rating||'').toLowerCase();
+                if (rat==='alto risco'||rat==='fallback') return false;
+                if ((p.bestPickLabel||'').includes('Sem aposta')) return false;
+                if (edge < 0) return false;
+                return pct>=70 || conf.includes('média') || conf.includes('alta')
+                    || conf.includes('moderada') || conf.includes('forte') || edge>2;
+            }
+            function _totalOdd(legs) { return legs.reduce((a,l)=>a*l.odd,1); }
+            function _level(tot) {
+                return tot<=5 ? {label:'Conservador',cls:'conservador'}
+                     : tot<=12? {label:'Moderado',cls:'moderado'}
+                     :          {label:'Agressivo',cls:'agressivo'};
+            }
+            function _copyText(txt, btn) {
+                navigator.clipboard.writeText(txt).then(()=>{
+                    if (!btn) return;
+                    const orig = btn.innerHTML;
+                    btn.innerHTML = '✅ Copiado!';
+                    btn.style.background = 'linear-gradient(135deg,#059669,#047857)';
+                    setTimeout(()=>{ btn.innerHTML=orig; btn.style.background=''; }, 2000);
+                }).catch(()=>alert('Não foi possível copiar.'));
+            }
+
+            function renderIA() {
+                const el = document.getElementById('oa-ia-card');
+                if (!el) return;
+                if (!_iaSug.length) {
+                    el.innerHTML = `<div class="oa-ia-empty">😔 Nenhum jogo com valor suficiente hoje. Tente montar seu bilhete manualmente abaixo.</div>`;
+                    return;
+                }
+                const tot = _totalOdd(_iaSug);
+                const lv  = _level(tot);
+                const legsHtml = _iaSug.map(l => {
+                    const est = l.estimated ? `<span class="oa-est-badge">ODD ESTIMADA (beta)</span>` : '';
+                    return `<div class="oa-ia-leg">
+                        <div class="oa-ia-leg-info">
+                            <span class="oa-ia-leg-market">${_mktLabel(l.market)}</span>
+                            <span class="oa-ia-leg-game">${l.pick.home} vs ${l.pick.away}</span>
+                            ${est}
+                        </div>
+                        <span class="oa-ia-leg-odd">${l.odd.toFixed(2)}</span>
+                    </div>`;
+                }).join('');
+                el.innerHTML = `
+                    <div class="oa-ia-header">
+                        <span class="oa-ia-title">⭐ Bilhete Sugerido pela IA</span>
+                        <span class="oa-ia-level oa-level-${lv.cls}">${lv.label}</span>
                     </div>
-                    <span class="oa-leg-odd">${l.odd.toFixed(2)}</span>
-                </li>`).join('');
-        }
+                    <div class="oa-ia-legs">${legsHtml}</div>
+                    <div class="oa-ia-total-block">
+                        <span class="oa-ia-total-label">🔥 Odd Total Sugerida</span>
+                        <span class="oa-ia-total-value">${tot.toFixed(2)}</span>
+                    </div>
+                    <div class="oa-ia-actions">
+                        <button class="oa-btn oa-btn-copy" id="oa-btn-cop-ia" onclick="window._oaFns.copiarIA()">📋 Copiar Bilhete</button>
+                        <button class="oa-btn oa-btn-add"  onclick="window._oaFns.addIAToTicket()">➕ Meu Bilhete</button>
+                    </div>
+                    <p class="oa-disclaimer">Bilhete gerado por modelo estatístico automatizado. Não é recomendação financeira.</p>`;
+            }
 
-        function oddsAltasCopiar() {
-            const linhas = _bilheteDoDia.legs.map((l, i) =>
-                `${i + 1}) ${l.jogo} — ${l.mercado} (${l.odd.toFixed(2)})`).join('\n');
-            const texto = `🔥 ODDS ALTAS - METAFY\n\nOdd total: ${_bilheteDoDia.totalOdd.toFixed(2)}\n\n${linhas}`;
-            navigator.clipboard.writeText(texto).then(() => {
-                const btn = document.getElementById('oa-copy-btn');
-                if (!btn) return;
-                btn.classList.add('copied');
-                btn.textContent = '✅ Copiado!';
-                setTimeout(() => {
-                    btn.classList.remove('copied');
-                    btn.innerHTML = '📋 Copiar bilhete';
-                }, 2000);
-            }).catch(() => alert('Não foi possível copiar. Tente manualmente.'));
-        }
+            function renderGames() {
+                const el = document.getElementById('oa-games-list');
+                if (!el) return;
+                if (!_cache.picks.length) {
+                    el.innerHTML = `<p class="oa-no-games">Nenhum jogo disponível hoje.</p>`; return;
+                }
+                el.innerHTML = _cache.picks.map(p => {
+                    const inTicket = _manual.some(l=>l.pick.id===p.id);
+                    const full     = _manual.length>=5 && !inTicket;
+                    const btnCls   = inTicket ? 'added' : full ? 'oa-disabled' : '';
+                    const btnTxt   = inTicket ? '✅' : full ? '🔒' : '➕';
+                    return `<div class="oa-game-item">
+                        <div class="oa-game-info">
+                            <span class="oa-game-teams">${p.home} vs ${p.away}</span>
+                            <span class="oa-game-meta">${p.league||''} · ${p.time||'--:--'}</span>
+                        </div>
+                        <button class="oa-add-btn ${btnCls}" ${full&&!inTicket?'disabled':''}
+                            onclick="window._oaFns.addGame('${p.id}')">${btnTxt} Adicionar</button>
+                    </div>`;
+                }).join('');
+            }
 
-        // Renderizar ao carregar
-        document.addEventListener('DOMContentLoaded', () => { oddsAltasRender(); });
+            function renderTicket() {
+                const el = document.getElementById('oa-float-ticket');
+                if (!el) return;
+                if (!_manual.length) { el.style.display='none'; return; }
+                el.style.display = 'flex';
+                const tot = _totalOdd(_manual);
+                const lv  = _level(tot);
+                const legsHtml = _manual.map(l => {
+                    const opts = _MKTS.map(m=>`<option value="${m.key}" ${l.market===m.key?'selected':''}>${m.label}</option>`).join('');
+                    const est  = l.estimated?`<span class="oa-est-badge">estimada</span>`:'';
+                    return `<div class="oa-ticket-leg">
+                        <div class="oa-ticket-leg-info">
+                            <span class="oa-ticket-teams">${l.pick.home} vs ${l.pick.away}</span>
+                            <select class="oa-mkt-select" onchange="window._oaFns.changeMarket('${l.pick.id}',this.value)">${opts}</select>
+                            ${est}
+                        </div>
+                        <div class="oa-ticket-leg-right">
+                            <span class="oa-ticket-odd">${l.odd.toFixed(2)}</span>
+                            <button class="oa-remove-btn" onclick="window._oaFns.removeGame('${l.pick.id}')">✕</button>
+                        </div>
+                    </div>`;
+                }).join('');
+                el.innerHTML = `
+                    <div class="oa-ticket-header">
+                        <span>🎟️ Bilhete do Dia (${_manual.length}/5)</span>
+                        <span class="oa-ia-level oa-level-${lv.cls}" style="font-size:.68rem">${lv.label}</span>
+                    </div>
+                    <div class="oa-ticket-legs">${legsHtml}</div>
+                    <div class="oa-ticket-total">🔥 Odd Total: <strong>${tot.toFixed(2)}</strong></div>
+                    <div class="oa-ticket-btns">
+                        <button class="oa-btn oa-btn-copy" id="oa-btn-cop-tk" onclick="window._oaFns.copiarTicket()">📋 Copiar</button>
+                        <button class="oa-btn oa-btn-clear" onclick="window._oaFns.clearTicket()">🔄 Limpar</button>
+                    </div>`;
+            }
+
+            async function load() {
+                const today = _brtDate();
+                if (_cache.date===today && _cache.picks.length) {
+                    _iaSug = _cache.picks.filter(_isGood).slice(0,3).map(p=>{
+                        const mkt=_pickMkt(p); const {odd,estimated}=_getOdd(p,mkt);
+                        return {pick:p,market:mkt,odd,estimated};
+                    });
+                    renderIA(); renderGames(); return;
+                }
+                try {
+                    const r    = await fetch(`${_BACKEND}/api/top-picks/today`);
+                    const data = await r.json();
+                    const picks = (data.picks||[]).filter(p=>p.home&&p.away);
+                    _cache = { date:today, picks };
+                    _iaSug = picks.filter(_isGood).slice(0,3).map(p=>{
+                        const mkt=_pickMkt(p); const {odd,estimated}=_getOdd(p,mkt);
+                        return {pick:p,market:mkt,odd,estimated};
+                    });
+                    renderIA(); renderGames();
+                } catch(e) {
+                    const el=document.getElementById('oa-ia-card');
+                    if(el) el.innerHTML=`<div class="oa-ia-empty">❌ Erro ao carregar dados. Tente novamente.</div>`;
+                    const gl=document.getElementById('oa-games-list');
+                    if(gl) gl.innerHTML='';
+                }
+            }
+
+            window._oaFns = {
+                addGame(id) {
+                    if (_manual.length>=5) return;
+                    if (_manual.some(l=>l.pick.id==id)) return;
+                    const p = _cache.picks.find(p=>p.id==id); if (!p) return;
+                    const mkt=_pickMkt(p); const {odd,estimated}=_getOdd(p,mkt);
+                    _manual.push({pick:p,market:mkt,odd,estimated});
+                    renderGames(); renderTicket();
+                },
+                removeGame(id) {
+                    _manual = _manual.filter(l=>l.pick.id!=id);
+                    renderGames(); renderTicket();
+                },
+                changeMarket(id, mkt) {
+                    const leg = _manual.find(l=>l.pick.id==id); if(!leg) return;
+                    const {odd,estimated}=_getOdd(leg.pick,mkt);
+                    leg.market=mkt; leg.odd=odd; leg.estimated=estimated;
+                    renderTicket();
+                },
+                addIAToTicket() {
+                    _iaSug.forEach(s=>{
+                        if(_manual.length>=5) return;
+                        if(_manual.some(l=>l.pick.id===s.pick.id)) return;
+                        _manual.push({...s});
+                    });
+                    renderGames(); renderTicket();
+                },
+                clearTicket()  { _manual=[]; renderGames(); renderTicket(); },
+                copiarIA() {
+                    if(!_iaSug.length) return;
+                    const l = _iaSug.map((s,i)=>`${i+1}) ${s.pick.home} vs ${s.pick.away} — ${_mktLabel(s.market)} (${s.odd.toFixed(2)})`).join('\n');
+                    _copyText(`⭐ BILHETE IA - METAFY\n\n${l}\n\nOdd Total: ${_totalOdd(_iaSug).toFixed(2)}`,
+                        document.getElementById('oa-btn-cop-ia'));
+                },
+                copiarTicket() {
+                    if(!_manual.length) return;
+                    const l = _manual.map((s,i)=>`${i+1}) ${s.pick.home} vs ${s.pick.away} — ${_mktLabel(s.market)} (${s.odd.toFixed(2)})`).join('\n');
+                    _copyText(`🎟️ MEU BILHETE - METAFY\n\n${l}\n\nOdd Total: ${_totalOdd(_manual).toFixed(2)}`,
+                        document.getElementById('oa-btn-cop-tk'));
+                },
+            };
+
+            window.oddsAltasInit = function() { load(); };
+        })();
         // ── fim Odds Altas ───────────────────────────────────────────────
         
         // User Menu Functions
