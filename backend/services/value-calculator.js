@@ -1,143 +1,104 @@
-/**
+﻿/**
  * services/value-calculator.js
- * Modelo híbrido de cálculo de value betting para home, draw e away
+ * Selecao de mercado por probabilidade ajustada (sem EV  EVs sao iguais por design das odds).
  */
 
-/**
- * Calcular form score (últimos 5 jogos)
- * W = 3 pontos, D = 1 ponto, L = 0 pontos
- */
-function calculateFormScore(last5) {
-  if (!Array.isArray(last5)) return 0;
-  
-  let score = 0;
-  last5.forEach(result => {
-    if (result === 'W') score += 3;
-    else if (result === 'D') score += 1;
-  });
-  
-  return score / 15; // Normalizar para 0-1 (máximo 15 pontos)
-}
+const FALLBACK_ODDS = {
+  home: { home: 2.05, draw: 3.25, away: 3.60 },
+  away: { home: 3.10, draw: 3.25, away: 2.35 },
+  draw: { home: 2.55, draw: 3.10, away: 2.85 },
+  none: { home: 2.35, draw: 3.10, away: 3.05 },
+};
 
-/**
- * Calcular value de um mercado específico
- */
-function calculateMarket(game, marketType) {
-  // 1. Pegar odd correspondente
-  let odd;
-  if (marketType === 'home') odd = game.odds.home;
-  else if (marketType === 'draw') odd = game.odds.draw;
-  else if (marketType === 'away') odd = game.odds.away;
-  else return null;
-  
-  // 2. Probabilidade implícita
-  const implied = 1 / odd;
-  
-  // 3. Calcular ajuste baseado no mercado
-  let adjustment = 0;
-  
-  if (game.stats) {
-    const homeFormScore = calculateFormScore(game.stats.homeLast5);
-    const awayFormScore = calculateFormScore(game.stats.awayLast5);
-    const homeStrengthHome = game.stats.homeGoalsAvg * 3.5; // Escala 0-10
-    const awayStrengthAway = game.stats.awayGoalsAvg * 3.5; // Escala 0-10
-    const avgGoalsCombined = (game.stats.homeGoalsAvg + game.stats.awayGoalsAvg) / 2;
-    const formDiff = Math.abs(homeFormScore - awayFormScore);
-    
-    if (marketType === 'home') {
-      // Regras para HOME
-      if (homeFormScore > awayFormScore) adjustment += 0.04;
-      if (game.stats.homeGoalsAvg > game.stats.awayConcededAvg) adjustment += 0.03;
-      if (homeStrengthHome >= 7) adjustment += 0.02;
-      if (game.stats.awayGoalsAvg > game.stats.homeConcededAvg) adjustment -= 0.02;
-      
-    } else if (marketType === 'away') {
-      // Regras para AWAY
-      if (awayFormScore > homeFormScore) adjustment += 0.04;
-      if (game.stats.awayGoalsAvg > game.stats.homeConcededAvg) adjustment += 0.03;
-      if (awayStrengthAway >= 7) adjustment += 0.02;
-      if (game.stats.homeGoalsAvg > game.stats.awayConcededAvg) adjustment -= 0.02;
-      
-    } else if (marketType === 'draw') {
-      // Regras para DRAW — exige TODAS as condições simultâneas para evitar empate padrão
-      const bothEqualized = formDiff <= 0.15
-        && avgGoalsCombined < 1.8
-        && Math.abs(game.stats.homeGoalsAvg - game.stats.awayGoalsAvg) < 0.3;
-      if (bothEqualized) adjustment += 0.05;
-    }
-  } else {
-    // Sem estatísticas: ajuste baseado na faixa da odd (igual para todos os mercados).
-    // Odds baixas (favorito) ganham boost; odds altas (azarão) ficam neutras.
-    // Isso garante que o pick siga o favorito de mercado quando não há stats.
-    if      (odd < 2.10) adjustment += 0.03; // favorito claro → +3pp
-    else if (odd <= 2.80) adjustment += 0.01; // leve favorito → +1pp
-    // odd > 2.80 → 0pp (azarão, sem ajuste)
-  }
-  
-  // 4. Probabilidade ajustada
-  const adjusted = Math.min(0.95, Math.max(0.05, implied + adjustment));
-  
-  // 5. Edge
-  const edge = adjusted - implied;
-  
-  // 6. Classificação
-  let rating;
-  if (edge >= 0.04) {
-    rating = "Forte";
-  } else if (edge >= 0.02) {
-    rating = "Moderada";
-  } else if (edge >= 0) {
-    rating = "Leve";
-  } else {
-    rating = "Alto risco";
-  }
-  
-  return {
-    implied: Number((implied * 100).toFixed(2)),
-    adjusted: Number((adjusted * 100).toFixed(2)),
-    edge: Number((edge * 100).toFixed(2)),
-    rating
-  };
-}
-
-/**
- * Calcular value para todos os mercados e retornar apenas o melhor
- */
 export function calculateValue(game) {
-  // Calcular para os 3 mercados
-  const homeMarket = calculateMarket(game, 'home');
-  const drawMarket = calculateMarket(game, 'draw');
-  const awayMarket = calculateMarket(game, 'away');
-  
-  // Determinar o melhor mercado (maior edge)
-  const markets = [
-    { type: 'home', label: 'Vitória Casa', ...homeMarket },
-    { type: 'draw', label: 'Empate', ...drawMarket },
-    { type: 'away', label: 'Vitória Fora', ...awayMarket }
-  ];
-  
-  const bestMarketData = markets.reduce((best, current) => {
-    return current.edge > best.edge ? current : best;
-  });
+  // 1. Resolver odds
+  var hasRealOdds = game.odds && game.odds.home && game.odds.draw && game.odds.away;
+  var odds;
+  if (hasRealOdds) {
+    odds = { home: +game.odds.home, draw: +game.odds.draw, away: +game.odds.away };
+  } else {
+    var dir = (game.valueAnalysis && game.valueAnalysis.bestMarket) || 'none';
+    odds = FALLBACK_ODDS[dir] || FALLBACK_ODDS.none;
+  }
 
-  // Tiebreaker: quando edges são todos iguais (mercado equilibrado sem stats),
-  // escolhe o favorito do mercado (maior prob implícita = odd mais baixa).
-  // Isso gera variedade natural: Casa/Empate/Fora conforme as odds do jogo.
-  const [home, draw, away] = markets;
-  const allEdgesEqual = Math.abs(home.edge - draw.edge) < 0.3
-                     && Math.abs(draw.edge  - away.edge) < 0.3
-                     && Math.abs(home.edge  - away.edge) < 0.3;
-  const resolved = allEdgesEqual
-    ? markets.reduce((best, cur) => cur.implied > best.implied ? cur : best)
-    : bestMarketData;
+  // 2. Prob implicita normalizada
+  var pH0 = 1 / odds.home;
+  var pD0 = 1 / odds.draw;
+  var pA0 = 1 / odds.away;
+  var sum  = pH0 + pD0 + pA0;
+  var pH = pH0 / sum;
+  var pD = pD0 / sum;
+  var pA = pA0 / sum;
 
-  // Sempre retorna o melhor mercado, independente do edge
+  // 3. Ajuste leve de mando (so aplica quando casa nao e favorita clara nem clara azarao)
+  if (pH >= 0.33 && pH <= 0.48) {
+    var boost = 0.015;
+    var ratio = (pD + pA > 0) ? (1 - boost / (pD + pA)) : 1;
+    pH += boost;
+    pD *= ratio;
+    pA *= ratio;
+    var s2 = pH + pD + pA;
+    pH /= s2; pD /= s2; pA /= s2;
+  }
+
+  // 4. Escolha pelo mercado de maior probabilidade
+  var best;
+  var bestType, bestLabel, bestProb, bestOdd;
+
+  // Tiebreaker especial: jogo equilibrado? prefere Empate
+  // Equilibrado = diferenca entre casa e fora < 0.07 E draw minimamente plausivel (> 0.26)
+  if (Math.abs(pH - pA) < 0.07 && pD > 0.26) {
+    bestType  = 'draw';
+    bestLabel = 'Empate';
+    bestProb  = pD;
+    bestOdd   = odds.draw;
+  } else if (pH >= pD && pH >= pA) {
+    bestType  = 'home';
+    bestLabel = 'Vitoria Casa';
+    bestProb  = pH;
+    bestOdd   = odds.home;
+  } else if (pA >= pD && pA >= pH) {
+    bestType  = 'away';
+    bestLabel = 'Vitoria Fora';
+    bestProb  = pA;
+    bestOdd   = odds.away;
+  } else {
+    bestType  = 'draw';
+    bestLabel = 'Empate';
+    bestProb  = pD;
+    bestOdd   = odds.draw;
+  }
+
+  // 5. Metricas
+  var impliedOrig   = (1 / bestOdd) / sum * 100;
+  var adjustedPct   = bestProb * 100;
+  var edgePct       = parseFloat((adjustedPct - impliedOrig).toFixed(2));
+
+  // confidencePct: escala linear sobre bestProb, intervalo 54-78
+  // bestProb tipico: 0.28 (draw equilibrado) ate 0.55 (favorito forte)
+  // Formula: 54 + clamp((bestProb - 0.28) / 0.27, 0, 1) * 24
+  var t = Math.min(1, Math.max(0, (bestProb - 0.28) / 0.27));
+  var confidencePct = parseFloat((54 + t * 24).toFixed(1));
+
+  var rating;
+  if      (confidencePct >= 68) rating = 'Forte';
+  else if (confidencePct >= 60) rating = 'Moderada';
+  else                          rating = 'Leve';
+
   return {
-    bestMarket:   resolved.type,
-    marketLabel:  resolved.label,
-    impliedProb:  resolved.implied,
-    adjustedProb: resolved.adjusted,
-    edge:         resolved.edge,
-    rating:       resolved.rating
+    bestMarket:   bestType,
+    marketLabel:  bestLabel,
+    impliedProb:  parseFloat(impliedOrig.toFixed(2)),
+    adjustedProb: parseFloat(adjustedPct.toFixed(2)),
+    edge:         edgePct,
+    rating:       rating,
+    confidencePct: confidencePct,
   };
+}
+
+export function calculateFormScore(last5) {
+  if (!Array.isArray(last5)) return 0;
+  var score = 0;
+  last5.forEach(function(r) { if (r === 'W') score += 3; else if (r === 'D') score += 1; });
+  return score / 15;
 }
