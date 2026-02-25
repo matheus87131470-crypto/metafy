@@ -751,13 +751,14 @@ function matchToTopPick(match) {
 
   // Nível de confiança — statusGroup tem prioridade sobre rating
   const levelMap = {
-    'Forte':      { levelClass: 'high',   confidenceLevel: 'ALTA CONFIANÇA'   },
-    'Moderada':   { levelClass: 'medium', confidenceLevel: 'MÉDIA CONFIANÇA'  },
-    'Leve':       { levelClass: 'medium', confidenceLevel: 'LEVE VALOR'       },
-    'Alto risco': { levelClass: 'low',    confidenceLevel: 'ALTO RISCO'       },
+    'Forte':            { levelClass: 'high',   confidenceLevel: 'ALTA CONFIANÇA'   },
+    'Moderada':         { levelClass: 'medium', confidenceLevel: 'MÉDIA CONFIANÇA'  },
+    'Leve':             { levelClass: 'medium', confidenceLevel: 'LEVE VALOR'       },
+    'Alto risco':       { levelClass: 'low',    confidenceLevel: 'ALTO RISCO'       },
+    'Sem valor claro':  { levelClass: 'low',    confidenceLevel: 'SEM VALOR CLARO'  },
     // compat. retroativa com rótulos antigos
     'Forte oportunidade': { levelClass: 'high',   confidenceLevel: 'ALTA CONFIANÇA'  },
-    'Valor moderado':     { levelClass: 'medium',  confidenceLevel: 'MÉDIA CONFIANÇA' },
+    'Valor moderado':     { levelClass: 'medium', confidenceLevel: 'MÉDIA CONFIANÇA' },
   };
   const level = statusGroup === 'live'    ? { levelClass: 'high',  confidenceLevel: 'AO VIVO'         }
               : statusGroup === 'finished' ? { levelClass: 'low',   confidenceLevel: 'ENCERRADO'       }
@@ -766,17 +767,18 @@ function matchToTopPick(match) {
 
   // Pick: nome legível do mercado vencedor
   const pickLabel =
-    va.bestMarket === 'home' ? match.home :
-    va.bestMarket === 'draw' ? 'Empate' :
-    va.bestMarket === 'away' ? match.away :
+    va.bestMarket === 'home'  ? match.home :
+    va.bestMarket === 'draw'  ? 'Empate' :
+    va.bestMarket === 'away'  ? match.away :
+    va.bestMarket === 'avoid' ? 'Evitar' :
     (va.marketLabel || '—');
 
   // Odds do mercado escolhido
   const oddValue =
-    va.bestMarket === 'home' ? match.odds?.home :
-    va.bestMarket === 'draw' ? match.odds?.draw :
-    va.bestMarket === 'away' ? match.odds?.away :
-    null;
+    va.bestMarket === 'home'  ? match.odds?.home :
+    va.bestMarket === 'draw'  ? match.odds?.draw :
+    va.bestMarket === 'away'  ? match.odds?.away :
+    null; // avoid: sem odd
 
   // Confiança = prob implícita do pick mapeada para escala visual 55–84%.
   // Mercado equilibrado (implied ~33%) → 55%; favorito forte (implied ≥60%) → 84%.
@@ -811,10 +813,14 @@ function matchToTopPick(match) {
 
   const explanation = isFallback
     ? `${match.home} vs ${match.away} — ${match.league}. Jogo em observação, acompanhe as odds antes da partida.`
+    : va.bestMarket === 'avoid'
+    ? `${match.home} vs ${match.away} — ${match.league}. Sem valor claro nos mercados 1X2 (edge abaixo de 2%). Melhor evitar ou apostar muito leve.`
     : `${match.home} vs ${match.away} — ${match.league}. ` +
-      `Mercado "${va.marketLabel || pickLabel}" com edge de +${va.edge ?? 0}% ` +
-      `(probabilidade ajustada ${fmt(va.adjustedProb)}% vs implícita ${fmt(va.impliedProb)}%).`;
+      `Direção: ${va.marketLabel || pickLabel}. Edge +${va.edge ?? 0}% ` +
+      `(prob ajustada ${fmt(va.adjustedProb)}% vs implícita ${fmt(va.impliedProb)}%). ` +
+      `Stake: ${va.rating === 'Forte' ? 'moderada a alta' : va.rating === 'Moderada' ? 'conservadora a moderada' : 'conservadora'}.`;
 
+  const isAvoid = va.bestMarket === 'avoid';
   return {
     id:               `m-${match.id}`,
     league:           match.league || 'Liga',
@@ -823,16 +829,16 @@ function matchToTopPick(match) {
     away:             match.away,
     market:           isFallback ? 'Observação' : (va.marketLabel || 'Resultado'),
     pick:             isFallback ? '—' : pickLabel,
-    confidencePct:    pct.toFixed(1),
+    confidencePct:    isAvoid ? '0' : pct.toFixed(1),
     confidenceLevel:  level.confidenceLevel,
-    levelClass:       level.levelClass,
+    levelClass:       isAvoid ? 'low' : level.levelClass,
     rating:           isFallback ? 'fallback' : (va.rating || ''),
     statusGroup,
     explanation,
     keyStats,
     iaFree:           !!match.iaFree,
     // Campos estruturados para o modal IA
-    bestPick:         isFallback ? 'home' : (va.bestMarket || 'home'),
+    bestPick:         isFallback ? 'home' : (va.bestMarket || 'avoid'),
     bestPickLabel:    isFallback ? '—'    : pickLabel,
     edge:             isFallback ? 0      : (va.edge          ?? 0),
     probAdjusted:     isFallback ? 0      : (va.adjustedProb  ?? 0),

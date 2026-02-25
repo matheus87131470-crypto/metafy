@@ -1670,20 +1670,42 @@
             }
             function _pickMkt(pick) {
                 const d = pick.bestPick || pick.direction;
-                return (d==='home'||d==='draw'||d==='away') ? d : 'home';
+                return (d==='home'||d==='draw'||d==='away') ? d : null; // null = avoid/invalido
             }
             function _isGood(p) {
-                const pct  = parseFloat(p.confidencePct) || 0;
                 const edge = parseFloat(p.edge) || 0;
-                const conf = (p.confidenceLevel||'').toLowerCase();
-                const rat  = (p.rating||'').toLowerCase();
-                if (rat==='alto risco'||rat==='fallback') return false;
-                if ((p.bestPickLabel||'').includes('Sem aposta')) return false;
-                if (edge < 0) return false;
-                return pct>=70 || edge>2
-                    || conf.includes('média') || conf.includes('alta')
-                    || conf.includes('moderada') || conf.includes('forte')
-                    || rat.includes('moderada') || rat.includes('forte');
+                const bp   = p.bestPick || '';
+                // Excluir: avoid, risco, fallback, borda negativa
+                if (bp === 'avoid' || bp === '') return false;
+                if ((p.rating||'').toLowerCase() === 'sem valor claro') return false;
+                if ((p.rating||'').toLowerCase() === 'alto risco') return false;
+                if ((p.rating||'').toLowerCase() === 'fallback') return false;
+                if (edge < 2) return false;
+                return true;
+            }
+            // Constroi bilhete diversificado: max 2 Casa, max 1 Empate, sort edge DESC, alvo 6-12x
+            function _buildIASug(picks) {
+                const valid = picks
+                    .filter(_isGood)
+                    .sort((a,b) => (parseFloat(b.edge)||0) - (parseFloat(a.edge)||0));
+                const limits = { home:2, draw:1, away:3 };
+                const counts = { home:0, draw:0, away:0 };
+                const result = [];
+                for (const p of valid) {
+                    if (result.length >= 3) break;
+                    const mkt = _pickMkt(p);
+                    if (!mkt) continue;
+                    if (counts[mkt] >= limits[mkt]) continue;
+                    // Limitar odd total: nao passar de 15x com 3 pernas
+                    if (result.length === 2) {
+                        const {odd} = _getOdd(p, mkt);
+                        if (_totalOdd(result) * odd > 15) continue;
+                    }
+                    const {odd, estimated} = _getOdd(p, mkt);
+                    counts[mkt]++;
+                    result.push({pick:p, market:mkt, odd, estimated});
+                }
+                return result;
             }
             function _totalOdd(legs) { return legs.reduce((a,l)=>a*l.odd,1); }
             function _level(tot) {
@@ -1798,10 +1820,7 @@
             async function load() {
                 const today = _brtDate();
                 if (_cache.date===today && _cache.picks.length) {
-                    _iaSug = _cache.picks.filter(_isGood).slice(0,3).map(p=>{
-                        const mkt=_pickMkt(p); const {odd,estimated}=_getOdd(p,mkt);
-                        return {pick:p,market:mkt,odd,estimated};
-                    });
+                    _iaSug = _buildIASug(_cache.picks);
                     renderIA(); renderGames(); return;
                 }
                 try {
@@ -1809,10 +1828,7 @@
                     const data = await r.json();
                     const picks = (data.picks||[]).filter(p=>p.home&&p.away);
                     _cache = { date:today, picks };
-                    _iaSug = picks.filter(_isGood).slice(0,3).map(p=>{
-                        const mkt=_pickMkt(p); const {odd,estimated}=_getOdd(p,mkt);
-                        return {pick:p,market:mkt,odd,estimated};
-                    });
+                    _iaSug = _buildIASug(picks);
                     renderIA(); renderGames();
                 } catch(e) {
                     const el=document.getElementById('oa-ia-card');
