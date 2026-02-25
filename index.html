@@ -1823,10 +1823,33 @@
                     _iaSug = _buildIASug(_cache.picks);
                     renderIA(); renderGames(); return;
                 }
+
+                // Reusar os jogos já carregados pela aba Jogos (window.TOP_PICKS_TODAY)
+                const existing = (window.TOP_PICKS_TODAY||[]).filter(p=>p.home&&p.away);
+                if (existing.length) {
+                    _cache = { date:today, picks: existing };
+                    _iaSug = _buildIASug(existing);
+                    renderIA(); renderGames(); return;
+                }
+
+                // Fallback: buscar /api/matches/today diretamente
                 try {
-                    const r    = await fetch('/api/top-picks-today');
+                    const r    = await fetch(`${window.BACKEND_URL||'https://metafy-backend.onrender.com'}/api/matches/today`);
                     const data = await r.json();
-                    const picks = (data.picks||[]).filter(p=>p.home&&p.away);
+                    const picks = (data.matches||[]).filter(p=>p.home&&p.away).map((m,i)=>({
+                        id:            'm-'+m.id,
+                        home:          m.home,
+                        away:          m.away,
+                        league:        m.league||'',
+                        time:          m.timeBRT||'--:--',
+                        odds:          m.odds||{},
+                        bestPick:      (m.valueAnalysis&&m.valueAnalysis.bestMarket)||'avoid',
+                        bestPickLabel: (m.valueAnalysis&&m.valueAnalysis.marketLabel)||'Evitar',
+                        confidencePct: (m.valueAnalysis&&m.valueAnalysis.confidencePct)||0,
+                        rating:        (m.valueAnalysis&&m.valueAnalysis.rating)||'Sem valor claro',
+                        edge:          (m.valueAnalysis&&m.valueAnalysis.edge)||0,
+                        iaFree:        i<2,
+                    }));
                     _cache = { date:today, picks };
                     _iaSug = _buildIASug(picks);
                     renderIA(); renderGames();

@@ -843,6 +843,7 @@ function matchToTopPick(match) {
     edge:             isFallback ? 0      : (va.edge          ?? 0),
     probAdjusted:     isFallback ? 0      : (va.adjustedProb  ?? 0),
     probImplied:      isFallback ? 0      : (va.impliedProb   ?? 0),
+    odds:             match.odds || {},
   };
 }
 
