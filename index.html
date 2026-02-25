@@ -1688,7 +1688,7 @@
                 const valid = picks
                     .filter(_isGood)
                     .sort((a,b) => (parseFloat(b.edge)||0) - (parseFloat(a.edge)||0));
-                const limits = { home:2, draw:1, away:3 };
+                const limits = { home:1, draw:1, away:2 };
                 const counts = { home:0, draw:0, away:0 };
                 const result = [];
                 for (const p of valid) {
