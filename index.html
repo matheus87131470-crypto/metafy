@@ -1680,8 +1680,10 @@
                 if (rat==='alto risco'||rat==='fallback') return false;
                 if ((p.bestPickLabel||'').includes('Sem aposta')) return false;
                 if (edge < 0) return false;
-                return pct>=70 || conf.includes('média') || conf.includes('alta')
-                    || conf.includes('moderada') || conf.includes('forte') || edge>2;
+                return pct>=70 || edge>2
+                    || conf.includes('média') || conf.includes('alta')
+                    || conf.includes('moderada') || conf.includes('forte')
+                    || rat.includes('moderada') || rat.includes('forte');
             }
             function _totalOdd(legs) { return legs.reduce((a,l)=>a*l.odd,1); }
             function _level(tot) {
@@ -1803,7 +1805,7 @@
                     renderIA(); renderGames(); return;
                 }
                 try {
-                    const r    = await fetch(`${_BACKEND}/api/top-picks/today`);
+                    const r    = await fetch('/api/top-picks-today');
                     const data = await r.json();
                     const picks = (data.picks||[]).filter(p=>p.home&&p.away);
                     _cache = { date:today, picks };
