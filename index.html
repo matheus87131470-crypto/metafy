@@ -311,6 +311,141 @@
             font-size: 1.1rem;
         }
 
+        /* ── Odds Altas tab ─────────────────────────────── */
+        .oa-page {
+            padding: 16px 0 40px;
+            max-width: 520px;
+            margin: 0 auto;
+        }
+        .oa-card {
+            background: var(--bg-card, #1a1a2e);
+            border: 1px solid rgba(139, 92, 246, 0.35);
+            border-radius: 18px;
+            overflow: hidden;
+            box-shadow: 0 4px 24px rgba(139,92,246,0.10);
+        }
+        .oa-card-header {
+            background: linear-gradient(135deg, rgba(139,92,246,0.18) 0%, rgba(99,62,196,0.10) 100%);
+            border-bottom: 1px solid rgba(139,92,246,0.25);
+            padding: 18px 20px 14px;
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+        }
+        .oa-header-left h2 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-primary, #fff);
+            margin: 0 0 3px;
+        }
+        .oa-header-left p {
+            font-size: 0.8rem;
+            color: var(--text-secondary, #aaa);
+            margin: 0;
+        }
+        .oa-badge {
+            background: rgba(139,92,246,0.22);
+            color: #c084fc;
+            border: 1px solid rgba(139,92,246,0.4);
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 3px 10px;
+            white-space: nowrap;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+        .oa-total-block {
+            text-align: center;
+            padding: 22px 20px 18px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .oa-total-label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            color: var(--text-secondary, #aaa);
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+        .oa-total-value {
+            font-size: 3rem;
+            font-weight: 800;
+            color: #fbbf24;
+            line-height: 1;
+            text-shadow: 0 0 24px rgba(251,191,36,0.3);
+        }
+        .oa-legs {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .oa-leg {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 13px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            transition: background .15s;
+        }
+        .oa-leg:last-child { border-bottom: none; }
+        .oa-leg:hover { background: rgba(255,255,255,0.03); }
+        .oa-leg-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            min-width: 0;
+        }
+        .oa-leg-market {
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: var(--text-primary, #fff);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .oa-leg-jogo {
+            font-size: 0.74rem;
+            color: var(--text-secondary, #aaa);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .oa-leg-odd {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #a78bfa;
+            min-width: 38px;
+            text-align: right;
+            flex-shrink: 0;
+        }
+        .oa-footer {
+            padding: 16px 20px;
+            border-top: 1px solid rgba(139,92,246,0.2);
+        }
+        .oa-copy-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #7c3aed, #6d28d9);
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: opacity .2s, transform .1s;
+        }
+        .oa-copy-btn:hover  { opacity: .9; }
+        .oa-copy-btn:active { transform: scale(.98); }
+        .oa-copy-btn.copied { background: linear-gradient(135deg,#059669,#047857); }
+        /* ── fim Odds Altas ──────────────────────────────── */
+
         /* Premium tab content */
         .premium-content {
             max-width: 600px;
@@ -1078,6 +1213,10 @@
             <span class="tab-icon">💎</span>
             <span>Premium</span>
         </button>
+        <button class="nav-tab" data-tab="odds-altas" onclick="switchTab('odds-altas')">
+            <span class="tab-icon">📈</span>
+            <span>Odds Altas</span>
+        </button>
     </nav>
 
     <!-- Main Content -->
@@ -1092,6 +1231,34 @@
 
             <!-- Lista de Jogos (mantida p/ fallback) -->
             <div id="gamesList" style="display:none"></div>
+        </div>
+
+        <!-- Tab: Odds Altas -->
+        <div class="tab-content" id="tab-odds-altas">
+            <div class="oa-page">
+                <div class="oa-card">
+                    <div class="oa-card-header">
+                        <div class="oa-header-left">
+                            <h2>📈 Odds Altas</h2>
+                            <p>Bilhete do dia</p>
+                        </div>
+                        <span class="oa-badge">Aposta combinada</span>
+                    </div>
+
+                    <div class="oa-total-block">
+                        <div class="oa-total-label">Odd Total</div>
+                        <div class="oa-total-value" id="oa-total-value">12.40</div>
+                    </div>
+
+                    <ul class="oa-legs" id="oa-legs-list"></ul>
+
+                    <div class="oa-footer">
+                        <button class="oa-copy-btn" id="oa-copy-btn" onclick="oddsAltasCopiar()">
+                            📋 Copiar bilhete
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Tab: Ganhos/Perdas -->
@@ -1493,6 +1660,51 @@
         function showPremiumInfo() {
             switchTab('premium');
         }
+
+        // ── Odds Altas ──────────────────────────────────────────────────
+        const _bilheteDoDia = {
+            totalOdd: 12.40,
+            legs: [
+                { jogo: 'Irlanda do Norte x Alemanha', mercado: 'ML HT Alemanha',      odd: 3.10 },
+                { jogo: 'Islândia x França',           mercado: 'Over 1.5 França',      odd: 4.00 },
+                { jogo: 'Juventus x Galatasaray',      mercado: 'Vitória Juventus',     odd: 2.40 },
+            ],
+        };
+
+        function oddsAltasRender() {
+            const listEl = document.getElementById('oa-legs-list');
+            const totalEl = document.getElementById('oa-total-value');
+            if (!listEl || !totalEl) return;
+            totalEl.textContent = _bilheteDoDia.totalOdd.toFixed(2);
+            listEl.innerHTML = _bilheteDoDia.legs.map(l => `
+                <li class="oa-leg">
+                    <div class="oa-leg-info">
+                        <span class="oa-leg-market">${l.mercado}</span>
+                        <span class="oa-leg-jogo">${l.jogo}</span>
+                    </div>
+                    <span class="oa-leg-odd">${l.odd.toFixed(2)}</span>
+                </li>`).join('');
+        }
+
+        function oddsAltasCopiar() {
+            const linhas = _bilheteDoDia.legs.map((l, i) =>
+                `${i + 1}) ${l.jogo} — ${l.mercado} (${l.odd.toFixed(2)})`).join('\n');
+            const texto = `🔥 ODDS ALTAS - METAFY\n\nOdd total: ${_bilheteDoDia.totalOdd.toFixed(2)}\n\n${linhas}`;
+            navigator.clipboard.writeText(texto).then(() => {
+                const btn = document.getElementById('oa-copy-btn');
+                if (!btn) return;
+                btn.classList.add('copied');
+                btn.textContent = '✅ Copiado!';
+                setTimeout(() => {
+                    btn.classList.remove('copied');
+                    btn.innerHTML = '📋 Copiar bilhete';
+                }, 2000);
+            }).catch(() => alert('Não foi possível copiar. Tente manualmente.'));
+        }
+
+        // Renderizar ao carregar
+        document.addEventListener('DOMContentLoaded', () => { oddsAltasRender(); });
+        // ── fim Odds Altas ───────────────────────────────────────────────
         
         // User Menu Functions
         function toggleUserMenu() {
